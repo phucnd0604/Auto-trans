@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import re
@@ -85,6 +85,8 @@ class LocalEchoTranslator:
             "taptobreakdefenseand then toquick attack 0/4 staggerenemy": "Nhan de pha phong thu, sau do tan cong nhanh 0/4 lam choang ke dich",
             "tap to break defense and then to quick attack 0/4 stagger enemy": "Nhan de pha phong thu, sau do tan cong nhanh 0/4 lam choang ke dich",
             "lord shimura: break my block with a heavy attack, then strike quickly.": "Lord Shimura: Hay pha the do cua ta bang don manh, roi ra don that nhanh.",
+            "follow yuna": "Theo Yuna",
+            "do not raise the alarm": "Dung gay bao dong",
         }
         translated = dictionary.get(normalized.lower())
         if translated:
@@ -131,7 +133,9 @@ class HybridLocalTranslator:
         "audio game": "Am thanh va tro choi",
         "lord shimura: break my block with a heavy attack, then strike quickly.": "Lord Shimura: Hay pha the do cua ta bang don manh, roi ra don that nhanh.",
         "tap to break defense and then to quick attack 0/4 stagger enemy": "Nhan de pha phong thu, sau do tan cong nhanh 0/4 lam choang ke dich",
-        "yuna's brother is finally safe, but we had to split up after our escape.": "Anh em cua Yuna cuoi cung da an toan, nhung chung toi buoc phai tach ra sau cuoc tau thoat.",
+        "yuna''s brother is finally safe, but we had to split up after our escape.": "Anh em cua Yuna cuoi cung da an toan, nhung chung toi buoc phai tach ra sau cuoc tau thoat.",
+        "follow yuna": "Theo Yuna",
+        "do not raise the alarm": "Dung gay bao dong",
     }
     _COMPACT_RE = re.compile(r"[^a-z0-9]+")
 
@@ -493,6 +497,11 @@ def build_default_local_translator(config: AppConfig) -> TranslatorProvider:
         return HybridLocalTranslator(delegate=delegate)
     except Exception:
         return HybridLocalTranslator(delegate=None)
+
+
+
+
+
 
 
 

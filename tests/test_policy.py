@@ -1,4 +1,4 @@
-from autotrans.models import OCRBox, QualityMode, Rect
+﻿from autotrans.models import OCRBox, QualityMode, Rect
 from autotrans.services.policy import ProviderPolicy
 
 
@@ -13,17 +13,17 @@ def make_box(text: str, confidence: float = 0.95, language_hint: str = "en") -> 
     )
 
 
-def test_fast_mode_prefers_local() -> None:
+def test_ai_first_prefers_cloud_when_available() -> None:
     policy = ProviderPolicy()
     decision = policy.select([make_box("Quest accepted")], QualityMode.FAST, network_state=True)
-    assert decision.provider == "local"
+    assert decision.provider == "cloud"
 
 
-def test_high_quality_jp_prefers_cloud() -> None:
+def test_falls_back_to_local_when_cloud_unavailable() -> None:
     policy = ProviderPolicy()
     decision = policy.select(
         [make_box("???????", confidence=0.8, language_hint="jp")],
         QualityMode.HIGH_QUALITY,
-        network_state=True,
+        network_state=False,
     )
-    assert decision.provider == "cloud"
+    assert decision.provider == "local"

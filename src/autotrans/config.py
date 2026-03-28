@@ -13,7 +13,7 @@ class AppConfig:
     source_lang: str = getenv("AUTOTRANS_SOURCE_LANG", "en")
     target_lang: str = getenv("AUTOTRANS_TARGET_LANG", "vi")
     font_size: int = int(getenv("AUTOTRANS_FONT_SIZE", "18"))
-    overlay_background_opacity: float = float(getenv("AUTOTRANS_OVERLAY_BG_OPACITY", "0.72"))
+    overlay_background_opacity: float = float(getenv("AUTOTRANS_OVERLAY_BG_OPACITY", "0.9"))
     overlay_box_padding: int = int(getenv("AUTOTRANS_OVERLAY_BOX_PADDING", "8"))
     overlay_ttl_seconds: float = float(getenv("AUTOTRANS_OVERLAY_TTL_SECONDS", "1.5"))
     translation_log_enabled: bool = getenv("AUTOTRANS_TRANSLATION_LOG_ENABLED", "1") != "0"
@@ -55,6 +55,7 @@ class AppConfig:
     local_max_chars_balanced: int = int(getenv("AUTOTRANS_LOCAL_MAX_CHARS_BALANCED", "64"))
     debounce_frames: int = int(getenv("AUTOTRANS_DEBOUNCE_FRAMES", "1"))
     cache_size: int = int(getenv("AUTOTRANS_CACHE_SIZE", "1024"))
+    cache_root_dir: str = getenv("AUTOTRANS_CACHE_ROOT_DIR", "D:\\Games\\Cache_Trans")
 
     @property
     def translation_mode(self) -> str:

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import threading
 
@@ -136,6 +136,19 @@ class MainWindow(QMainWindow):
             self.window_list.addItem(item)
         self.status_label.setText(f"Detected {len(self._windows)} candidate windows.")
 
+    def _configure_cache_for_selected_window(self) -> None:
+        if self._selected_hwnd is None:
+            print("[AutoTrans] Cache skipped: no window selected", flush=True)
+            return
+        db_path = self.capture_service.get_cache_db_path(self._selected_hwnd)
+        if db_path is None:
+            selected_window = next((window for window in self._windows if window.hwnd == self._selected_hwnd), None)
+            title = selected_window.title if selected_window is not None else str(self._selected_hwnd)
+            print(f"[AutoTrans] Cache unavailable for window: {title}", flush=True)
+            return
+        print(f"[AutoTrans] Attaching cache for hwnd {self._selected_hwnd}: {db_path}", flush=True)
+        self.orchestrator.cache.set_persistent_path(db_path)
+
     def toggle_pipeline(self) -> None:
         if self._running:
             self.capture_timer.stop()
@@ -160,6 +173,7 @@ class MainWindow(QMainWindow):
                 )
                 return
 
+        self._configure_cache_for_selected_window()
         self.capture_timer.start()
         self.follow_timer.start()
         self.overlay.show()
@@ -243,3 +257,4 @@ class MainWindow(QMainWindow):
     def _apply_pipeline_error(self, message: str) -> None:
         self._processing = False
         self.status_label.setText(f"Pipeline error: {message}")
+
