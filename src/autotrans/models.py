@@ -101,6 +101,7 @@ class OverlayItem:
     visibility_state: VisibilityState = VisibilityState.VISIBLE
     source_text: str = ""
     tracking_key: str = ""
+    linger_seconds: float = 0.0
 
 
 @dataclass(slots=True)
@@ -110,3 +111,4 @@ class PipelineStats:
     translation_latency_ms: float = 0.0
     box_count: int = 0
     cache_hits: int = 0
+

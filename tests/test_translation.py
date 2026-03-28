@@ -1,5 +1,6 @@
-from autotrans.models import OCRBox, QualityMode, Rect
+﻿from autotrans.models import OCRBox, QualityMode, Rect
 from autotrans.services.translation import OpenAITranslator, WordByWordTranslator
+from autotrans.utils.text import is_probably_garbage_text
 
 
 def make_item(text: str) -> OCRBox:
@@ -44,3 +45,7 @@ def test_word_by_word_translator_handles_objectives() -> None:
 def test_openai_translator_sanitizes_numbering_and_quotes() -> None:
     assert OpenAITranslator._sanitize_line('1. "Restart from last checkpoint"') == "Restart from last checkpoint"
     assert OpenAITranslator._sanitize_line("- 'Save game'") == "Save game"
+
+
+def test_unicode_vietnamese_translation_is_not_garbage() -> None:
+    assert is_probably_garbage_text("Thách đấu với người Mông Cổ.") is False

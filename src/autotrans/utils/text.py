@@ -1,12 +1,12 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import re
 from collections import Counter
 
 
 _WHITESPACE_RE = re.compile(r"\s+")
-_WORD_RE = re.compile(r"[A-Za-z0-9']+")
-_NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
+_WORD_RE = re.compile(r"[^\W_]+(?:'[^\W_]+)?", re.UNICODE)
+_NON_ALNUM_RE = re.compile(r"[^\w]+", re.UNICODE)
 
 
 def normalize_text(text: str) -> str:
@@ -60,3 +60,4 @@ def is_probably_garbage_text(text: str) -> bool:
             return True
 
     return False
+

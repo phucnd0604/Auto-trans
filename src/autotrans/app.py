@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sys
 
@@ -74,7 +74,7 @@ def main() -> int:
     app = QApplication(sys.argv)
     config = AppConfig()
     capture_service = WindowsWindowCapture(config)
-    overlay = OverlayWindow(ttl_seconds=config.overlay_ttl_seconds)
+    overlay = OverlayWindow(ttl_seconds=config.overlay_ttl_seconds, overlay_fps=config.overlay_fps)
     orchestrator = PipelineOrchestrator(
         config=config,
         capture_service=capture_service,
@@ -94,4 +94,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 

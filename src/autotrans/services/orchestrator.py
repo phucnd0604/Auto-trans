@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import socket
 import time
@@ -25,7 +25,7 @@ from autotrans.services.policy import ProviderPolicy
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.tracker import OCRTracker
 from autotrans.services.translation import TranslatorProvider
-from autotrans.utils.text import canonicalize_text, is_probably_garbage_text, normalize_text
+from autotrans.utils.text import canonicalize_text, is_probably_garbage_text, normalize_text, tokenize_words
 
 
 class PipelineOrchestrator:
@@ -123,8 +123,19 @@ class PipelineOrchestrator:
 
     def _select_boxes(self, frame: Frame, boxes: list[OCRBox]) -> list[OCRBox]:
         if self.config.subtitle_mode:
-            return self.subtitle_detector.select(frame, boxes)
-        return boxes
+            selected = self.subtitle_detector.select(frame, boxes)
+        else:
+            selected = boxes
+        filtered: list[OCRBox] = []
+        skipped_short = 0
+        for box in selected:
+            if len(tokenize_words(box.source_text)) < 3:
+                skipped_short += 1
+                continue
+            filtered.append(box)
+        if skipped_short:
+            self._log(f"skipped {skipped_short} short OCR box(es) (<3 words)")
+        return filtered
 
     def _stabilize_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
         if self.config.translation_stable_scans <= 1 or self.config.overlay_source_text:
@@ -160,7 +171,7 @@ class PipelineOrchestrator:
             self._log(line)
         return stable
 
-    def _track_source_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
+    def _track_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
         original_debounce = self.tracker.debounce_frames
         self.tracker.debounce_frames = 1
         try:
@@ -185,7 +196,7 @@ class PipelineOrchestrator:
 
         if self.config.overlay_source_text:
             selected_boxes = self._select_boxes(frame, ocr_boxes)
-            tracked_boxes = self._track_source_boxes(selected_boxes)
+            tracked_boxes = self._track_boxes(selected_boxes)
             stable_boxes = tracked_boxes
             overlay_items = self._build_source_overlay(stable_boxes)
         else:
@@ -194,7 +205,9 @@ class PipelineOrchestrator:
                 f"selected {len(selected_boxes)}/{len(ocr_boxes)} OCR boxes for translation"
             )
             stable_boxes = self._stabilize_boxes(selected_boxes)
-            overlay_items = self._translate_and_build_overlay(stable_boxes)
+            tracked_boxes = self._track_boxes(stable_boxes)
+            overlay_items = self._translate_and_build_overlay(tracked_boxes)
+            stable_boxes = tracked_boxes
 
         if emit_overlay is not None:
             emit_overlay(overlay_items)
@@ -249,6 +262,13 @@ class PipelineOrchestrator:
             return False
         return True
 
+    def _overlay_linger_seconds(self, latency_ms: float) -> float:
+        capture_interval = 1.0 / max(self.config.capture_fps, 0.01)
+        latency_seconds = max(latency_ms, 0.0) / 1000.0
+        min_linger = capture_interval
+        desired_linger = capture_interval + latency_seconds
+        return max(min_linger, min(self.config.overlay_ttl_seconds, desired_linger))
+
     def _build_source_overlay(self, boxes: list[OCRBox]) -> list[OverlayItem]:
         style = OverlayStyle(
             font_size=self.config.font_size,
@@ -262,6 +282,7 @@ class PipelineOrchestrator:
                 visibility_state=VisibilityState.VISIBLE,
                 source_text=box.source_text,
                 tracking_key=box.id or canonicalize_text(box.source_text),
+                linger_seconds=self.config.overlay_ttl_seconds,
             )
             for box in boxes
             if normalize_text(box.source_text)
@@ -338,6 +359,7 @@ class PipelineOrchestrator:
             key = canonicalize_text(box.source_text)
             translated = results_by_key.get(key, ("", "", 0.0))[0]
             if not translated:
+                self._log(f"overlay skip no-translation {normalize_text(box.source_text)!r}")
                 continue
             overlay_items.append(
                 OverlayItem(
@@ -347,9 +369,20 @@ class PipelineOrchestrator:
                     visibility_state=VisibilityState.VISIBLE,
                     source_text=box.source_text,
                     tracking_key=box.id or key,
+                    linger_seconds=self._overlay_linger_seconds(results_by_key.get(key, ("", "", 0.0))[2]),
                 )
             )
+        for item in overlay_items[: self.config.translation_log_max_items]:
+            self._log(
+                f"overlay add {normalize_text(item.source_text)!r} -> {normalize_text(item.translated_text)!r} @ ({item.bbox.x},{item.bbox.y},{item.bbox.width},{item.bbox.height}) linger={item.linger_seconds:.2f}s"
+            )
         return overlay_items
+
+
+
+
+
+
 
 
 

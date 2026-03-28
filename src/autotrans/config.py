@@ -42,6 +42,13 @@ class AppConfig:
     ocr_preprocess: bool = getenv("AUTOTRANS_OCR_PREPROCESS", "0") != "0"
     ocr_max_side: int = int(getenv("AUTOTRANS_OCR_MAX_SIDE", "1280"))
     ocr_max_boxes: int = int(getenv("AUTOTRANS_OCR_MAX_BOXES", "0"))
+    paddle_ocr_version: str = getenv("AUTOTRANS_PADDLE_OCR_VERSION", "PP-OCRv5")
+    paddle_use_textline_orientation: bool = getenv("AUTOTRANS_PADDLE_USE_TEXTLINE_ORIENTATION", "0") != "0"
+    paddle_text_det_limit_side_len: int = int(getenv("AUTOTRANS_PADDLE_TEXT_DET_LIMIT_SIDE_LEN", "1536"))
+    paddle_text_det_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_THRESH", "0.2"))
+    paddle_text_det_box_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_BOX_THRESH", "0.35"))
+    paddle_text_det_unclip_ratio: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_UNCLIP_RATIO", "1.5"))
+    paddle_text_rec_score_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_REC_SCORE_THRESH", "0.2"))
     ocr_crop_subtitle_only: bool = getenv("AUTOTRANS_OCR_CROP_SUBTITLE_ONLY", "1") != "0"
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
     capture_backend: str = getenv("AUTOTRANS_CAPTURE_BACKEND", "mss")
@@ -77,4 +84,5 @@ class AppConfig:
 
     def cloud_base_host(self) -> str:
         return (urlparse(self.openai_base_url).hostname or "").strip()
+
 

@@ -211,7 +211,13 @@ class PaddleOCRProvider(BaseOCRProvider):
                 continue
             self._ocr_engines[language.lower()] = PaddleOCR(
                 lang=paddle_lang,
-                use_textline_orientation=False,
+                ocr_version=config.paddle_ocr_version,
+                use_textline_orientation=config.paddle_use_textline_orientation,
+                text_det_limit_side_len=config.paddle_text_det_limit_side_len,
+                text_det_thresh=config.paddle_text_det_thresh,
+                text_det_box_thresh=config.paddle_text_det_box_thresh,
+                text_det_unclip_ratio=config.paddle_text_det_unclip_ratio,
+                text_rec_score_thresh=config.paddle_text_rec_score_thresh,
             )
         if not self._ocr_engines:
             raise RuntimeError("No valid OCR languages configured")
@@ -290,3 +296,4 @@ class PaddleOCRProvider(BaseOCRProvider):
                     )
 
         return self._merge_line_boxes(boxes)
+
