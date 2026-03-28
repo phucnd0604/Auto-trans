@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from dataclasses import dataclass
 from os import cpu_count, getenv
@@ -6,13 +6,61 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
-_DEFAULT_MODEL_DIR = Path(getenv("AUTOTRANS_LOCAL_MODEL_DIR", ".models/opus-mt-en-vi-ctranslate2"))
+_DEFAULT_RUNTIME_ROOT_DIR = Path(getenv("AUTOTRANS_RUNTIME_ROOT_DIR", ".runtime"))
+_DEFAULT_MODEL_DIR = Path(
+    getenv(
+        "AUTOTRANS_LOCAL_MODEL_DIR",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "models" / "opus-mt-en-vi-ctranslate2"),
+    )
+)
+_DEFAULT_ARGOS_PACKAGES_DIR = Path(
+    getenv(
+        "AUTOTRANS_ARGOS_PACKAGES_DIR",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "argos" / "packages"),
+    )
+)
+_DEFAULT_CACHE_ROOT_DIR = Path(
+    getenv(
+        "AUTOTRANS_CACHE_ROOT_DIR",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "translation-cache"),
+    )
+)
+_DEFAULT_PADDLE_CACHE_DIR = Path(
+    getenv(
+        "AUTOTRANS_PADDLE_CACHE_DIR",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "paddle"),
+    )
+)
+_DEFAULT_XDG_DATA_HOME = Path(
+    getenv(
+        "AUTOTRANS_XDG_DATA_HOME",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "xdg" / "data"),
+    )
+)
+_DEFAULT_XDG_CACHE_HOME = Path(
+    getenv(
+        "AUTOTRANS_XDG_CACHE_HOME",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "xdg" / "cache"),
+    )
+)
+_DEFAULT_XDG_CONFIG_HOME = Path(
+    getenv(
+        "AUTOTRANS_XDG_CONFIG_HOME",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "xdg" / "config"),
+    )
+)
+_DEFAULT_HF_HOME = Path(
+    getenv(
+        "AUTOTRANS_HF_HOME",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "huggingface"),
+    )
+)
 _DEFAULT_INTRA_THREADS = str(max((cpu_count() or 4) - 1, 1))
-_DEFAULT_ARGOS_PACKAGES_DIR = Path(getenv("AUTOTRANS_ARGOS_PACKAGES_DIR", ".models/argos-packages"))
 
 
 @dataclass(slots=True)
 class AppConfig:
+    runtime_root_dir: Path = _DEFAULT_RUNTIME_ROOT_DIR
     capture_fps: float = float(getenv("AUTOTRANS_CAPTURE_FPS", "4"))
     overlay_fps: int = int(getenv("AUTOTRANS_OVERLAY_FPS", "30"))
     mode: str = getenv("AUTOTRANS_TRANSLATION_MODE", "balanced")
@@ -64,6 +112,11 @@ class AppConfig:
     local_target_prefix: str = getenv("AUTOTRANS_LOCAL_TARGET_PREFIX", ">>vie<<")
     argos_packages_dir: Path = _DEFAULT_ARGOS_PACKAGES_DIR
     argos_auto_install: bool = getenv("AUTOTRANS_ARGOS_AUTO_INSTALL", "1") != "0"
+    paddle_cache_dir: Path = _DEFAULT_PADDLE_CACHE_DIR
+    xdg_data_home: Path = _DEFAULT_XDG_DATA_HOME
+    xdg_cache_home: Path = _DEFAULT_XDG_CACHE_HOME
+    xdg_config_home: Path = _DEFAULT_XDG_CONFIG_HOME
+    hf_home: Path = _DEFAULT_HF_HOME
     cloud_provider: str = getenv("AUTOTRANS_CLOUD_PROVIDER", "none")
     openai_base_url: str = getenv("AUTOTRANS_OPENAI_BASE_URL", "https://api.openai.com/v1")
     openai_api_key: str | None = getenv("AUTOTRANS_OPENAI_API_KEY") or getenv("OPENAI_API_KEY") or None
@@ -72,7 +125,7 @@ class AppConfig:
     local_max_chars_balanced: int = int(getenv("AUTOTRANS_LOCAL_MAX_CHARS_BALANCED", "64"))
     debounce_frames: int = int(getenv("AUTOTRANS_DEBOUNCE_FRAMES", "1"))
     cache_size: int = int(getenv("AUTOTRANS_CACHE_SIZE", "1024"))
-    cache_root_dir: str = getenv("AUTOTRANS_CACHE_ROOT_DIR", "D:\\Games\\Cache_Trans")
+    cache_root_dir: Path = _DEFAULT_CACHE_ROOT_DIR
 
     @property
     def translation_mode(self) -> str:
@@ -84,5 +137,3 @@ class AppConfig:
 
     def cloud_base_host(self) -> str:
         return (urlparse(self.openai_base_url).hostname or "").strip()
-
-

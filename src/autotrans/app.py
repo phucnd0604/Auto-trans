@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import os
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -16,6 +17,31 @@ from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.translation import OpenAITranslator, build_default_local_translator
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
+
+
+def _prepare_runtime_environment(config: AppConfig) -> None:
+    runtime_dirs = [
+        config.runtime_root_dir,
+        config.local_model_dir,
+        config.argos_packages_dir,
+        config.cache_root_dir,
+        config.paddle_cache_dir,
+        config.xdg_data_home,
+        config.xdg_cache_home,
+        config.xdg_config_home,
+        config.hf_home,
+    ]
+    for path in runtime_dirs:
+        path.mkdir(parents=True, exist_ok=True)
+
+    os.environ["XDG_DATA_HOME"] = str(config.xdg_data_home.resolve())
+    os.environ["XDG_CACHE_HOME"] = str(config.xdg_cache_home.resolve())
+    os.environ["XDG_CONFIG_HOME"] = str(config.xdg_config_home.resolve())
+    os.environ["HF_HOME"] = str(config.hf_home.resolve())
+    os.environ["PADDLE_PDX_CACHE_HOME"] = str(config.paddle_cache_dir.resolve())
+    os.environ.setdefault("PADDLE_HOME", str((config.paddle_cache_dir / "paddle-home").resolve()))
+    os.environ["ARGOS_PACKAGES_DIR"] = str(config.argos_packages_dir.resolve())
+    os.environ.setdefault("ARGOS_TRANSLATE_PACKAGE_DIR", str(config.argos_packages_dir.resolve()))
 
 
 def _build_ocr_provider(config: AppConfig):
@@ -73,6 +99,7 @@ def _build_cloud_translator(config: AppConfig):
 def main() -> int:
     app = QApplication(sys.argv)
     config = AppConfig()
+    _prepare_runtime_environment(config)
     capture_service = WindowsWindowCapture(config)
     overlay = OverlayWindow(ttl_seconds=config.overlay_ttl_seconds, overlay_fps=config.overlay_fps)
     orchestrator = PipelineOrchestrator(
@@ -94,5 +121,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-
