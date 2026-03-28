@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import textwrap
+import time
 from pathlib import Path
 
 import cv2
@@ -127,15 +127,19 @@ def main() -> None:
     config.ocr_min_confidence = 0.25
     config.translation_log_enabled = True
     config.translation_log_max_items = 20
-    config.paddle_ocr_version = "PP-OCRv5"
-    config.paddle_text_det_limit_side_len = 1536
-    config.paddle_text_det_thresh = 0.2
-    config.paddle_text_det_box_thresh = 0.35
-    config.paddle_text_det_unclip_ratio = 1.5
-    config.paddle_text_rec_score_thresh = 0.2
 
     capture = ImageCapture(image)
     ocr = RapidOCRProvider(config)
+
+    ocr_frame = Frame(
+        image=image.copy(),
+        timestamp=0.0,
+        window_rect=Rect(0, 0, image.shape[1], image.shape[0]),
+    )
+    ocr_started = time.perf_counter()
+    raw_boxes = ocr.recognize(ocr_frame)
+    ocr_elapsed_ms = (time.perf_counter() - ocr_started) * 1000
+
     orchestrator = PipelineOrchestrator(
         config=config,
         capture_service=capture,
@@ -145,7 +149,9 @@ def main() -> None:
         policy=NoCloudPolicy(),
     )
 
+    pipeline_started = time.perf_counter()
     items = orchestrator.process_window(1)
+    pipeline_elapsed_ms = (time.perf_counter() - pipeline_started) * 1000
 
     preview = image.copy()
     lines = []
@@ -159,7 +165,10 @@ def main() -> None:
     LOG.write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {OUTPUT}")
     print(f"Wrote {LOG}")
+    print(f"RapidOCR raw boxes after line-merge: {len(raw_boxes)}")
+    print(f"RapidOCR recognize: {ocr_elapsed_ms:.1f} ms")
     print(f"Grouped overlay items: {len(items)}")
+    print(f"Full pipeline process_window: {pipeline_elapsed_ms:.1f} ms")
 
 
 if __name__ == "__main__":
