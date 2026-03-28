@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import socket
 import time
@@ -48,7 +48,10 @@ class PipelineOrchestrator:
         self.cloud_translator = cloud_translator
         self.cache = cache or TranslationCache()
         self.policy = policy or ProviderPolicy(cloud_timeout_ms=config.cloud_timeout_ms)
-        self.tracker = tracker or OCRTracker(debounce_frames=config.debounce_frames, max_missed_frames=config.subtitle_hold_frames)
+        self.tracker = tracker or OCRTracker(
+            debounce_frames=config.debounce_frames,
+            max_missed_frames=config.subtitle_hold_frames,
+        )
         self.subtitle_detector = subtitle_detector or SubtitleDetector(config)
         self.stats = PipelineStats()
         self._stable_counts: dict[str, int] = {}
@@ -161,7 +164,9 @@ class PipelineOrchestrator:
                 stable.append(box)
                 stable_logs.append(f"stable[{count}] {normalize_text(box.source_text)!r}")
             else:
-                pending_logs.append(f"pending[{count}/{self.config.translation_stable_scans}] {normalize_text(box.source_text)!r}")
+                pending_logs.append(
+                    f"pending[{count}/{self.config.translation_stable_scans}] {normalize_text(box.source_text)!r}"
+                )
 
         self._stable_counts = next_counts
 
@@ -201,9 +206,7 @@ class PipelineOrchestrator:
             overlay_items = self._build_source_overlay(stable_boxes)
         else:
             selected_boxes = self._select_boxes(frame, ocr_boxes)
-            self._log(
-                f"selected {len(selected_boxes)}/{len(ocr_boxes)} OCR boxes for translation"
-            )
+            self._log(f"selected {len(selected_boxes)}/{len(ocr_boxes)} OCR boxes for translation")
             stable_boxes = self._stabilize_boxes(selected_boxes)
             tracked_boxes = self._track_boxes(stable_boxes)
             overlay_items = self._translate_and_build_overlay(tracked_boxes)
@@ -269,12 +272,90 @@ class PipelineOrchestrator:
         desired_linger = capture_interval + latency_seconds
         return max(min_linger, min(self.config.overlay_ttl_seconds, desired_linger))
 
+    @staticmethod
+    def _boxes_belong_to_same_paragraph(current: OverlayItem, candidate: OverlayItem) -> bool:
+        current_box = current.bbox
+        candidate_box = candidate.bbox
+        vertical_gap = candidate_box.y - current_box.bottom
+        if vertical_gap < -max(current_box.height, candidate_box.height) * 0.5:
+            return False
+        if vertical_gap > max(current_box.height, candidate_box.height) * 1.5 + 10:
+            return False
+
+        overlap_x = min(current_box.right, candidate_box.right) - max(current_box.x, candidate_box.x)
+        left_delta = abs(current_box.x - candidate_box.x)
+        center_delta = abs(
+            (current_box.x + (current_box.width / 2)) - (candidate_box.x + (candidate_box.width / 2))
+        )
+        min_width = max(min(current_box.width, candidate_box.width), 1)
+        same_column = overlap_x >= min_width * 0.2 or left_delta <= 80 or center_delta <= 160
+        return same_column
+
+    def _group_overlay_items(self, items: list[OverlayItem]) -> list[OverlayItem]:
+        if len(items) <= 1:
+            return items
+
+        ordered = sorted(items, key=lambda item: (item.bbox.y, item.bbox.x))
+        groups: list[list[OverlayItem]] = []
+        for item in ordered:
+            placed = False
+            for group in groups:
+                anchor = group[-1]
+                if self._boxes_belong_to_same_paragraph(anchor, item):
+                    group.append(item)
+                    placed = True
+                    break
+            if not placed:
+                groups.append([item])
+
+        if len(groups) == len(items):
+            return items
+
+        merged_items: list[OverlayItem] = []
+        merged_count = 0
+        for group in groups:
+            if len(group) == 1:
+                merged_items.append(group[0])
+                continue
+
+            merged_count += len(group) - 1
+            x = min(item.bbox.x for item in group)
+            y = min(item.bbox.y for item in group)
+            right = max(item.bbox.right for item in group)
+            bottom = max(item.bbox.bottom for item in group)
+            merged_items.append(
+                OverlayItem(
+                    bbox=Rect(x=x, y=y, width=right - x, height=bottom - y),
+                    translated_text="\n".join(
+                        normalize_text(item.translated_text)
+                        for item in group
+                        if normalize_text(item.translated_text)
+                    ),
+                    style=group[0].style,
+                    visibility_state=group[0].visibility_state,
+                    source_text="\n".join(
+                        normalize_text(item.source_text)
+                        for item in group
+                        if normalize_text(item.source_text)
+                    ),
+                    tracking_key="paragraph-" + "-".join(
+                        item.tracking_key or canonicalize_text(item.source_text)
+                        for item in group
+                    ),
+                    linger_seconds=max(item.linger_seconds for item in group),
+                )
+            )
+
+        if merged_count:
+            self._log(f"grouped {merged_count} overlay box(es) into paragraph blocks")
+        return merged_items
+
     def _build_source_overlay(self, boxes: list[OCRBox]) -> list[OverlayItem]:
         style = OverlayStyle(
             font_size=self.config.font_size,
             background_opacity=self.config.overlay_background_opacity,
         )
-        return [
+        items = [
             OverlayItem(
                 bbox=box.bbox,
                 translated_text=box.source_text,
@@ -287,6 +368,7 @@ class PipelineOrchestrator:
             for box in boxes
             if normalize_text(box.source_text)
         ]
+        return self._group_overlay_items(items)
 
     def _translate_and_build_overlay(self, boxes: list[OCRBox]) -> list[OverlayItem]:
         if not boxes:
@@ -314,11 +396,7 @@ class PipelineOrchestrator:
                 glossary_version=self.config.glossary_version,
             )
             if cache_entry is not None:
-                results_by_key[key] = (
-                    cache_entry.translated_text,
-                    cache_entry.provider,
-                    0.0,
-                )
+                results_by_key[key] = (cache_entry.translated_text, cache_entry.provider, 0.0)
                 cache_hits += 1
             else:
                 pending.append(box)
@@ -335,11 +413,7 @@ class PipelineOrchestrator:
                 if not self._translation_is_usable(item.source_text, item.translated_text):
                     self._log(f"dropped unusable translation for {normalize_text(item.source_text)!r}")
                     continue
-                results_by_key[key] = (
-                    item.translated_text,
-                    item.provider,
-                    item.latency_ms,
-                )
+                results_by_key[key] = (item.translated_text, item.provider, item.latency_ms)
                 self.cache.put(
                     text=item.source_text,
                     source_lang=request.source_lang,
@@ -357,10 +431,12 @@ class PipelineOrchestrator:
         overlay_items: list[OverlayItem] = []
         for box in boxes:
             key = canonicalize_text(box.source_text)
-            translated = results_by_key.get(key, ("", "", 0.0))[0]
+            translated_entry = results_by_key.get(key)
+            translated = translated_entry[0] if translated_entry else ""
             if not translated:
                 self._log(f"overlay skip no-translation {normalize_text(box.source_text)!r}")
                 continue
+            latency_ms = translated_entry[2] if translated_entry else 0.0
             overlay_items.append(
                 OverlayItem(
                     bbox=box.bbox,
@@ -369,21 +445,13 @@ class PipelineOrchestrator:
                     visibility_state=VisibilityState.VISIBLE,
                     source_text=box.source_text,
                     tracking_key=box.id or key,
-                    linger_seconds=self._overlay_linger_seconds(results_by_key.get(key, ("", "", 0.0))[2]),
+                    linger_seconds=self._overlay_linger_seconds(latency_ms),
                 )
             )
+
+        overlay_items = self._group_overlay_items(overlay_items)
         for item in overlay_items[: self.config.translation_log_max_items]:
             self._log(
                 f"overlay add {normalize_text(item.source_text)!r} -> {normalize_text(item.translated_text)!r} @ ({item.bbox.x},{item.bbox.y},{item.bbox.width},{item.bbox.height}) linger={item.linger_seconds:.2f}s"
             )
         return overlay_items
-
-
-
-
-
-
-
-
-
-
