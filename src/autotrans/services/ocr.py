@@ -95,7 +95,12 @@ class BaseOCRProvider:
                 anchor_center_y = anchor.bbox.y + (anchor.bbox.height / 2)
                 avg_height = (anchor.bbox.height + box.bbox.height) / 2
                 gap_x = box.bbox.x - anchor.bbox.right
-                if abs(box_center_y - anchor_center_y) <= avg_height * 0.45 and gap_x <= avg_height * 1.5:
+                max_gap_x = max(18, int(avg_height * 0.75))
+                min_gap_x = -int(avg_height * 0.35)
+                if (
+                    abs(box_center_y - anchor_center_y) <= avg_height * 0.35
+                    and min_gap_x <= gap_x <= max_gap_x
+                ):
                     group.append(box)
                     placed = True
                     break

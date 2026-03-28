@@ -273,23 +273,30 @@ class PipelineOrchestrator:
         return max(min_linger, min(self.config.overlay_ttl_seconds, desired_linger))
 
     @staticmethod
-    def _boxes_belong_to_same_paragraph(current: OverlayItem, candidate: OverlayItem) -> bool:
-        current_box = current.bbox
+    def _boxes_belong_to_same_paragraph(
+        anchor: OverlayItem,
+        previous: OverlayItem,
+        candidate: OverlayItem,
+    ) -> bool:
+        anchor_box = anchor.bbox
+        current_box = previous.bbox
         candidate_box = candidate.bbox
         vertical_gap = candidate_box.y - current_box.bottom
-        if vertical_gap < -max(current_box.height, candidate_box.height) * 0.5:
+        if vertical_gap < -max(current_box.height, candidate_box.height) * 0.25:
             return False
-        if vertical_gap > max(current_box.height, candidate_box.height) * 1.5 + 10:
+        if vertical_gap > max(current_box.height, candidate_box.height) * 1.15 + 8:
             return False
 
-        overlap_x = min(current_box.right, candidate_box.right) - max(current_box.x, candidate_box.x)
-        left_delta = abs(current_box.x - candidate_box.x)
-        center_delta = abs(
-            (current_box.x + (current_box.width / 2)) - (candidate_box.x + (candidate_box.width / 2))
-        )
-        min_width = max(min(current_box.width, candidate_box.width), 1)
-        same_column = overlap_x >= min_width * 0.2 or left_delta <= 80 or center_delta <= 160
-        return same_column
+        left_delta = abs(anchor_box.x - candidate_box.x)
+        allowed_left_delta = max(24, int(min(anchor_box.width, candidate_box.width) * 0.12))
+        if left_delta > allowed_left_delta:
+            return False
+
+        overlap_x = min(anchor_box.right, candidate_box.right) - max(anchor_box.x, candidate_box.x)
+        if overlap_x <= 0 and left_delta > 12:
+            return False
+
+        return True
 
     def _group_overlay_items(self, items: list[OverlayItem]) -> list[OverlayItem]:
         if len(items) <= 1:
@@ -300,8 +307,9 @@ class PipelineOrchestrator:
         for item in ordered:
             placed = False
             for group in groups:
-                anchor = group[-1]
-                if self._boxes_belong_to_same_paragraph(anchor, item):
+                anchor = group[0]
+                previous = group[-1]
+                if self._boxes_belong_to_same_paragraph(anchor, previous, item):
                     group.append(item)
                     placed = True
                     break
