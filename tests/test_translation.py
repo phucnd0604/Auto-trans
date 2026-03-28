@@ -1,24 +1,5 @@
-from autotrans.models import OCRBox, QualityMode, Rect, TranslationResult
-from autotrans.services.translation import HybridLocalTranslator, OpenAITranslator
-
-
-class FakeDelegate:
-    name = "fake-model"
-
-    def __init__(self) -> None:
-        self.calls = 0
-
-    def translate_batch(self, items, source_lang, target_lang, mode):
-        self.calls += 1
-        return [
-            TranslationResult(
-                source_text=item.source_text,
-                translated_text=f"VI:{item.source_text}",
-                provider=self.name,
-                latency_ms=5.0,
-            )
-            for item in items
-        ]
+from autotrans.models import OCRBox, QualityMode, Rect
+from autotrans.services.translation import OpenAITranslator, WordByWordTranslator
 
 
 def make_item(text: str) -> OCRBox:
@@ -32,33 +13,32 @@ def make_item(text: str) -> OCRBox:
     )
 
 
-def test_hybrid_local_translator_uses_glossary_for_glued_ui_text() -> None:
-    translator = HybridLocalTranslator(delegate=None)
+def test_word_by_word_translator_handles_menu_text() -> None:
+    translator = WordByWordTranslator()
 
     result = translator.translate_batch(
-        [make_item("SAVEGAME"), make_item("RESTARTFROMLASTCHECKPOINT")],
+        [make_item("SAVE GAME"), make_item("RESTART FROM LAST CHECKPOINT")],
         "en",
         "vi",
         QualityMode.BALANCED,
     )
 
-    assert result[0].translated_text == "Luu game"
-    assert result[1].translated_text == "Choi lai tu diem luu gan nhat"
+    assert result[0].translated_text == "luu game"
+    assert result[1].translated_text == "khoi dong lai tu cuoi diem kiem soat"
 
 
-def test_hybrid_local_translator_uses_delegate_for_sentences() -> None:
-    delegate = FakeDelegate()
-    translator = HybridLocalTranslator(delegate=delegate)
+def test_word_by_word_translator_handles_objectives() -> None:
+    translator = WordByWordTranslator()
 
     result = translator.translate_batch(
-        [make_item("Yuna and Taka reached Komatsu Forge safely.")],
+        [make_item("Follow Yuna"), make_item("Do not raise the alarm")],
         "en",
         "vi",
         QualityMode.BALANCED,
     )
 
-    assert delegate.calls == 1
-    assert result[0].translated_text == "VI:Yuna and Taka reached Komatsu Forge safely."
+    assert result[0].translated_text == "theo Yuna"
+    assert result[1].translated_text == "khong gay bao dong"
 
 
 def test_openai_translator_sanitizes_numbering_and_quotes() -> None:

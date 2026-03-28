@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 
 tests/sample-screenshot/test-*.png
+
+.models/
+temp_argos_bench.py

@@ -1,11 +1,11 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
 import sqlite3
 from threading import RLock
 
-from autotrans.utils.text import normalize_text
+from autotrans.utils.text import canonicalize_text
 
 
 @dataclass(slots=True)
@@ -31,7 +31,7 @@ class TranslationCache:
         target_lang: str,
         glossary_version: str,
     ) -> str:
-        normalized = normalize_text(text)
+        normalized = canonicalize_text(text)
         return f"{source_lang}:{target_lang}:{glossary_version}:{normalized}"
 
     def get(

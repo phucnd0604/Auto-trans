@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import time
 
@@ -112,3 +112,4 @@ class OverlayWindow(QWidget):
             painter.setPen(QColor(245, 210, 90))
             painter.drawText(QRect(draw_rect), text_flags, item.translated_text)
         painter.end()
+

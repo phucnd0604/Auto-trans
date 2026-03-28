@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import socket
 import time
@@ -25,7 +25,7 @@ from autotrans.services.policy import ProviderPolicy
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.tracker import OCRTracker
 from autotrans.services.translation import TranslatorProvider
-from autotrans.utils.text import is_probably_garbage_text, normalize_text
+from autotrans.utils.text import canonicalize_text, is_probably_garbage_text, normalize_text
 
 
 class PipelineOrchestrator:
@@ -48,9 +48,14 @@ class PipelineOrchestrator:
         self.cloud_translator = cloud_translator
         self.cache = cache or TranslationCache()
         self.policy = policy or ProviderPolicy(cloud_timeout_ms=config.cloud_timeout_ms)
-        self.tracker = tracker or OCRTracker(debounce_frames=config.debounce_frames)
+        self.tracker = tracker or OCRTracker(debounce_frames=config.debounce_frames, max_missed_frames=config.subtitle_hold_frames)
         self.subtitle_detector = subtitle_detector or SubtitleDetector(config)
         self.stats = PipelineStats()
+        self._stable_counts: dict[str, int] = {}
+
+    def _log(self, message: str) -> None:
+        if self.config.translation_log_enabled:
+            print(f"[AutoTrans] {message}", flush=True)
 
     def _network_available(self) -> bool:
         if self.config.cloud_is_localhost():
@@ -116,6 +121,53 @@ class PipelineOrchestrator:
                 kept.append(box)
         return kept
 
+    def _select_boxes(self, frame: Frame, boxes: list[OCRBox]) -> list[OCRBox]:
+        if self.config.subtitle_mode:
+            return self.subtitle_detector.select(frame, boxes)
+        return boxes
+
+    def _stabilize_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
+        if self.config.translation_stable_scans <= 1 or self.config.overlay_source_text:
+            return boxes
+
+        next_counts: dict[str, int] = {}
+        best_by_key: dict[str, OCRBox] = {}
+        for box in boxes:
+            key = canonicalize_text(box.source_text)
+            if not key:
+                continue
+            next_counts[key] = self._stable_counts.get(key, 0) + 1
+            existing = best_by_key.get(key)
+            if existing is None or box.confidence > existing.confidence:
+                best_by_key[key] = box
+
+        stable: list[OCRBox] = []
+        pending_logs: list[str] = []
+        stable_logs: list[str] = []
+        for key, box in best_by_key.items():
+            count = next_counts[key]
+            if count >= self.config.translation_stable_scans:
+                stable.append(box)
+                stable_logs.append(f"stable[{count}] {normalize_text(box.source_text)!r}")
+            else:
+                pending_logs.append(f"pending[{count}/{self.config.translation_stable_scans}] {normalize_text(box.source_text)!r}")
+
+        self._stable_counts = next_counts
+
+        for line in pending_logs[: self.config.translation_log_max_items]:
+            self._log(line)
+        for line in stable_logs[: self.config.translation_log_max_items]:
+            self._log(line)
+        return stable
+
+    def _track_source_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
+        original_debounce = self.tracker.debounce_frames
+        self.tracker.debounce_frames = 1
+        try:
+            return self.tracker.update(boxes)
+        finally:
+            self.tracker.debounce_frames = original_debounce
+
     def process_window(
         self,
         hwnd: int,
@@ -129,15 +181,19 @@ class PipelineOrchestrator:
         ocr_frame, y_offset = self._crop_ocr_frame(frame)
         ocr_boxes = self.ocr_provider.recognize(ocr_frame)
         ocr_boxes = self._offset_boxes(ocr_boxes, y_offset)
-        ocr_boxes = [box for box in ocr_boxes if not is_probably_garbage_text(box.source_text)]
         ocr_boxes = self._dedupe_boxes(ocr_boxes)
 
         if self.config.overlay_source_text:
-            stable_boxes = ocr_boxes
+            selected_boxes = self._select_boxes(frame, ocr_boxes)
+            tracked_boxes = self._track_source_boxes(selected_boxes)
+            stable_boxes = tracked_boxes
             overlay_items = self._build_source_overlay(stable_boxes)
         else:
-            subtitle_boxes = self.subtitle_detector.select(frame, ocr_boxes)
-            stable_boxes = self.tracker.update(subtitle_boxes)
+            selected_boxes = self._select_boxes(frame, ocr_boxes)
+            self._log(
+                f"selected {len(selected_boxes)}/{len(ocr_boxes)} OCR boxes for translation"
+            )
+            stable_boxes = self._stabilize_boxes(selected_boxes)
             overlay_items = self._translate_and_build_overlay(stable_boxes)
 
         if emit_overlay is not None:
@@ -161,6 +217,9 @@ class PipelineOrchestrator:
             if decision.provider == "cloud" and self.cloud_translator is not None
             else self.local_translator
         )
+        self._log(
+            f"translator={getattr(preferred, 'name', decision.provider)} provider={decision.provider} reason={decision.reason} items={len(pending)}"
+        )
         try:
             return preferred.translate_batch(
                 items=pending,
@@ -168,9 +227,10 @@ class PipelineOrchestrator:
                 target_lang=request.target_lang,
                 mode=request.mode,
             )
-        except Exception:
+        except Exception as exc:
             if preferred is self.local_translator:
                 raise
+            self._log(f"cloud fallback triggered: {exc}")
             return self.local_translator.translate_batch(
                 items=pending,
                 source_lang=request.source_lang,
@@ -201,6 +261,7 @@ class PipelineOrchestrator:
                 style=style,
                 visibility_state=VisibilityState.VISIBLE,
                 source_text=box.source_text,
+                tracking_key=box.id or canonicalize_text(box.source_text),
             )
             for box in boxes
             if normalize_text(box.source_text)
@@ -217,9 +278,14 @@ class PipelineOrchestrator:
             mode=QualityMode(self.config.mode),
         )
 
-        results_by_text: dict[str, tuple[str, str, float]] = {}
+        results_by_key: dict[str, tuple[str, str, float]] = {}
         pending: list[OCRBox] = []
+        cache_hits = 0
+        cache_misses = 0
         for box in request.items:
+            key = canonicalize_text(box.source_text)
+            if not key:
+                continue
             cache_entry = self.cache.get(
                 text=box.source_text,
                 source_lang=request.source_lang,
@@ -227,20 +293,28 @@ class PipelineOrchestrator:
                 glossary_version=self.config.glossary_version,
             )
             if cache_entry is not None:
-                results_by_text[box.source_text] = (
+                results_by_key[key] = (
                     cache_entry.translated_text,
                     cache_entry.provider,
                     0.0,
                 )
+                cache_hits += 1
             else:
                 pending.append(box)
+                cache_misses += 1
+
+        self._log(f"cache hits={cache_hits} misses={cache_misses}")
 
         if pending:
             translated = self._translate_pending(pending, request)
             for item in translated:
-                if not self._translation_is_usable(item.source_text, item.translated_text):
+                key = canonicalize_text(item.source_text)
+                if not key:
                     continue
-                results_by_text[item.source_text] = (
+                if not self._translation_is_usable(item.source_text, item.translated_text):
+                    self._log(f"dropped unusable translation for {normalize_text(item.source_text)!r}")
+                    continue
+                results_by_key[key] = (
                     item.translated_text,
                     item.provider,
                     item.latency_ms,
@@ -261,7 +335,8 @@ class PipelineOrchestrator:
         )
         overlay_items: list[OverlayItem] = []
         for box in boxes:
-            translated = results_by_text.get(box.source_text, ("", "", 0.0))[0]
+            key = canonicalize_text(box.source_text)
+            translated = results_by_key.get(key, ("", "", 0.0))[0]
             if not translated:
                 continue
             overlay_items.append(
@@ -271,6 +346,11 @@ class PipelineOrchestrator:
                     style=style,
                     visibility_state=VisibilityState.VISIBLE,
                     source_text=box.source_text,
+                    tracking_key=box.id or key,
                 )
             )
         return overlay_items
+
+
+
+

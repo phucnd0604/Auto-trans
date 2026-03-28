@@ -100,6 +100,7 @@ class OverlayItem:
     style: OverlayStyle
     visibility_state: VisibilityState = VisibilityState.VISIBLE
     source_text: str = ""
+    tracking_key: str = ""
 
 
 @dataclass(slots=True)

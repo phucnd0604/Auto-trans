@@ -77,6 +77,7 @@ def test_orchestrator_uses_cache_after_first_pass() -> None:
     config = AppConfig()
     config.mode = QualityMode.BALANCED.value
     config.debounce_frames = 1
+    config.translation_stable_scans = 1
     translator = FakeTranslator()
     orchestrator = PipelineOrchestrator(
         config=config,
@@ -100,6 +101,7 @@ def test_orchestrator_falls_back_to_local_on_cloud_error() -> None:
     config = AppConfig()
     config.mode = QualityMode.HIGH_QUALITY.value
     config.debounce_frames = 1
+    config.translation_stable_scans = 1
     translator = FakeTranslator()
     orchestrator = PipelineOrchestrator(
         config=config,
@@ -123,6 +125,7 @@ def test_orchestrator_can_overlay_source_text_without_translation() -> None:
     config.subtitle_mode = False
     config.ocr_crop_subtitle_only = False
     config.debounce_frames = 1
+    config.translation_stable_scans = 1
     translator = FakeTranslator()
     orchestrator = PipelineOrchestrator(
         config=config,
@@ -138,3 +141,26 @@ def test_orchestrator_can_overlay_source_text_without_translation() -> None:
     assert len(items) == 1
     assert items[0].translated_text == "then drop him with one strike"
     assert translator.calls == 0
+
+
+def test_orchestrator_waits_for_stable_scan_before_translation() -> None:
+    config = AppConfig()
+    config.mode = QualityMode.BALANCED.value
+    config.debounce_frames = 1
+    config.translation_stable_scans = 2
+    translator = FakeTranslator()
+    orchestrator = PipelineOrchestrator(
+        config=config,
+        capture_service=FakeCapture(),
+        ocr_provider=FakeOCR(),
+        local_translator=translator,
+        cloud_translator=None,
+        policy=NoCloudPolicy(),
+    )
+
+    items_first = orchestrator.process_window(1)
+    items_second = orchestrator.process_window(1)
+
+    assert items_first == []
+    assert len(items_second) == 1
+    assert translator.calls == 1

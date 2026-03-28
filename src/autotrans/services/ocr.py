@@ -72,11 +72,11 @@ class BaseOCRProvider:
         normalized = normalize_text(text)
         if not normalized or confidence < self._config.ocr_min_confidence:
             return False
-        if bbox.width < 18 or bbox.height < 12:
+        if bbox.width < 8 or bbox.height < 8:
             return False
-        if self._text_score(normalized) < 3:
+        if self._text_score(normalized) < 1:
             return False
-        if len(normalized) == 1:
+        if len(normalized) < 1:
             return False
         return True
 
@@ -124,7 +124,8 @@ class BaseOCRProvider:
             )
 
         output.sort(key=lambda item: (item.bbox.width * item.bbox.height), reverse=True)
-        output = output[: self._config.ocr_max_boxes]
+        if self._config.ocr_max_boxes > 0:
+            output = output[: self._config.ocr_max_boxes]
         output.sort(key=lambda item: (item.bbox.y, item.bbox.x))
         return output
 

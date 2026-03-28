@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import re
 from collections import Counter
@@ -6,10 +6,25 @@ from collections import Counter
 
 _WHITESPACE_RE = re.compile(r"\s+")
 _WORD_RE = re.compile(r"[A-Za-z0-9']+")
+_NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
 
 
 def normalize_text(text: str) -> str:
     return _WHITESPACE_RE.sub(" ", text or "").strip()
+
+
+def canonicalize_text(text: str) -> str:
+    normalized = normalize_text(text).lower()
+    if not normalized:
+        return ""
+    collapsed = normalized.replace(" ", "")
+    if len(collapsed) >= 8:
+        normalized = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", text).lower()
+        normalized = normalize_text(normalized)
+    normalized = normalized.replace("0/4", "0 4")
+    normalized = normalized.replace("don't", "dont")
+    normalized = _NON_ALNUM_RE.sub(" ", normalized)
+    return normalize_text(normalized)
 
 
 def tokenize_words(text: str) -> list[str]:

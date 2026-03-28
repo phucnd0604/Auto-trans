@@ -1,9 +1,9 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-import json
+import os
 import re
+import threading
 import time
-from collections import Counter
 from pathlib import Path
 from typing import Protocol
 
@@ -25,8 +25,98 @@ class TranslatorProvider(Protocol):
         ...
 
 
-class LocalEchoTranslator:
-    name = "local-fallback"
+class WordByWordTranslator:
+    name = "local-word-by-word"
+
+    _WORD_MAP = {
+        "follow": "theo",
+        "yuna": "Yuna",
+        "do": "",
+        "not": "khong",
+        "raise": "gay",
+        "the": "",
+        "alarm": "bao dong",
+        "restart": "khoi dong lai",
+        "from": "tu",
+        "last": "cuoi",
+        "checkpoint": "diem kiem soat",
+        "exit": "thoat",
+        "to": "den",
+        "title": "tieu de",
+        "screen": "man hinh",
+        "enter": "vao",
+        "legends": "Legends",
+        "mode": "che do",
+        "save": "luu",
+        "game": "game",
+        "accessibility": "tro nang",
+        "mouse": "chuot",
+        "keyboard": "ban phim",
+        "audio": "am thanh",
+        "graphics": "do hoa",
+        "open": "mo",
+        "close": "dong",
+        "climb": "leo",
+        "collect": "nhat",
+        "pick": "nhat",
+        "up": "len",
+        "mission": "nhiem vu",
+        "objective": "muc tieu",
+        "quest": "nhiem vu",
+        "journal": "nhat ky",
+        "map": "ban do",
+        "completed": "hoan thanh",
+        "privacy": "rieng tu",
+        "settings": "cai dat",
+        "end": "ket thuc",
+        "suffering": "dau kho",
+        "more": "them",
+        "guards": "linh canh",
+        "they": "ho",
+        "said": "noi",
+        "all": "tat ca",
+        "samurai": "samurai",
+        "were": "da",
+        "dead": "chet",
+        "thank": "cam on",
+        "you": "ban",
+        "my": "cua toi",
+        "lord": "lanh chua",
+        "brother": "anh em",
+        "mongols": "quan Mongol",
+        "took": "bat",
+        "him": "anh ay",
+    }
+    _TOKEN_RE = re.compile(r"[A-Za-z']+|\d+|[^A-Za-z'\d\s]+")
+
+    def _translate_token(self, token: str) -> str:
+        if not token:
+            return token
+        if not any(char.isalpha() for char in token):
+            return token
+        lowered = token.lower()
+        translated = self._WORD_MAP.get(lowered)
+        if translated is None:
+            if token.isupper() and len(token) > 1:
+                return token
+            return token
+        return translated
+
+    def _translate_text(self, text: str) -> str:
+        normalized = normalize_text(text)
+        if not normalized:
+            return ""
+        tokens = self._TOKEN_RE.findall(normalized)
+        translated_tokens: list[str] = []
+        for token in tokens:
+            mapped = self._translate_token(token)
+            if mapped:
+                translated_tokens.append(mapped)
+        result = " ".join(translated_tokens)
+        result = re.sub(r"\s+([,.:;!?])", r"\1", result)
+        result = re.sub(r"\(\s+", "(", result)
+        result = re.sub(r"\s+\)", ")", result)
+        return normalize_text(result)
 
     def translate_batch(
         self,
@@ -38,168 +128,92 @@ class LocalEchoTranslator:
         started = time.perf_counter()
         results: list[TranslationResult] = []
         for item in items:
-            translated = self._basic_translate(item.source_text)
+            translated = self._translate_text(item.source_text)
             results.append(
                 TranslationResult(
                     source_text=item.source_text,
-                    translated_text=translated,
+                    translated_text=translated or normalize_text(item.source_text),
                     provider=self.name,
                     latency_ms=(time.perf_counter() - started) * 1000,
                 )
             )
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        print(
+            f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms",
+            flush=True,
+        )
+        for item, result in list(zip(items, results, strict=False))[:6]:
+            print(
+                f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
+                flush=True,
+            )
         return results
 
-    @staticmethod
-    def _basic_translate(text: str) -> str:
-        normalized = normalize_text(text)
-        dictionary = {
-            "quest accepted": "Nhiem vu da nhan",
-            "start adventure": "Bat dau cuoc phieu luu",
-            "buy": "Mua",
-            "sell": "Ban",
-            "new thread": "Cuoc tro chuyen moi",
-            "options": "Tuy chon",
-            "audio game": "Am thanh va tro choi",
-            "gamepad": "Tay cam",
-            "game": "Tro choi",
-            "audio": "Am thanh",
-            "display": "Hien thi",
-            "graphics": "Do hoa",
-            "mouse&keyboard": "Chuot va ban phim",
-            "mouse & keyboard": "Chuot va ban phim",
-            "accessibility": "Tro nang truy cap",
-            "privacy settings": "Cai dat quyen rieng tu",
-            "esc exit": "ESC Thoat",
-            "restartfromlastcheckpoint": "Choi lai tu diem luu gan nhat",
-            "restart from last checkpoint": "Choi lai tu diem luu gan nhat",
-            "exittotitle screen": "Thoat ve man hinh tieu de",
-            "exit to title screen": "Thoat ve man hinh tieu de",
-            "savegame": "Luu game",
-            "save game": "Luu game",
-            "quitgame": "Thoat game",
-            "quit game": "Thoat game",
-            "enterlegendsmode": "Vao che do Legends",
-            "enter legends mode": "Vao che do Legends",
-            "taptobreakdefenseand": "Nhan de pha phong thu va",
-            "then toquick attack 0/4 staggerenemy": "sau do tan cong nhanh 0/4 lam choang ke dich",
-            "taptobreakdefenseand then toquick attack 0/4 staggerenemy": "Nhan de pha phong thu, sau do tan cong nhanh 0/4 lam choang ke dich",
-            "tap to break defense and then to quick attack 0/4 stagger enemy": "Nhan de pha phong thu, sau do tan cong nhanh 0/4 lam choang ke dich",
-            "lord shimura: break my block with a heavy attack, then strike quickly.": "Lord Shimura: Hay pha the do cua ta bang don manh, roi ra don that nhanh.",
-            "follow yuna": "Theo Yuna",
-            "do not raise the alarm": "Dung gay bao dong",
-        }
-        translated = dictionary.get(normalized.lower())
-        if translated:
-            return translated
-        return normalized
 
+class ArgosTranslator:
+    name = "local-argos"
 
-class HybridLocalTranslator:
-    name = "local-hybrid"
+    def __init__(
+        self,
+        packages_dir: Path,
+        auto_install: bool = True,
+        compute_type: str = "int8",
+        inter_threads: int = 1,
+        intra_threads: int = 0,
+    ) -> None:
+        self._packages_dir = Path(packages_dir)
+        self._packages_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["ARGOS_PACKAGES_DIR"] = str(self._packages_dir.resolve())
+        os.environ.setdefault("ARGOS_DEVICE_TYPE", "cpu")
+        os.environ.setdefault("ARGOS_CHUNK_TYPE", "MINISBD")
+        os.environ.setdefault("ARGOS_COMPUTE_TYPE", compute_type)
+        os.environ.setdefault("ARGOS_INTER_THREADS", str(inter_threads))
+        os.environ.setdefault("ARGOS_INTRA_THREADS", str(intra_threads))
 
-    _GLOSSARY = {
-        "quest accepted": "Nhiem vu da nhan",
-        "start adventure": "Bat dau cuoc phieu luu",
-        "buy": "Mua",
-        "sell": "Ban",
-        "new thread": "Cuoc tro chuyen moi",
-        "options": "Tuy chon",
-        "gamepad": "Tay cam",
-        "game": "Tro choi",
-        "audio": "Am thanh",
-        "display": "Hien thi",
-        "graphics": "Do hoa",
-        "mouse & keyboard": "Chuot va ban phim",
-        "mouse keyboard": "Chuot va ban phim",
-        "accessibility": "Tro nang truy cap",
-        "privacy settings": "Cai dat quyen rieng tu",
-        "esc exit": "ESC Thoat",
-        "show on map": "Hien tren ban do",
-        "sort by most recent": "Sap xep theo moi nhat",
-        "show on map sort by most recent": "Hien tren ban do Sap xep theo moi nhat",
-        "map journal": "Ban do va nhat ky",
-        "completed tales": "Nhiem vu da hoan thanh",
-        "major legend": "Truyen thuyet lon",
-        "hammer and forge": "Bua va lo ren",
-        "the tale of ryuzo": "Truyen ve Ryuzo",
-        "act 1 rescue lord shimura": "Hoi 1 Giai cuu Lord Shimura",
-        "forge a tool to climb the walls of castle kaneda": "Che tao cong cu de leo tuong thanh Castle Kaneda",
-        "go to the town of komatsu forge": "Di den thi tran Komatsu Forge",
-        "restart from last checkpoint": "Choi lai tu diem luu gan nhat",
-        "save game": "Luu game",
-        "enter legends mode": "Vao che do Legends",
-        "exit to title screen": "Thoat ve man hinh tieu de",
-        "quit game": "Thoat game",
-        "audio game": "Am thanh va tro choi",
-        "lord shimura: break my block with a heavy attack, then strike quickly.": "Lord Shimura: Hay pha the do cua ta bang don manh, roi ra don that nhanh.",
-        "tap to break defense and then to quick attack 0/4 stagger enemy": "Nhan de pha phong thu, sau do tan cong nhanh 0/4 lam choang ke dich",
-        "yuna''s brother is finally safe, but we had to split up after our escape.": "Anh em cua Yuna cuoi cung da an toan, nhung chung toi buoc phai tach ra sau cuoc tau thoat.",
-        "follow yuna": "Theo Yuna",
-        "do not raise the alarm": "Dung gay bao dong",
-    }
-    _COMPACT_RE = re.compile(r"[^a-z0-9]+")
+        from argostranslate import package, translate
 
-    def __init__(self, delegate: TranslatorProvider | None = None) -> None:
-        self._delegate = delegate
-        self._compact_glossary = {
-            self._compact_key(source): target for source, target in self._GLOSSARY.items()
-        }
-
-    @classmethod
-    def _compact_key(cls, text: str) -> str:
-        return cls._COMPACT_RE.sub("", normalize_text(text).lower())
-
-    def _lookup_glossary(self, text: str) -> str | None:
-        normalized = normalize_text(text).lower()
-        translated = self._GLOSSARY.get(normalized)
-        if translated:
-            return translated
-        return self._compact_glossary.get(self._compact_key(normalized))
-
-    def _replace_known_phrases(self, text: str) -> str | None:
-        normalized = normalize_text(text)
-        lowered = normalized.lower()
-        replaced = normalized
-        changed = False
-        for source, target in sorted(self._GLOSSARY.items(), key=lambda item: len(item[0]), reverse=True):
-            if " " not in source:
-                continue
-            position = lowered.find(source)
-            if position == -1:
-                continue
-            replaced = replaced[:position] + target + replaced[position + len(source):]
-            lowered = replaced.lower()
-            changed = True
-        return replaced if changed else None
+        self._package = package
+        self._translate = translate
+        self._auto_install = auto_install
+        self._lock = threading.RLock()
+        self._translation_cache: dict[tuple[str, str], object] = {}
 
     @staticmethod
-    def _looks_glued_ui_text(text: str) -> bool:
-        normalized = normalize_text(text)
-        compact = normalized.replace(" ", "")
-        return len(compact) >= 10 and compact.upper() == compact and " " not in normalized
+    def _sanitize_line(text: str) -> str:
+        cleaned = normalize_text(text)
+        cleaned = re.sub(r"^\s*[>\-*]+\s*", "", cleaned)
+        return normalize_text(cleaned)
 
-    @staticmethod
-    def _looks_broken_translation(text: str) -> bool:
-        normalized = normalize_text(text)
-        if not normalized:
-            return True
-        compact = normalized.replace(" ", "")
-        if len(compact) >= 12 and len(set(compact)) <= 2:
-            return True
-        tokens = normalized.split()
-        if len(tokens) >= 4:
-            counts = Counter(tokens)
-            if counts.most_common(1)[0][1] / len(tokens) >= 0.6:
-                return True
-        return False
+    def _resolve_translation(self, source_lang: str, target_lang: str):
+        key = (source_lang, target_lang)
+        cached = self._translation_cache.get(key)
+        if cached is not None:
+            return cached
 
-    def _should_use_delegate(self, text: str) -> bool:
-        normalized = normalize_text(text)
-        if not normalized:
-            return False
-        if self._looks_glued_ui_text(normalized):
-            return False
-        return len(normalized) >= 12 or " " in normalized or ":" in normalized
+        with self._lock:
+            cached = self._translation_cache.get(key)
+            if cached is not None:
+                return cached
+
+            self._translate.get_installed_languages.cache_clear()
+            from_lang = self._translate.get_language_from_code(source_lang)
+            to_lang = self._translate.get_language_from_code(target_lang)
+            translation = None if from_lang is None or to_lang is None else from_lang.get_translation(to_lang)
+
+            if translation is None and self._auto_install:
+                self._package.update_package_index()
+                installed = self._package.install_package_for_language_pair(source_lang, target_lang)
+                if installed:
+                    self._translate.get_installed_languages.cache_clear()
+                    from_lang = self._translate.get_language_from_code(source_lang)
+                    to_lang = self._translate.get_language_from_code(target_lang)
+                    translation = None if from_lang is None or to_lang is None else from_lang.get_translation(to_lang)
+
+            if translation is None:
+                raise RuntimeError(f"Argos package unavailable for {source_lang}->{target_lang}")
+
+            self._translation_cache[key] = translation
+            return translation
 
     def translate_batch(
         self,
@@ -209,191 +223,28 @@ class HybridLocalTranslator:
         mode: QualityMode,
     ) -> list[TranslationResult]:
         started = time.perf_counter()
+        translation = self._resolve_translation(source_lang, target_lang)
         results: list[TranslationResult] = []
-        pending: list[OCRBox] = []
-        pending_index: list[int] = []
-
-        for index, item in enumerate(items):
-            translated = self._lookup_glossary(item.source_text)
-            if translated is not None:
-                results.append(
-                    TranslationResult(
-                        source_text=item.source_text,
-                        translated_text=translated,
-                        provider=self.name,
-                        latency_ms=(time.perf_counter() - started) * 1000,
-                    )
-                )
-                continue
-
-            partial = self._replace_known_phrases(item.source_text)
-            if partial is not None:
-                results.append(
-                    TranslationResult(
-                        source_text=item.source_text,
-                        translated_text=partial,
-                        provider=self.name,
-                        latency_ms=(time.perf_counter() - started) * 1000,
-                    )
-                )
-                continue
-
-            if self._delegate is not None and self._should_use_delegate(item.source_text):
-                pending.append(
-                    OCRBox(
-                        id=item.id,
-                        source_text=normalize_text(item.source_text),
-                        confidence=item.confidence,
-                        bbox=item.bbox,
-                        language_hint=item.language_hint,
-                        line_id=item.line_id,
-                    )
-                )
-                pending_index.append(index)
-                results.append(
-                    TranslationResult(
-                        source_text=item.source_text,
-                        translated_text="",
-                        provider=self.name,
-                        latency_ms=0.0,
-                    )
-                )
-                continue
-
+        for item in items:
+            source_text = normalize_text(item.source_text)
+            translated = self._sanitize_line(translation.translate(source_text)) if source_text else ""
             results.append(
                 TranslationResult(
                     source_text=item.source_text,
-                    translated_text=normalize_text(item.source_text),
+                    translated_text=translated or source_text,
                     provider=self.name,
                     latency_ms=(time.perf_counter() - started) * 1000,
                 )
             )
-
-        if pending and self._delegate is not None:
-            delegated = self._delegate.translate_batch(
-                pending,
-                source_lang=source_lang,
-                target_lang=target_lang,
-                mode=mode,
-            )
-            for slot, item, translated in zip(pending_index, pending, delegated, strict=False):
-                final_text = normalize_text(translated.translated_text)
-                if self._looks_broken_translation(final_text):
-                    final_text = self._lookup_glossary(item.source_text) or normalize_text(item.source_text)
-                results[slot] = TranslationResult(
-                    source_text=items[slot].source_text,
-                    translated_text=final_text,
-                    provider=getattr(self._delegate, "name", self.name),
-                    latency_ms=translated.latency_ms,
-                )
-
-        return results
-
-
-class CTranslate2Translator:
-    name = "local"
-
-    def __init__(self, config: AppConfig) -> None:
-        import ctranslate2
-        import sentencepiece as spm
-        from huggingface_hub import snapshot_download
-
-        model_dir = config.local_model_dir
-        if model_dir is None:
-            model_dir = Path(
-                snapshot_download(
-                    repo_id=config.local_model_repo,
-                    allow_patterns=[
-                        "model.bin",
-                        "config.json",
-                        "shared_vocabulary.txt",
-                        "shared_vocabulary.json",
-                        "source_vocabulary.txt",
-                        "target_vocabulary.txt",
-                        "source.spm",
-                        "target.spm",
-                        "tokenizer_config.json",
-                    ],
-                )
-            )
-        self._model_dir = Path(model_dir)
-        self._source_sp = spm.SentencePieceProcessor()
-        self._target_sp = spm.SentencePieceProcessor()
-        if not self._source_sp.load(str(self._model_dir / "source.spm")):
-            raise RuntimeError("Unable to load source.spm for local translator")
-        if not self._target_sp.load(str(self._model_dir / "target.spm")):
-            raise RuntimeError("Unable to load target.spm for local translator")
-
-        self._ensure_vocab_files()
-
-        self._translator = ctranslate2.Translator(
-            str(self._model_dir),
-            device=config.local_device,
-            inter_threads=config.local_inter_threads,
-            intra_threads=config.local_intra_threads,
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        print(
+            f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms",
+            flush=True,
         )
-        self._warmup()
-
-    def _ensure_vocab_files(self) -> None:
-        shared_txt = self._model_dir / "shared_vocabulary.txt"
-        if shared_txt.exists():
-            return
-
-        shared_json = self._model_dir / "shared_vocabulary.json"
-        if shared_json.exists():
-            with shared_json.open("r", encoding="utf-8") as handle:
-                data = json.load(handle)
-            if isinstance(data, dict):
-                pieces = [piece for piece, _ in sorted(data.items(), key=lambda item: item[1])]
-            else:
-                pieces = list(data)
-        else:
-            pieces = [self._source_sp.id_to_piece(i) for i in range(self._source_sp.get_piece_size())]
-
-        shared_txt.write_text("\n".join(pieces) + "\n", encoding="utf-8")
-
-    def _warmup(self) -> None:
-        try:
-            self._translate_texts(["start game"])
-        except Exception:
-            pass
-
-    def _translate_texts(self, texts: list[str]) -> list[str]:
-        tokenized = [self._source_sp.encode(normalize_text(text), out_type=str) for text in texts]
-        results = self._translator.translate_batch(
-            tokenized,
-            beam_size=1,
-            max_decoding_length=128,
-            return_scores=False,
-            repetition_penalty=1.0,
-            disable_unk=True,
-        )
-        outputs: list[str] = []
-        for result in results:
-            hypothesis = result.hypotheses[0] if result.hypotheses else []
-            decoded = self._target_sp.decode(hypothesis)
-            outputs.append(normalize_text(decoded))
-        return outputs
-
-    def translate_batch(
-        self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-        mode: QualityMode,
-    ) -> list[TranslationResult]:
-        started = time.perf_counter()
-        texts = [item.source_text for item in items]
-        translated_texts = self._translate_texts(texts)
-        results: list[TranslationResult] = []
-        for item, translated in zip(items, translated_texts, strict=False):
-            results.append(
-                TranslationResult(
-                    source_text=item.source_text,
-                    translated_text=translated or item.source_text,
-                    provider=self.name,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                )
+        for item, result in list(zip(items, results, strict=False))[:6]:
+            print(
+                f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
+                flush=True,
             )
         return results
 
@@ -488,22 +339,23 @@ class OpenAITranslator:
                 )
         return results
 
+
 def build_default_local_translator(config: AppConfig) -> TranslatorProvider:
-    if not config.local_model_enabled:
-        return HybridLocalTranslator(delegate=None)
+    backend = config.local_translator_backend.strip().lower()
+    if backend == "word":
+        return WordByWordTranslator()
 
-    try:
-        delegate = CTranslate2Translator(config)
-        return HybridLocalTranslator(delegate=delegate)
-    except Exception:
-        return HybridLocalTranslator(delegate=None)
+    if backend == "argos":
+        try:
+            return ArgosTranslator(
+                packages_dir=config.argos_packages_dir,
+                auto_install=config.argos_auto_install,
+                compute_type=config.local_model_compute_type,
+                inter_threads=config.local_inter_threads,
+                intra_threads=config.local_intra_threads,
+            )
+        except Exception as exc:
+            print(f"[AutoTrans] Argos unavailable, falling back to word-by-word: {exc}", flush=True)
+            return WordByWordTranslator()
 
-
-
-
-
-
-
-
-
-
+    return WordByWordTranslator()

@@ -1,8 +1,14 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass
-from os import getenv
+from os import cpu_count, getenv
+from pathlib import Path
 from urllib.parse import urlparse
+
+
+_DEFAULT_MODEL_DIR = Path(getenv("AUTOTRANS_LOCAL_MODEL_DIR", ".models/opus-mt-en-vi-ctranslate2"))
+_DEFAULT_INTRA_THREADS = str(max((cpu_count() or 4) - 1, 1))
+_DEFAULT_ARGOS_PACKAGES_DIR = Path(getenv("AUTOTRANS_ARGOS_PACKAGES_DIR", ".models/argos-packages"))
 
 
 @dataclass(slots=True)
@@ -18,14 +24,15 @@ class AppConfig:
     overlay_ttl_seconds: float = float(getenv("AUTOTRANS_OVERLAY_TTL_SECONDS", "1.5"))
     translation_log_enabled: bool = getenv("AUTOTRANS_TRANSLATION_LOG_ENABLED", "1") != "0"
     translation_log_max_items: int = int(getenv("AUTOTRANS_TRANSLATION_LOG_MAX_ITEMS", "6"))
-    glossary_version: str = getenv("AUTOTRANS_GLOSSARY_VERSION", "v1")
+    translation_stable_scans: int = int(getenv("AUTOTRANS_TRANSLATION_STABLE_SCANS", "2"))
+    glossary_version: str = getenv("AUTOTRANS_GLOSSARY_VERSION", "word-v1")
     subtitle_mode: bool = getenv("AUTOTRANS_SUBTITLE_MODE", "1") != "0"
     subtitle_region_top_ratio: float = float(getenv("AUTOTRANS_SUBTITLE_REGION_TOP_RATIO", "0.45"))
     subtitle_min_width_ratio: float = float(getenv("AUTOTRANS_SUBTITLE_MIN_WIDTH_RATIO", "0.08"))
     subtitle_min_chars: int = int(getenv("AUTOTRANS_SUBTITLE_MIN_CHARS", "6"))
-    subtitle_max_candidates: int = int(getenv("AUTOTRANS_SUBTITLE_MAX_CANDIDATES", "2"))
+    subtitle_max_candidates: int = int(getenv("AUTOTRANS_SUBTITLE_MAX_CANDIDATES", "4"))
     subtitle_hold_frames: int = int(getenv("AUTOTRANS_SUBTITLE_HOLD_FRAMES", "2"))
-    ocr_provider: str = getenv("AUTOTRANS_OCR_PROVIDER", "rapidocr")
+    ocr_provider: str = getenv("AUTOTRANS_OCR_PROVIDER", "paddle")
     ocr_languages: tuple[str, ...] = tuple(
         language.strip()
         for language in getenv("AUTOTRANS_OCR_LANGUAGES", "en,jp").split(",")
@@ -34,19 +41,22 @@ class AppConfig:
     ocr_min_confidence: float = float(getenv("AUTOTRANS_OCR_MIN_CONFIDENCE", "0.45"))
     ocr_preprocess: bool = getenv("AUTOTRANS_OCR_PREPROCESS", "0") != "0"
     ocr_max_side: int = int(getenv("AUTOTRANS_OCR_MAX_SIDE", "1280"))
-    ocr_max_boxes: int = int(getenv("AUTOTRANS_OCR_MAX_BOXES", "10"))
+    ocr_max_boxes: int = int(getenv("AUTOTRANS_OCR_MAX_BOXES", "0"))
     ocr_crop_subtitle_only: bool = getenv("AUTOTRANS_OCR_CROP_SUBTITLE_ONLY", "1") != "0"
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
     capture_backend: str = getenv("AUTOTRANS_CAPTURE_BACKEND", "mss")
     local_model_enabled: bool = getenv("AUTOTRANS_LOCAL_MODEL_ENABLED", "0") != "0"
+    local_translator_backend: str = getenv("AUTOTRANS_LOCAL_TRANSLATOR", "argos")
     local_model_path: str | None = getenv("AUTOTRANS_LOCAL_MODEL_PATH") or None
-    local_model_type: str = getenv("AUTOTRANS_LOCAL_MODEL_TYPE", "opus-mt")
+    local_model_repo: str = getenv("AUTOTRANS_LOCAL_MODEL_REPO", "manancode/opus-mt-en-vi-ctranslate2-android")
+    local_model_dir: Path = _DEFAULT_MODEL_DIR
     local_model_device: str = getenv("AUTOTRANS_LOCAL_MODEL_DEVICE", "cpu")
     local_model_compute_type: str = getenv("AUTOTRANS_LOCAL_MODEL_COMPUTE_TYPE", "int8")
-    local_model_beam_size: int = int(getenv("AUTOTRANS_LOCAL_MODEL_BEAM_SIZE", "2"))
-    local_model_batch_size: int = int(getenv("AUTOTRANS_LOCAL_MODEL_BATCH_SIZE", "8"))
-    local_model_max_input_chars: int = int(getenv("AUTOTRANS_LOCAL_MODEL_MAX_INPUT_CHARS", "180"))
-    local_model_timeout_ms: int = int(getenv("AUTOTRANS_LOCAL_MODEL_TIMEOUT_MS", "900"))
+    local_inter_threads: int = int(getenv("AUTOTRANS_LOCAL_INTER_THREADS", "1"))
+    local_intra_threads: int = int(getenv("AUTOTRANS_LOCAL_INTRA_THREADS", _DEFAULT_INTRA_THREADS))
+    local_target_prefix: str = getenv("AUTOTRANS_LOCAL_TARGET_PREFIX", ">>vie<<")
+    argos_packages_dir: Path = _DEFAULT_ARGOS_PACKAGES_DIR
+    argos_auto_install: bool = getenv("AUTOTRANS_ARGOS_AUTO_INSTALL", "1") != "0"
     cloud_provider: str = getenv("AUTOTRANS_CLOUD_PROVIDER", "none")
     openai_base_url: str = getenv("AUTOTRANS_OPENAI_BASE_URL", "https://api.openai.com/v1")
     openai_api_key: str | None = getenv("AUTOTRANS_OPENAI_API_KEY") or getenv("OPENAI_API_KEY") or None
@@ -67,3 +77,4 @@ class AppConfig:
 
     def cloud_base_host(self) -> str:
         return (urlparse(self.openai_base_url).hostname or "").strip()
+
