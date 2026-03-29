@@ -18,44 +18,32 @@ class SubtitleDetector:
     def __init__(self, config: AppConfig) -> None:
         self._config = config
 
-    def _center_offset(self, frame: Frame, box: OCRBox) -> float:
-        center_x = box.bbox.x + (box.bbox.width / 2)
-        return abs(center_x - (frame.window_rect.width / 2)) / max(frame.window_rect.width / 2, 1)
-
     def _normalized_length(self, text: str) -> int:
         return len(normalize_text(text))
 
-    def _detect_region(self, frame: Frame, box: OCRBox) -> str | None:
+    @staticmethod
+    def _looks_like_uppercase_label(text: str) -> bool:
+        normalized = normalize_text(text)
+        letters = [char for char in normalized if char.isalpha()]
+        if not letters:
+            return False
+        uppercase = sum(1 for char in letters if char.isupper())
+        return uppercase / max(len(letters), 1) >= 0.85
+
+    def _is_subtitle_candidate(self, frame: Frame, box: OCRBox) -> bool:
         text_len = self._normalized_length(box.source_text)
         if text_len <= 1 or is_probably_garbage_text(box.source_text):
-            return None
-
-        width_ratio = box.bbox.width / max(frame.window_rect.width, 1)
-        height_ratio = box.bbox.height / max(frame.window_rect.height, 1)
-        top_ratio = box.bbox.y / max(frame.window_rect.height, 1)
-        center_offset = self._center_offset(frame, box)
-
-        if top_ratio <= 0.35 and box.bbox.x <= frame.window_rect.width * 0.45 and text_len >= 6:
-            return 'objective'
+            return False
+        if self._looks_like_uppercase_label(box.source_text):
+            return False
 
         region_top = int(frame.window_rect.height * self._config.subtitle_region_top_ratio)
-        if box.bbox.y >= region_top and width_ratio >= self._config.subtitle_min_width_ratio and text_len >= 6:
-            return 'subtitle'
+        center_x = frame.window_rect.width / 2
+        return box.bbox.y >= region_top and text_len >= self._config.subtitle_min_chars and box.bbox.x < center_x < box.bbox.right
 
-        if 0.35 <= top_ratio <= 0.85 and width_ratio >= 0.04 and height_ratio >= 0.015 and text_len >= 2:
-            if center_offset <= 0.4 or box.bbox.x >= frame.window_rect.width * 0.55:
-                return 'interaction'
-
-        if width_ratio >= 0.12 and text_len >= 6:
-            return 'ui'
-
-        return None
-
-    def _merge_candidates(self, region: str, boxes: list[OCRBox]) -> list[OCRBox]:
+    def _merge_candidates(self, boxes: list[OCRBox]) -> list[OCRBox]:
         if not boxes:
             return []
-        if region == 'interaction':
-            return boxes
 
         boxes = sorted(boxes, key=lambda item: (item.bbox.y, item.bbox.x))
         groups: list[list[OCRBox]] = []
@@ -87,51 +75,33 @@ class SubtitleDetector:
                     confidence=sum(item.confidence for item in group) / len(group),
                     bbox=Rect(x=x, y=y, width=right - x, height=bottom - y),
                     language_hint=group[0].language_hint,
-                    line_id=f'{region}-{index}',
+                    line_id=f'subtitle-{index}',
                 )
             )
         return merged
 
-    def _score(self, frame: Frame, box: OCRBox, region: str) -> float:
+    def _score(self, frame: Frame, box: OCRBox) -> float:
         width_ratio = box.bbox.width / max(frame.window_rect.width, 1)
         bottom_proximity = box.bbox.bottom / max(frame.window_rect.height, 1)
-        top_proximity = 1.0 - (box.bbox.y / max(frame.window_rect.height, 1))
-        center_offset = self._center_offset(frame, box)
+        center_x = box.bbox.x + (box.bbox.width / 2)
+        center_offset = abs(center_x - (frame.window_rect.width / 2)) / max(frame.window_rect.width / 2, 1)
         text_length = min(self._normalized_length(box.source_text), 48)
         base = (box.confidence * 1.2) + (text_length * 0.05)
-        if region == 'subtitle':
-            return base + (width_ratio * 2.0) + (bottom_proximity * 1.0) - (center_offset * 0.8)
-        if region == 'objective':
-            return base + (top_proximity * 1.2) + ((1.0 - center_offset) * 0.3) + (width_ratio * 0.8)
-        if region == 'interaction':
-            return base + (width_ratio * 0.7) + ((1.0 - center_offset) * 0.6)
-        return base + (width_ratio * 0.6) - (center_offset * 0.4)
+        return base + (width_ratio * 2.0) + (bottom_proximity * 1.0) - (center_offset * 0.8)
 
     def select(self, frame: Frame, boxes: list[OCRBox]) -> list[OCRBox]:
         if not self._config.subtitle_mode:
             return boxes
 
-        region_groups: dict[str, list[OCRBox]] = {'objective': [], 'subtitle': [], 'interaction': [], 'ui': []}
-        for box in boxes:
-            region = self._detect_region(frame, box)
-            if region is not None:
-                region_groups[region].append(box)
+        subtitle_boxes = [box for box in boxes if self._is_subtitle_candidate(frame, box)]
+        if not subtitle_boxes:
+            return []
 
         scored: list[SubtitleCandidate] = []
-        for region, region_boxes in region_groups.items():
-            for merged in self._merge_candidates(region, region_boxes):
-                scored.append(SubtitleCandidate(box=merged, score=self._score(frame, merged, region), region=region))
+        for merged in self._merge_candidates(subtitle_boxes):
+            scored.append(SubtitleCandidate(box=merged, score=self._score(frame, merged), region='subtitle'))
 
-        if not scored:
-            fallback = sorted(
-                [box for box in boxes if self._normalized_length(box.source_text) > 5 and not is_probably_garbage_text(box.source_text)],
-                key=lambda item: item.confidence,
-                reverse=True,
-            )
-            return fallback[: self._config.subtitle_max_candidates]
-
-        region_priority = {'subtitle': 0, 'objective': 1, 'interaction': 2, 'ui': 3}
-        scored.sort(key=lambda item: (region_priority[item.region], -item.score))
+        scored.sort(key=lambda item: -item.score)
 
         selected: list[OCRBox] = []
         for candidate in scored:

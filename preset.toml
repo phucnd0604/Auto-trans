@@ -1,0 +1,99 @@
+# AutoTrans current stable preset
+# This file is a human-readable reference for the settings that currently give
+# the best tradeoff after testing on:
+# - tests/videos/test.mp4
+# - tests/videos/test2.mp4
+#
+# It is not auto-loaded by the app yet.
+# Use it as a single place to review and tweak the values before copying them
+# into env vars, startup settings, or future preset-loading code.
+
+[capture]
+# Capture backend:
+# - bettercam: fastest and most suitable for continuous capture on Windows
+# - printwindow: safer fallback for some games, slower
+# - mss: generic fallback
+backend = "bettercam"
+
+# Capture tick rate for the UI loop.
+# The app may capture more often than it OCRs; latest-frame behavior prevents
+# backlog from building up.
+fps = 4.0
+
+[ocr]
+# Current OCR backend kept in production path.
+provider = "rapidocr"
+
+# Downscale long side before OCR.
+# Lower = faster but may lose small text.
+# 960 tested better than 1024/896 on current video samples.
+max_side = 960
+
+# Minimum OCR confidence accepted.
+# 0.45 worked better than 0.55 in practice for current samples.
+min_confidence = 0.45
+
+# Keep 0 to avoid trimming OCR results too early.
+max_boxes = 0
+
+# OCR preprocessing:
+# - false keeps pipeline simpler/faster
+# - true may help some noisy scenes but usually adds cost
+preprocess = false
+
+# OCR languages still left here for reference.
+# RapidOCR is mainly used with English game UI/text in current setup.
+languages = ["en", "jp"]
+
+[translation]
+# Local translator backend.
+local_translator = "ctranslate2"
+
+# Current local model.
+model_repo = "quickmt/quickmt-en-vi"
+
+# Stable scans before translation/render.
+# 1 keeps response immediate; raising it reduces flicker but delays updates.
+stable_scans = 1
+
+[overlay]
+# Base font size.
+font_size = 18
+
+# Overlay redraw cadence.
+fps = 30
+
+# How long an item can remain visible before pruning.
+ttl_seconds = 1.5
+
+# Maximum number of paragraph/group blocks shown at once.
+# This was the strongest improvement for reducing UI clutter.
+max_groups = 8
+
+# Background opacity of text panel.
+background_opacity = 0.9
+
+# Inner panel padding.
+box_padding = 8
+
+[subtitle]
+# Current testing focus is not subtitle-only mode.
+mode = false
+
+# When subtitle mode is enabled, this controls OCR crop behavior.
+crop_subtitle_only = false
+
+[logging]
+# Keep enabled while tuning.
+translation_log_enabled = true
+
+# Rotating log file limit.
+log_max_bytes = 1048576
+
+[notes]
+# Practical conclusions from current tuning:
+#
+# 1. RapidOCR is slower than ideal, so avoid full-frame high-frequency OCR.
+# 2. bettercam + latest-frame processing is safer than trying to process every tick.
+# 3. text-unchanged reuse helps, but layout clutter is improved most by overlay_max_groups.
+# 4. max_side = 960 and max_groups = 8 is the current manual preference for runtime use.

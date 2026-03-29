@@ -102,6 +102,7 @@ class OverlayItem:
     source_text: str = ""
     tracking_key: str = ""
     linger_seconds: float = 0.0
+    region: str = ""
 
 
 @dataclass(slots=True)

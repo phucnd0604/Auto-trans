@@ -201,20 +201,43 @@ class WindowsWindowCapture:
             return None
 
         image = None
+        used_backend = self._config.capture_backend
         if self._config.capture_backend == 'bettercam':
-            image = self._capture_with_bettercam(rect)
+            image = self._capture_with_printwindow(hwnd, rect)
+            if image is not None:
+                used_backend = 'printwindow'
+            if image is None:
+                image = self._capture_with_bettercam(rect)
+                if image is not None:
+                    used_backend = 'bettercam'
             if image is None:
                 image = self._capture_with_printwindow(hwnd, rect)
+                if image is not None:
+                    used_backend = 'printwindow'
             if image is None:
                 image = self._capture_with_mss(rect)
+                if image is not None:
+                    used_backend = 'mss'
         elif self._config.capture_backend == 'printwindow':
             image = self._capture_with_printwindow(hwnd, rect)
+            if image is not None:
+                used_backend = 'printwindow'
             if image is None:
                 image = self._capture_with_mss(rect)
+                if image is not None:
+                    used_backend = 'mss'
         else:
-            image = self._capture_with_mss(rect)
+            image = self._capture_with_printwindow(hwnd, rect)
+            if image is not None:
+                used_backend = 'printwindow'
+            if image is None:
+                image = self._capture_with_mss(rect)
+                if image is not None:
+                    used_backend = 'mss'
             if image is None:
                 image = self._capture_with_printwindow(hwnd, rect)
+                if image is not None:
+                    used_backend = 'printwindow'
 
         if image is None:
             return None
@@ -223,5 +246,5 @@ class WindowsWindowCapture:
             image=image,
             timestamp=time.time(),
             window_rect=rect,
-            metadata={"capture_backend": self._config.capture_backend},
+            metadata={"capture_backend": used_backend},
         )

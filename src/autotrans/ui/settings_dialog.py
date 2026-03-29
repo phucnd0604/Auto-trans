@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+import tomllib
 
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -19,7 +20,7 @@ from PySide6.QtWidgets import (
 
 DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "ocr_provider": "rapidocr",
-    "capture_backend": "printwindow",
+    "capture_backend": "bettercam",
     "local_translator": "ctranslate2",
     "cloud_provider": "none",
     "subtitle_mode": False,
@@ -30,6 +31,45 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "translation_log_enabled": True,
     "font_size": 18,
 }
+
+
+def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
+    if not preset_path.exists():
+        return {}
+    try:
+        data = tomllib.loads(preset_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    settings: dict[str, Any] = {}
+    capture = data.get("capture", {})
+    ocr = data.get("ocr", {})
+    translation = data.get("translation", {})
+    overlay = data.get("overlay", {})
+    subtitle = data.get("subtitle", {})
+    logging = data.get("logging", {})
+
+    if "backend" in capture:
+        settings["capture_backend"] = capture["backend"]
+    if "provider" in ocr:
+        settings["ocr_provider"] = ocr["provider"]
+    if "local_translator" in translation:
+        settings["local_translator"] = translation["local_translator"]
+    if "mode" in subtitle:
+        settings["subtitle_mode"] = bool(subtitle["mode"])
+    if "crop_subtitle_only" in subtitle:
+        settings["ocr_crop_subtitle_only"] = bool(subtitle["crop_subtitle_only"])
+    if "fps" in capture:
+        settings["capture_fps"] = float(capture["fps"])
+    if "fps" in overlay:
+        settings["overlay_fps"] = int(overlay["fps"])
+    if "ttl_seconds" in overlay:
+        settings["overlay_ttl_seconds"] = float(overlay["ttl_seconds"])
+    if "font_size" in overlay:
+        settings["font_size"] = int(overlay["font_size"])
+    if "translation_log_enabled" in logging:
+        settings["translation_log_enabled"] = bool(logging["translation_log_enabled"])
+    return settings
 
 
 class SettingsDialog(QDialog):
@@ -143,6 +183,8 @@ class SettingsDialog(QDialog):
 
 def load_startup_settings(settings_path: Path) -> dict[str, Any]:
     settings = dict(DEFAULT_STARTUP_SETTINGS)
+    preset_path = settings_path.parent.parent / "preset.toml"
+    settings.update(_load_preset_settings(preset_path))
     if settings_path.exists():
         try:
             loaded = json.loads(settings_path.read_text(encoding="utf-8"))

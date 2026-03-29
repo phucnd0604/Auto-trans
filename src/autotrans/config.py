@@ -78,12 +78,14 @@ class AppConfig:
     overlay_background_opacity: float = float(getenv("AUTOTRANS_OVERLAY_BG_OPACITY", "0.9"))
     overlay_box_padding: int = int(getenv("AUTOTRANS_OVERLAY_BOX_PADDING", "8"))
     overlay_ttl_seconds: float = float(getenv("AUTOTRANS_OVERLAY_TTL_SECONDS", "1.5"))
+    overlay_max_groups: int = int(getenv("AUTOTRANS_OVERLAY_MAX_GROUPS", "8"))
     translation_log_enabled: bool = getenv("AUTOTRANS_TRANSLATION_LOG_ENABLED", "1") != "0"
     translation_log_max_items: int = int(getenv("AUTOTRANS_TRANSLATION_LOG_MAX_ITEMS", "6"))
     translation_stable_scans: int = int(getenv("AUTOTRANS_TRANSLATION_STABLE_SCANS", "2"))
     glossary_version: str = getenv("AUTOTRANS_GLOSSARY_VERSION", "word-v1")
     subtitle_mode: bool = getenv("AUTOTRANS_SUBTITLE_MODE", "1") != "0"
-    subtitle_region_top_ratio: float = float(getenv("AUTOTRANS_SUBTITLE_REGION_TOP_RATIO", "0.45"))
+    subtitle_region_top_ratio: float = float(getenv("AUTOTRANS_SUBTITLE_REGION_TOP_RATIO", "0.70"))
+    subtitle_center_tolerance_px: int = int(getenv("AUTOTRANS_SUBTITLE_CENTER_TOLERANCE_PX", "400"))
     subtitle_min_width_ratio: float = float(getenv("AUTOTRANS_SUBTITLE_MIN_WIDTH_RATIO", "0.08"))
     subtitle_min_chars: int = int(getenv("AUTOTRANS_SUBTITLE_MIN_CHARS", "6"))
     subtitle_max_candidates: int = int(getenv("AUTOTRANS_SUBTITLE_MAX_CANDIDATES", "4"))
@@ -96,7 +98,7 @@ class AppConfig:
     )
     ocr_min_confidence: float = float(getenv("AUTOTRANS_OCR_MIN_CONFIDENCE", "0.45"))
     ocr_preprocess: bool = getenv("AUTOTRANS_OCR_PREPROCESS", "0") != "0"
-    ocr_max_side: int = int(getenv("AUTOTRANS_OCR_MAX_SIDE", "1280"))
+    ocr_max_side: int = int(getenv("AUTOTRANS_OCR_MAX_SIDE", "960"))
     ocr_max_boxes: int = int(getenv("AUTOTRANS_OCR_MAX_BOXES", "0"))
     ocr_crop_subtitle_only: bool = getenv("AUTOTRANS_OCR_CROP_SUBTITLE_ONLY", "1") != "0"
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
@@ -116,7 +118,8 @@ class AppConfig:
     xdg_config_home: Path = _DEFAULT_XDG_CONFIG_HOME
     hf_home: Path = _DEFAULT_HF_HOME
     log_dir: Path = _DEFAULT_LOG_DIR
-    log_max_bytes: int = int(getenv("AUTOTRANS_LOG_MAX_BYTES", str(1024 * 1024)))
+    log_max_lines: int = int(getenv("AUTOTRANS_LOG_MAX_LINES", "10000"))
+    log_trim_to_lines: int = int(getenv("AUTOTRANS_LOG_TRIM_TO_LINES", "5000"))
     cloud_provider: str = getenv("AUTOTRANS_CLOUD_PROVIDER", "none")
     openai_base_url: str = getenv("AUTOTRANS_OPENAI_BASE_URL", "https://api.openai.com/v1")
     openai_api_key: str | None = getenv("AUTOTRANS_OPENAI_API_KEY") or getenv("OPENAI_API_KEY") or None

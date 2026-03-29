@@ -54,9 +54,7 @@ def test_subtitle_detector_handles_glued_uppercase_menu_text() -> None:
 
     selected = detector.select(frame, boxes)
 
-    assert len(selected) >= 1
-    assert selected[0].source_text == "RESTARTFROMLASTCHECKPOINT"
-    assert any(box.source_text == "EXITTOTITLE SCREEN" for box in selected)
+    assert selected == []
 
 
 def test_subtitle_detector_ignores_short_bottom_text() -> None:
@@ -75,3 +73,40 @@ def test_subtitle_detector_ignores_short_bottom_text() -> None:
     selected = detector.select(frame, boxes)
 
     assert selected == []
+
+
+def test_subtitle_detector_accepts_centered_bottom_shorter_line() -> None:
+    config = AppConfig()
+    detector = SubtitleDetector(config)
+    frame = Frame(
+        image=np.zeros((768, 1366, 3), dtype=np.uint8),
+        timestamp=1.0,
+        window_rect=Rect(0, 0, 1366, 768),
+    )
+    boxes = [
+        make_box("Do you think he'll survive?", 560, 640, 250, 28),
+        make_box("R2 LISTEN", 390, 590, 220, 36),
+    ]
+
+    selected = detector.select(frame, boxes)
+
+    assert any("Do you think he'll survive?" in box.source_text for box in selected)
+
+
+def test_subtitle_detector_requires_box_to_span_screen_center() -> None:
+    config = AppConfig()
+    detector = SubtitleDetector(config)
+    frame = Frame(
+        image=np.zeros((1000, 1000, 3), dtype=np.uint8),
+        timestamp=1.0,
+        window_rect=Rect(0, 0, 1000, 1000),
+    )
+    boxes = [
+        make_box("not subtitle", 300, 800, 300, 50),
+        make_box("real subtitle", 300, 860, 400, 50),
+    ]
+
+    selected = detector.select(frame, boxes)
+
+    assert len(selected) == 1
+    assert "real subtitle" in selected[0].source_text

@@ -55,6 +55,10 @@ class PipelineOrchestrator:
         self.subtitle_detector = subtitle_detector or SubtitleDetector(config)
         self.stats = PipelineStats()
         self._stable_counts: dict[str, int] = {}
+        self._last_text_signature = ""
+        self._last_overlay_items: list[OverlayItem] = []
+        self._last_window_height = 1080
+        self._last_window_width = 1920
 
     def _log(self, message: str) -> None:
         if self.config.translation_log_enabled:
@@ -131,16 +135,49 @@ class PipelineOrchestrator:
             selected = boxes
         filtered: list[OCRBox] = []
         skipped_short = 0
+        skipped_hud = 0
         for box in selected:
             normalized = normalize_text(box.source_text)
             alnum_count = sum(char.isalnum() for char in normalized)
             if alnum_count <= 2:
                 skipped_short += 1
                 continue
+            if not self.config.subtitle_mode and self._should_skip_hud_noise(frame, box, normalized):
+                skipped_hud += 1
+                continue
             filtered.append(box)
         if skipped_short:
             self._log(f"skipped {skipped_short} short OCR box(es) (<=2 chars)")
+        if skipped_hud:
+            self._log(f"skipped {skipped_hud} HUD/menu OCR box(es)")
         return filtered
+
+    @staticmethod
+    def _should_skip_hud_noise(frame: Frame, box: OCRBox, normalized: str) -> bool:
+        tokens = tokenize_words(normalized)
+        if not tokens:
+            return True
+
+        alnum_count = sum(char.isalnum() for char in normalized)
+        alpha_count = sum(char.isalpha() for char in normalized)
+        digit_count = sum(char.isdigit() for char in normalized)
+        uppercase_alpha = sum(char.isupper() for char in normalized if char.isalpha())
+        digit_ratio = digit_count / max(alnum_count, 1)
+        uppercase_ratio = uppercase_alpha / max(alpha_count, 1)
+
+        top_band = frame.window_rect.height * 0.18
+        side_band = frame.window_rect.width * 0.22
+        near_top = box.bbox.y <= top_band
+        near_side = box.bbox.x <= side_band or box.bbox.right >= frame.window_rect.width - side_band
+        short_label = len(tokens) <= 2 and len(normalized) <= 24
+
+        if digit_ratio >= 0.7 and alnum_count <= 16:
+            return True
+
+        if near_top and near_side and short_label and (digit_ratio >= 0.2 or uppercase_ratio >= 0.85):
+            return True
+
+        return False
 
     def _stabilize_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
         if self.config.translation_stable_scans <= 1 or self.config.overlay_source_text:
@@ -186,6 +223,86 @@ class PipelineOrchestrator:
         finally:
             self.tracker.debounce_frames = original_debounce
 
+    @staticmethod
+    def _smooth_rect(previous: Rect, current: Rect) -> Rect:
+        return Rect(
+            x=int(round((previous.x * 0.65) + (current.x * 0.35))),
+            y=int(round((previous.y * 0.65) + (current.y * 0.35))),
+            width=int(round((previous.width * 0.65) + (current.width * 0.35))),
+            height=int(round((previous.height * 0.65) + (current.height * 0.35))),
+        )
+
+    def _overlay_match_score(self, previous: OverlayItem, current: OverlayItem) -> float:
+        iou = previous.bbox.iou(current.bbox)
+        prev_text = normalize_text(previous.source_text or previous.translated_text)
+        curr_text = normalize_text(current.source_text or current.translated_text)
+        text_score = ratio(prev_text, curr_text) / 100.0 if prev_text and curr_text else 0.0
+        prev_canonical = canonicalize_text(previous.source_text or previous.translated_text)
+        curr_canonical = canonicalize_text(current.source_text or current.translated_text)
+        canonical_score = ratio(prev_canonical, curr_canonical) / 100.0 if prev_canonical and curr_canonical else 0.0
+        center_dx = abs((previous.bbox.x + previous.bbox.width / 2) - (current.bbox.x + current.bbox.width / 2))
+        center_dy = abs((previous.bbox.y + previous.bbox.height / 2) - (current.bbox.y + current.bbox.height / 2))
+        max_dx = max(previous.bbox.width, current.bbox.width, 1) * 0.35 + 12
+        max_dy = max(previous.bbox.height, current.bbox.height, 1) * 0.6 + 12
+        if center_dx > max_dx or center_dy > max_dy:
+            return 0.0
+        return max(iou, 0.0) * 0.45 + text_score * 0.2 + canonical_score * 0.35
+
+    def _reconcile_overlay_items(self, items: list[OverlayItem]) -> list[OverlayItem]:
+        if not items or not self._last_overlay_items:
+            return items
+
+        remaining_previous = list(self._last_overlay_items)
+        reconciled: list[OverlayItem] = []
+        reused = 0
+
+        for item in items:
+            best_index = -1
+            best_score = 0.0
+            for index, previous in enumerate(remaining_previous):
+                score = self._overlay_match_score(previous, item)
+                if score > best_score:
+                    best_score = score
+                    best_index = index
+
+            if best_index >= 0 and best_score >= 0.82:
+                previous = remaining_previous.pop(best_index)
+                reconciled.append(
+                    OverlayItem(
+                        bbox=self._smooth_rect(previous.bbox, item.bbox),
+                        translated_text=previous.translated_text,
+                        style=item.style,
+                        visibility_state=item.visibility_state,
+                        source_text=previous.source_text or item.source_text,
+                        tracking_key=previous.tracking_key or item.tracking_key,
+                        linger_seconds=1.5
+                        if self._is_subtitle_bbox(item.bbox)
+                        else max(previous.linger_seconds, item.linger_seconds, self.config.overlay_ttl_seconds),
+                        region=previous.region or item.region,
+                    )
+                )
+                reused += 1
+            else:
+                reconciled.append(item)
+
+        if reused:
+            self._log(f"overlay reconciled {reused} item(s) with previous frame")
+        return reconciled
+
+    def _text_signature(self, boxes: list[OCRBox]) -> str:
+        if not boxes:
+            return ""
+        ordered = sorted(boxes, key=lambda item: (item.bbox.y, item.bbox.x, canonicalize_text(item.source_text)))
+        parts: list[str] = []
+        for box in ordered:
+            key = canonicalize_text(box.source_text)
+            if not key:
+                continue
+            parts.append(
+                f"{key}@{box.bbox.x // 16}:{box.bbox.y // 16}:{box.bbox.width // 16}:{box.bbox.height // 16}"
+            )
+        return "|".join(parts)
+
     def process_window(
         self,
         hwnd: int,
@@ -198,6 +315,9 @@ class PipelineOrchestrator:
         if frame is None:
             self._log(f"timing capture={capture_elapsed_ms:.0f}ms total={capture_elapsed_ms:.0f}ms boxes=0->0->0 items=0")
             return []
+
+        self._last_window_height = max(frame.window_rect.height, 1)
+        self._last_window_width = max(frame.window_rect.width, 1)
 
         ocr_started = time.perf_counter()
         ocr_frame, y_offset = self._crop_ocr_frame(frame)
@@ -222,13 +342,22 @@ class PipelineOrchestrator:
             tracked_boxes = self._track_boxes(stable_boxes)
             select_elapsed_ms = (time.perf_counter() - select_started) * 1000.0
             overlay_started = time.perf_counter()
-            overlay_items = self._translate_and_build_overlay(tracked_boxes)
+            signature = self._text_signature(tracked_boxes)
+            if signature and signature == self._last_text_signature:
+                self._log("text unchanged, reusing previous overlay")
+                overlay_items = list(self._last_overlay_items)
+                self._last_translate_step_ms = 0.0
+            else:
+                overlay_items = self._translate_and_build_overlay(tracked_boxes)
+                overlay_items = self._reconcile_overlay_items(overlay_items)
+                self._last_text_signature = signature
             stable_boxes = tracked_boxes
             translate_elapsed_ms = getattr(self, "_last_translate_step_ms", 0.0)
         overlay_elapsed_ms = (time.perf_counter() - overlay_started) * 1000.0
 
         if emit_overlay is not None:
             emit_overlay(overlay_items)
+        self._last_overlay_items = list(overlay_items)
 
         elapsed = max(time.perf_counter() - started, 0.001)
         self.stats.capture_fps = 1.0 / elapsed
@@ -297,6 +426,48 @@ class PipelineOrchestrator:
         min_linger = capture_interval
         desired_linger = capture_interval + latency_seconds
         return max(min_linger, min(self.config.overlay_ttl_seconds, desired_linger))
+
+    @staticmethod
+    def _overlay_region_for_box(box: OCRBox) -> str:
+        line_id = (box.line_id or "").strip().lower()
+        if line_id.startswith("subtitle-"):
+            return "subtitle"
+        if line_id.startswith("objective-"):
+            return "objective"
+        if line_id.startswith("interaction-"):
+            return "interaction"
+        if line_id.startswith("ui-"):
+            return "ui"
+        return ""
+
+    def _is_subtitle_bbox(self, bbox: Rect) -> bool:
+        window_height = max(self._last_window_height, 1)
+        window_width = max(self._last_window_width, 1)
+        region_top = window_height * self.config.subtitle_region_top_ratio
+        return (
+            bbox.y >= region_top
+            and bbox.x < (window_width / 2) < bbox.right
+        )
+
+    def _should_skip_similar_subtitle(self, box: OCRBox, translated_text: str) -> bool:
+        if not self._is_subtitle_bbox(box.bbox):
+            return False
+
+        current_source = canonicalize_text(box.source_text)
+        current_translated = canonicalize_text(translated_text)
+        for previous in reversed(self._last_overlay_items):
+            if not self._is_subtitle_bbox(previous.bbox):
+                continue
+            prev_source = canonicalize_text(previous.source_text)
+            prev_translated = canonicalize_text(previous.translated_text)
+            source_score = ratio(prev_source, current_source) / 100.0 if prev_source and current_source else 0.0
+            translated_score = ratio(prev_translated, current_translated) / 100.0 if prev_translated and current_translated else 0.0
+            position_score = previous.bbox.iou(box.bbox)
+            if max(source_score, translated_score) >= 0.9 and position_score >= 0.35:
+                self._log(f"subtitle skip similar {normalize_text(box.source_text)!r}")
+                return True
+            break
+        return False
 
     @staticmethod
     def _boxes_belong_to_same_paragraph(
@@ -377,12 +548,31 @@ class PipelineOrchestrator:
                         for item in group
                     ),
                     linger_seconds=max(item.linger_seconds for item in group),
+                    region=group[0].region,
                 )
             )
 
         if merged_count:
             self._log(f"grouped {merged_count} overlay box(es) into paragraph blocks")
-        return merged_items
+        return self._limit_overlay_groups(merged_items)
+
+    def _limit_overlay_groups(self, items: list[OverlayItem]) -> list[OverlayItem]:
+        max_groups = max(self.config.overlay_max_groups, 0)
+        if max_groups == 0 or len(items) <= max_groups:
+            return items
+
+        def score(item: OverlayItem) -> tuple[int, int, int]:
+            text_len = len(normalize_text(item.source_text))
+            lower_bias = item.bbox.y + item.bbox.height
+            area = item.bbox.width * item.bbox.height
+            return (area + (lower_bias * 4) + (text_len * 8), lower_bias, text_len)
+
+        kept = sorted(items, key=score, reverse=True)[:max_groups]
+        kept_sorted = sorted(kept, key=lambda item: (item.bbox.y, item.bbox.x))
+        skipped = len(items) - len(kept_sorted)
+        if skipped > 0:
+            self._log(f"limited overlay groups, dropped {skipped} low-priority block(s)")
+        return kept_sorted
 
     def _build_source_overlay(self, boxes: list[OCRBox]) -> list[OverlayItem]:
         style = OverlayStyle(
@@ -397,7 +587,8 @@ class PipelineOrchestrator:
                 visibility_state=VisibilityState.VISIBLE,
                 source_text=box.source_text,
                 tracking_key=box.id or canonicalize_text(box.source_text),
-                linger_seconds=self.config.overlay_ttl_seconds,
+                linger_seconds=1.5 if self._is_subtitle_bbox(box.bbox) else self.config.overlay_ttl_seconds,
+                region=self._overlay_region_for_box(box),
             )
             for box in boxes
             if normalize_text(box.source_text)
@@ -475,6 +666,8 @@ class PipelineOrchestrator:
             if not translated:
                 self._log(f"overlay skip no-translation {normalize_text(box.source_text)!r}")
                 continue
+            if self._should_skip_similar_subtitle(box, translated):
+                continue
             latency_ms = translated_entry[2] if translated_entry else 0.0
             overlay_items.append(
                 OverlayItem(
@@ -484,7 +677,8 @@ class PipelineOrchestrator:
                     visibility_state=VisibilityState.VISIBLE,
                     source_text=box.source_text,
                     tracking_key=box.id or key,
-                    linger_seconds=self._overlay_linger_seconds(latency_ms),
+                    linger_seconds=1.5 if self._is_subtitle_bbox(box.bbox) else self._overlay_linger_seconds(latency_ms),
+                    region=self._overlay_region_for_box(box),
                 )
             )
 

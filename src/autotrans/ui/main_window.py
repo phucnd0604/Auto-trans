@@ -44,6 +44,9 @@ class MainWindow(QMainWindow):
         self._windows: list[WindowInfo] = []
         self._running = False
         self._processing = False
+        self._rerun_requested = False
+        self._overlay_enabled = True
+        self._overlay_temporarily_hidden = False
 
         self.setWindowTitle("AutoTrans MVP")
         self.resize(700, 450)
@@ -155,6 +158,8 @@ class MainWindow(QMainWindow):
             self.follow_timer.stop()
             self._running = False
             self._processing = False
+            self._rerun_requested = False
+            self._overlay_temporarily_hidden = False
             self.start_button.setText("Start")
             self.status_label.setText("Paused")
             self.stats_label.setText("Paused")
@@ -176,17 +181,20 @@ class MainWindow(QMainWindow):
         self._configure_cache_for_selected_window()
         self.capture_timer.start()
         self.follow_timer.start()
-        self.overlay.show()
+        if self._overlay_enabled:
+            self.overlay.show()
         self._running = True
         self.start_button.setText("Stop")
         self.status_label.setText("Running OCR + overlay...")
 
     def toggle_overlay(self) -> None:
         if self.overlay.isVisible():
+            self._overlay_enabled = False
             self.overlay.hide()
             self.overlay_button.setText("Show Overlay")
             self.status_label.setText("Overlay hidden")
         else:
+            self._overlay_enabled = True
             self.overlay.show()
             self.overlay_button.setText("Hide Overlay")
             self.status_label.setText("Overlay visible")
@@ -223,11 +231,20 @@ class MainWindow(QMainWindow):
             self.overlay.sync_window_rect(match.rect)
 
     def _tick_pipeline(self) -> None:
-        if self._selected_hwnd is None or self._processing:
+        if self._selected_hwnd is None:
+            return
+        if self._processing:
+            self._rerun_requested = True
             return
 
+        self._start_pipeline_worker(self._selected_hwnd)
+
+    def _start_pipeline_worker(self, hwnd: int) -> None:
+        if self._overlay_enabled and self.config.capture_backend in {"bettercam", "mss"} and self.overlay.isVisible():
+            self.overlay.hide()
+            self._overlay_temporarily_hidden = True
         self._processing = True
-        hwnd = self._selected_hwnd
+        self._rerun_requested = False
         worker = threading.Thread(target=self._process_window_background, args=(hwnd,), daemon=True)
         worker.start()
 
@@ -240,6 +257,9 @@ class MainWindow(QMainWindow):
 
     def _apply_pipeline_result(self, overlay_items) -> None:
         self._processing = False
+        if self._overlay_temporarily_hidden and self._overlay_enabled:
+            self.overlay.show()
+        self._overlay_temporarily_hidden = False
         self.overlay.set_overlay_items(overlay_items)
         if overlay_items:
             self.status_label.setText(f"Overlay updated with {len(overlay_items)} translated boxes.")
@@ -253,8 +273,15 @@ class MainWindow(QMainWindow):
                 hits=self.orchestrator.stats.cache_hits,
             )
         )
+        if self._running and self._rerun_requested and self._selected_hwnd is not None:
+            self._start_pipeline_worker(self._selected_hwnd)
 
     def _apply_pipeline_error(self, message: str) -> None:
         self._processing = False
+        if self._overlay_temporarily_hidden and self._overlay_enabled:
+            self.overlay.show()
+        self._overlay_temporarily_hidden = False
         self.status_label.setText(f"Pipeline error: {message}")
+        if self._running and self._rerun_requested and self._selected_hwnd is not None:
+            self._start_pipeline_worker(self._selected_hwnd)
 
