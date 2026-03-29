@@ -17,6 +17,7 @@ dependencies = [
   "httpx>=0.28",
   "pydantic>=2.9",
   "pywin32>=308",
+  "bettercam>=1.0.0",
 ]
 
 [project.optional-dependencies]

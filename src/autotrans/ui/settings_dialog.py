@@ -51,7 +51,7 @@ class SettingsDialog(QDialog):
         self.ocr_provider_combo.setCurrentText(selected_ocr_provider)
 
         self.capture_backend_combo = QComboBox()
-        self.capture_backend_combo.addItems(["printwindow", "mss"])
+        self.capture_backend_combo.addItems(["bettercam", "printwindow", "mss"])
         self.capture_backend_combo.setCurrentText(str(settings["capture_backend"]))
 
         self.local_translator_combo = QComboBox()

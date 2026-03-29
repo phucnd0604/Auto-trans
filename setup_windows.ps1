@@ -20,7 +20,7 @@ $python = Join-Path $repoRoot ".venv\Scripts\python.exe"
 if ($Profile -eq "full") {
     & $python -m pip install -e .[ocr,local_translate]
 } else {
-    & $python -m pip install rapidocr_onnxruntime ctranslate2 sentencepiece huggingface_hub
+    & $python -m pip install rapidocr_onnxruntime ctranslate2 sentencepiece huggingface_hub bettercam
 }
 
 Write-Host ""

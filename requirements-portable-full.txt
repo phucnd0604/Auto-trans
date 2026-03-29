@@ -6,6 +6,7 @@ RapidFuzz==3.14.3
 httpx==0.28.1
 pydantic==2.12.5
 pywin32==311
+bettercam==1.0.0
 rapidocr-onnxruntime==1.2.3
 opencv-python==4.13.0.92
 ctranslate2==4.7.1

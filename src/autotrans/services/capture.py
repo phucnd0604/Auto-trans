@@ -27,6 +27,11 @@ try:
 except ImportError:  # pragma: no cover
     mss = None
 
+try:
+    import bettercam
+except ImportError:  # pragma: no cover
+    bettercam = None
+
 
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 
@@ -50,6 +55,7 @@ class CaptureService(Protocol):
 class WindowsWindowCapture:
     def __init__(self, config: AppConfig | None = None) -> None:
         self._config = config or AppConfig()
+        self._bettercam = None
 
     @staticmethod
     def _safe_name(value: str) -> str:
@@ -174,6 +180,17 @@ class WindowsWindowCapture:
             )
             return np.asarray(grabbed)[..., :3]
 
+    def _capture_with_bettercam(self, rect: Rect) -> np.ndarray | None:
+        if bettercam is None:
+            return None
+        if self._bettercam is None:
+            self._bettercam = bettercam.create(output_color="BGR")
+        region = (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
+        image = self._bettercam.grab(region=region)
+        if image is None:
+            return None
+        return np.ascontiguousarray(image)
+
     def capture_window(self, hwnd: int) -> Frame | None:
         if win32gui is None:
             return None
@@ -184,7 +201,13 @@ class WindowsWindowCapture:
             return None
 
         image = None
-        if self._config.capture_backend == 'printwindow':
+        if self._config.capture_backend == 'bettercam':
+            image = self._capture_with_bettercam(rect)
+            if image is None:
+                image = self._capture_with_printwindow(hwnd, rect)
+            if image is None:
+                image = self._capture_with_mss(rect)
+        elif self._config.capture_backend == 'printwindow':
             image = self._capture_with_printwindow(hwnd, rect)
             if image is None:
                 image = self._capture_with_mss(rect)
@@ -200,4 +223,5 @@ class WindowsWindowCapture:
             image=image,
             timestamp=time.time(),
             window_rect=rect,
+            metadata={"capture_backend": self._config.capture_backend},
         )
