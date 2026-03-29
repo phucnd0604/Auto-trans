@@ -1,7 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
@@ -17,6 +18,7 @@ from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.translation import OpenAITranslator, build_default_local_translator
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
+from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
 
 
 def _prepare_runtime_environment(config: AppConfig) -> None:
@@ -96,9 +98,31 @@ def _build_cloud_translator(config: AppConfig):
     return None
 
 
+def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> AppConfig:
+    config.ocr_provider = str(settings.get("ocr_provider", config.ocr_provider))
+    config.capture_backend = str(settings.get("capture_backend", config.capture_backend))
+    config.local_translator_backend = str(settings.get("local_translator", config.local_translator_backend))
+    config.cloud_provider = str(settings.get("cloud_provider", config.cloud_provider))
+    config.subtitle_mode = bool(settings.get("subtitle_mode", config.subtitle_mode))
+    config.ocr_crop_subtitle_only = bool(settings.get("ocr_crop_subtitle_only", config.ocr_crop_subtitle_only))
+    config.capture_fps = float(settings.get("capture_fps", config.capture_fps))
+    config.overlay_fps = int(settings.get("overlay_fps", config.overlay_fps))
+    config.overlay_ttl_seconds = float(settings.get("overlay_ttl_seconds", config.overlay_ttl_seconds))
+    config.translation_log_enabled = bool(settings.get("translation_log_enabled", config.translation_log_enabled))
+    config.font_size = int(settings.get("font_size", config.font_size))
+    return config
+
+
 def main() -> int:
     app = QApplication(sys.argv)
     config = AppConfig()
+    settings_path = Path(config.runtime_root_dir) / "ui-settings.json"
+    initial_settings = load_startup_settings(settings_path)
+    settings_dialog = SettingsDialog(settings_path=settings_path, initial_settings=initial_settings)
+    if settings_dialog.exec() == 0:
+        return 0
+
+    config = _apply_startup_settings(config, settings_dialog.values())
     _prepare_runtime_environment(config)
     capture_service = WindowsWindowCapture(config)
     overlay = OverlayWindow(ttl_seconds=config.overlay_ttl_seconds, overlay_fps=config.overlay_fps)

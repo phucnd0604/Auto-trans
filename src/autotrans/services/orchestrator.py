@@ -132,12 +132,14 @@ class PipelineOrchestrator:
         filtered: list[OCRBox] = []
         skipped_short = 0
         for box in selected:
-            if len(tokenize_words(box.source_text)) < 3:
+            normalized = normalize_text(box.source_text)
+            alnum_count = sum(char.isalnum() for char in normalized)
+            if alnum_count <= 2:
                 skipped_short += 1
                 continue
             filtered.append(box)
         if skipped_short:
-            self._log(f"skipped {skipped_short} short OCR box(es) (<3 words)")
+            self._log(f"skipped {skipped_short} short OCR box(es) (<=2 chars)")
         return filtered
 
     def _stabilize_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
@@ -463,3 +465,5 @@ class PipelineOrchestrator:
                 f"overlay add {normalize_text(item.source_text)!r} -> {normalize_text(item.translated_text)!r} @ ({item.bbox.x},{item.bbox.y},{item.bbox.width},{item.bbox.height}) linger={item.linger_seconds:.2f}s"
             )
         return overlay_items
+
+
