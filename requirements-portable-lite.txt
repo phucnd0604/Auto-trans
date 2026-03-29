@@ -1,0 +1,11 @@
+PySide6==6.11.0
+numpy==2.4.3
+Pillow==12.1.1
+mss==10.1.0
+RapidFuzz==3.14.3
+httpx==0.28.1
+pydantic==2.12.5
+pywin32==311
+rapidocr-onnxruntime==1.2.3
+opencv-python==4.13.0.92
+argostranslate==1.11.0

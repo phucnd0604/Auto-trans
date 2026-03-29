@@ -1,12 +1,26 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from os import cpu_count, getenv
 from pathlib import Path
 from urllib.parse import urlparse
 
 
-_DEFAULT_RUNTIME_ROOT_DIR = Path(getenv("AUTOTRANS_RUNTIME_ROOT_DIR", ".runtime"))
+def _default_app_root_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parents[2]
+
+
+def _resolve_from_app_root(raw_path: str | Path) -> Path:
+    path = Path(raw_path)
+    if path.is_absolute():
+        return path
+    return (_default_app_root_dir() / path).resolve()
+
+
+_DEFAULT_RUNTIME_ROOT_DIR = _resolve_from_app_root(getenv("AUTOTRANS_RUNTIME_ROOT_DIR", ".runtime"))
 _DEFAULT_MODEL_DIR = Path(
     getenv(
         "AUTOTRANS_LOCAL_MODEL_DIR",
@@ -127,6 +141,17 @@ class AppConfig:
     cache_size: int = int(getenv("AUTOTRANS_CACHE_SIZE", "1024"))
     cache_root_dir: Path = _DEFAULT_CACHE_ROOT_DIR
 
+    def __post_init__(self) -> None:
+        self.runtime_root_dir = _resolve_from_app_root(self.runtime_root_dir)
+        self.local_model_dir = _resolve_from_app_root(self.local_model_dir)
+        self.argos_packages_dir = _resolve_from_app_root(self.argos_packages_dir)
+        self.cache_root_dir = _resolve_from_app_root(self.cache_root_dir)
+        self.paddle_cache_dir = _resolve_from_app_root(self.paddle_cache_dir)
+        self.xdg_data_home = _resolve_from_app_root(self.xdg_data_home)
+        self.xdg_cache_home = _resolve_from_app_root(self.xdg_cache_home)
+        self.xdg_config_home = _resolve_from_app_root(self.xdg_config_home)
+        self.hf_home = _resolve_from_app_root(self.hf_home)
+
     @property
     def translation_mode(self) -> str:
         return self.mode
@@ -137,3 +162,5 @@ class AppConfig:
 
     def cloud_base_host(self) -> str:
         return (urlparse(self.openai_base_url).hostname or "").strip()
+
+

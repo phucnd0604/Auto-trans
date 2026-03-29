@@ -21,6 +21,21 @@ from autotrans.ui.overlay import OverlayWindow
 from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
 
 
+def _clear_runtime_path_overrides() -> None:
+    for key in (
+        "AUTOTRANS_RUNTIME_ROOT_DIR",
+        "AUTOTRANS_LOCAL_MODEL_DIR",
+        "AUTOTRANS_ARGOS_PACKAGES_DIR",
+        "AUTOTRANS_CACHE_ROOT_DIR",
+        "AUTOTRANS_PADDLE_CACHE_DIR",
+        "AUTOTRANS_XDG_DATA_HOME",
+        "AUTOTRANS_XDG_CACHE_HOME",
+        "AUTOTRANS_XDG_CONFIG_HOME",
+        "AUTOTRANS_HF_HOME",
+    ):
+        os.environ.pop(key, None)
+
+
 def _prepare_runtime_environment(config: AppConfig) -> None:
     runtime_dirs = [
         config.runtime_root_dir,
@@ -44,6 +59,9 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
     os.environ.setdefault("PADDLE_HOME", str((config.paddle_cache_dir / "paddle-home").resolve()))
     os.environ["ARGOS_PACKAGES_DIR"] = str(config.argos_packages_dir.resolve())
     os.environ.setdefault("ARGOS_TRANSLATE_PACKAGE_DIR", str(config.argos_packages_dir.resolve()))
+
+    print(f"[AutoTrans] Runtime root: {config.runtime_root_dir}", flush=True)
+    print(f"[AutoTrans] Cache root: {config.cache_root_dir}", flush=True)
 
 
 def _build_ocr_provider(config: AppConfig):
@@ -114,6 +132,7 @@ def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> A
 
 
 def main() -> int:
+    _clear_runtime_path_overrides()
     app = QApplication(sys.argv)
     config = AppConfig()
     settings_path = Path(config.runtime_root_dir) / "ui-settings.json"

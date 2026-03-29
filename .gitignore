@@ -7,4 +7,8 @@ tests/sample-screenshot/test-*.png
 
 .models/
 temp_argos_bench.py
-.runtime/
+.runtime/
+.portable-runtime/
+dist/
+deployment/
+nuitka-crash-report.xml

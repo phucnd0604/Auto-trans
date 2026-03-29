@@ -29,6 +29,66 @@ autotrans
 
 The MVP runs with mock OCR and local translation fallback by default. To wire real providers, set environment variables and install optional extras.
 
+## Shareable Windows setup
+
+If you want to share the project without packaging a standalone `.exe`, use the included scripts:
+
+```powershell
+.\setup_windows.ps1
+```
+
+For a lighter install:
+
+```powershell
+.\setup_windows.ps1 -Profile lite
+```
+
+Then run:
+
+```powershell
+.\run_windows.ps1
+```
+
+Or double-click:
+
+```text
+run_windows.cmd
+```
+
+## Portable zip without Python installed
+
+If the target machine does not have Python installed, you can share a small zip that contains only:
+
+- source code
+- `.runtime` data if you want to prebundle caches/models
+- bootstrap scripts
+
+On the target machine:
+
+```powershell
+.\bootstrap_portable.ps1
+```
+
+For a lighter setup:
+
+```powershell
+.\bootstrap_portable.ps1 -Profile lite
+```
+
+Then run:
+
+```text
+run_portable.cmd
+```
+
+The bootstrap script downloads the official Windows embedded Python package from Python.org and installs only the runtime dependencies needed by the selected profile.
+
+To create a small zip for sharing:
+
+```powershell
+.\create_share_zip.ps1
+```
+
 ## Real OCR setup
 
 Install OCR extras:

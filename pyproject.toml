@@ -22,7 +22,6 @@ dependencies = [
 [project.optional-dependencies]
 ocr = [
   "paddleocr>=2.8",
-  "opencv-python-headless>=4.10",
   "paddlepaddle>=3.3",
   "rapidocr_onnxruntime>=1.2",
 ]
@@ -42,3 +41,6 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+[tool.pyside6-project]
+files = ["main.py"]
+
