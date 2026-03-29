@@ -18,7 +18,7 @@ $python = Join-Path $repoRoot ".venv\Scripts\python.exe"
 & $python -m pip install -e .[dev]
 
 if ($Profile -eq "full") {
-    & $python -m pip install -e .[ocr,local_translate]
+    & $python -m pip install -e .[ocr,local_translate,openai]
 } else {
     & $python -m pip install rapidocr_onnxruntime ctranslate2 sentencepiece huggingface_hub bettercam
 }

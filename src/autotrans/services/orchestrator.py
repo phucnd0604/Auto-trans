@@ -24,7 +24,7 @@ from autotrans.services.ocr import OCRProvider
 from autotrans.services.policy import ProviderPolicy
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.tracker import OCRTracker
-from autotrans.services.translation import OpenAITranslator, TranslatorProvider
+from autotrans.services.translation import OllamaTranslator, OpenAITranslator, TranslatorProvider
 from autotrans.utils.text import canonicalize_text, is_probably_garbage_text, normalize_text, tokenize_words
 
 
@@ -62,6 +62,8 @@ class PipelineOrchestrator:
 
     def _select_deep_translator(self) -> tuple[TranslatorProvider, str]:
         translator = self.cloud_translator
+        if isinstance(translator, OllamaTranslator) and self._network_available():
+            return translator, "cloud"
         if isinstance(translator, OpenAITranslator) and self.config.openai_api_key and self._network_available():
             return translator, "cloud"
         return self.local_translator, "local"
@@ -288,6 +290,25 @@ class PipelineOrchestrator:
             )
         return merged
 
+    @staticmethod
+    def _split_deep_batches(boxes: list[OCRBox], max_items: int = 6, max_chars: int = 900) -> list[list[OCRBox]]:
+        batches: list[list[OCRBox]] = []
+        current: list[OCRBox] = []
+        current_chars = 0
+        for box in boxes:
+            text_len = len(normalize_text(box.source_text))
+            would_exceed_items = len(current) >= max_items
+            would_exceed_chars = current and (current_chars + text_len) > max_chars
+            if would_exceed_items or would_exceed_chars:
+                batches.append(current)
+                current = []
+                current_chars = 0
+            current.append(box)
+            current_chars += text_len
+        if current:
+            batches.append(current)
+        return batches
+
     def _select_deep_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
         filtered: list[OCRBox] = []
         for box in boxes:
@@ -504,12 +525,14 @@ class PipelineOrchestrator:
     def translate_deep_boxes(self, grouped_boxes: list[OCRBox]) -> list[OverlayItem]:
         started = time.perf_counter()
         translator, translator_kind = self._select_deep_translator()
+        translator_name = getattr(translator, "name", translator_kind)
         if not grouped_boxes:
             return []
 
         results_by_key: dict[str, tuple[str, str, float]] = {}
         pending: list[OCRBox] = []
-        deep_glossary_version = f"{self.config.glossary_version}:deep"
+        deep_glossary_version = f"{self.config.glossary_version}:deep:{translator_name}"
+        cache_hits = 0
         for box in grouped_boxes:
             key = canonicalize_text(box.source_text)
             if not key:
@@ -522,28 +545,41 @@ class PipelineOrchestrator:
             )
             if cache_entry is not None:
                 results_by_key[key] = (cache_entry.translated_text, cache_entry.provider, 0.0)
+                cache_hits += 1
             else:
                 pending.append(box)
 
         if pending:
             translate_started = time.perf_counter()
             try:
-                translated = translator.translate_screen_blocks(
-                    items=pending,
-                    source_lang=self.config.source_lang,
-                    target_lang=self.config.target_lang,
-                )
+                translated: list[TranslationResult] = []
+                batches = self._split_deep_batches(pending)
+                self._log(f"deep batches={len(batches)} pending={len(pending)} translator={translator_name}")
+                for batch in batches:
+                    translated.extend(
+                        translator.translate_screen_blocks(
+                            items=batch,
+                            source_lang=self.config.source_lang,
+                            target_lang=self.config.target_lang,
+                        )
+                    )
             except Exception as exc:
                 if translator is self.local_translator:
                     raise
                 self._log(f"deep cloud fallback triggered: {exc}")
                 translator = self.local_translator
                 translator_kind = "local"
-                translated = translator.translate_screen_blocks(
-                    items=pending,
-                    source_lang=self.config.source_lang,
-                    target_lang=self.config.target_lang,
-                )
+                translator_name = getattr(translator, "name", translator_kind)
+                deep_glossary_version = f"{self.config.glossary_version}:deep:{translator_name}"
+                translated = []
+                for batch in self._split_deep_batches(pending):
+                    translated.extend(
+                        translator.translate_screen_blocks(
+                            items=batch,
+                            source_lang=self.config.source_lang,
+                            target_lang=self.config.target_lang,
+                        )
+                    )
             self._last_translate_step_ms = (time.perf_counter() - translate_started) * 1000.0
             for item in translated:
                 key = canonicalize_text(item.source_text)
@@ -584,7 +620,9 @@ class PipelineOrchestrator:
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         self._log(
             f"deep translate completed in {elapsed_ms:.0f}ms "
-            f"translator={translator_kind} "
+            f"translator={translator_name} "
+            f"provider={translator_kind} "
+            f"cache_hits={cache_hits} misses={len(pending)} "
             f"grouped={len(grouped_boxes)} shown={len(overlay_items)}"
         )
         return overlay_items

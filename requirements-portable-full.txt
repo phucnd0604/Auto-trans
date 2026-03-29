@@ -12,3 +12,4 @@ opencv-python==4.13.0.92
 ctranslate2==4.7.1
 sentencepiece==0.2.1
 huggingface_hub==1.8.0
+openai==2.30.0

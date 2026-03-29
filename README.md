@@ -40,3 +40,6 @@ Neu muon ban nhe hon:
 ```text
 run_portable.cmd
 ```
+
+
+key: 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

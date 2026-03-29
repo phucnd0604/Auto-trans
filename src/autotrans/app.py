@@ -13,7 +13,7 @@ from autotrans.services.ocr import (
     RapidOCRProvider,
 )
 from autotrans.services.orchestrator import PipelineOrchestrator
-from autotrans.services.translation import OpenAITranslator, build_default_local_translator
+from autotrans.services.translation import OllamaTranslator, OpenAITranslator, build_default_local_translator
 from autotrans.ui.global_hotkeys import GlobalHotkeyManager
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
@@ -91,6 +91,18 @@ def _build_cloud_translator(config: AppConfig):
             )
         except Exception as exc:
             print(f"[AutoTrans] Cloud translator unavailable: {exc}", flush=True)
+            return None
+    if config.cloud_provider == "ollama":
+        try:
+            return OllamaTranslator(
+                model=config.openai_model,
+                base_url=config.openai_base_url,
+                timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
+                verbose=config.translation_log_enabled,
+                max_logged_items=config.translation_log_max_items,
+            )
+        except Exception as exc:
+            print(f"[AutoTrans] Ollama translator unavailable: {exc}", flush=True)
             return None
     return None
 

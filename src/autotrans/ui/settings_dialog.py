@@ -112,18 +112,18 @@ class SettingsDialog(QDialog):
         self.local_translator_combo.setCurrentText(selected_local_translator)
 
         self.cloud_provider_combo = QComboBox()
-        self.cloud_provider_combo.addItems(["none", "openai"])
+        self.cloud_provider_combo.addItems(["none", "openai", "ollama"])
         self.cloud_provider_combo.setCurrentText(str(settings["cloud_provider"]))
 
         self.openai_base_url_edit = QLineEdit(str(settings["openai_base_url"]))
-        self.openai_base_url_edit.setPlaceholderText("https://openrouter.ai/api/v1")
+        self.openai_base_url_edit.setPlaceholderText("https://openrouter.ai/api/v1 or http://ubuntu-server:11434")
 
         self.openai_api_key_edit = QLineEdit(str(settings["openai_api_key"]))
         self.openai_api_key_edit.setEchoMode(QLineEdit.Password)
-        self.openai_api_key_edit.setPlaceholderText("sk-or-v1-...")
+        self.openai_api_key_edit.setPlaceholderText("OpenAI/OpenRouter key, or leave empty for Ollama")
 
         self.openai_model_edit = QLineEdit(str(settings["openai_model"]))
-        self.openai_model_edit.setPlaceholderText("openai/gpt-4.1-mini")
+        self.openai_model_edit.setPlaceholderText("openai/gpt-4.1-mini or qwen2.5:3b")
 
         self.subtitle_mode_check = QCheckBox("Enable subtitle mode")
         self.subtitle_mode_check.setChecked(bool(settings["subtitle_mode"]))
