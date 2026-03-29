@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import time
 from typing import Protocol
 
@@ -42,23 +41,6 @@ class MockOCRProvider:
                 line_id="line-1",
             ),
         ]
-
-
-class FallbackOCRProvider:
-    def __init__(self, primary: OCRProvider, secondary: OCRProvider) -> None:
-        self.name = f"{getattr(primary, 'name', 'primary')}+fallback"
-        self._primary = primary
-        self._secondary = secondary
-        self._primary_failed = False
-
-    def recognize(self, frame: Frame) -> list[OCRBox]:
-        if not self._primary_failed:
-            try:
-                return self._primary.recognize(frame)
-            except Exception as exc:
-                self._primary_failed = True
-                print(f"[AutoTrans] OCR primary failed, switching to fallback: {exc}", flush=True)
-        return self._secondary.recognize(frame)
 
 
 class BaseOCRProvider:
@@ -277,135 +259,4 @@ class RapidOCRProvider(BaseOCRProvider):
             f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} total={(time.perf_counter() - started) * 1000.0:.0f}ms"
         )
         return merged
-
-
-class PaddleOCRProvider(BaseOCRProvider):
-    name = "paddle"
-
-    _LANG_MAP = {
-        "en": "en",
-        "jp": "japan",
-        "ja": "japan",
-    }
-
-    def __init__(self, config: AppConfig) -> None:
-        super().__init__(config)
-        os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
-
-        from paddleocr import PaddleOCR
-
-        requested = config.ocr_languages or ("en", "jp")
-        self._ocr_engines: dict[str, object] = {}
-        for language in requested:
-            paddle_lang = self._LANG_MAP.get(language.lower())
-            if not paddle_lang or language.lower() in self._ocr_engines:
-                continue
-            self._ocr_engines[language.lower()] = PaddleOCR(
-                lang=paddle_lang,
-                ocr_version=config.paddle_ocr_version,
-                use_textline_orientation=config.paddle_use_textline_orientation,
-                text_det_limit_side_len=config.paddle_text_det_limit_side_len,
-                text_det_thresh=config.paddle_text_det_thresh,
-                text_det_box_thresh=config.paddle_text_det_box_thresh,
-                text_det_unclip_ratio=config.paddle_text_det_unclip_ratio,
-                text_rec_score_thresh=config.paddle_text_rec_score_thresh,
-            )
-        if not self._ocr_engines:
-            raise RuntimeError("No valid OCR languages configured")
-
-    def _resize_for_ocr(self, image: np.ndarray) -> tuple[np.ndarray, float]:
-        height, width = image.shape[:2]
-        longest = max(height, width)
-        if longest <= self._config.ocr_max_side:
-            return image, 1.0
-
-        scale = self._config.ocr_max_side / float(longest)
-        new_width = max(1, int(width * scale))
-        new_height = max(1, int(height * scale))
-        import cv2
-
-        resized = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
-        return resized, 1.0 / scale
-
-    def _preprocess(self, image: np.ndarray) -> np.ndarray:
-        if not self._config.ocr_preprocess:
-            return image
-
-        import cv2
-
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        denoised = cv2.bilateralFilter(gray, 5, 40, 40)
-        enhanced = cv2.adaptiveThreshold(
-            denoised,
-            255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY,
-            31,
-            11,
-        )
-        return cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
-
-    def recognize(self, frame: Frame) -> list[OCRBox]:
-        started = time.perf_counter()
-        preprocess_started = started
-        processed = self._preprocess(frame.image)
-        preprocess_ms = (time.perf_counter() - preprocess_started) * 1000.0
-        resize_started = time.perf_counter()
-        resized, scale_back = self._resize_for_ocr(processed)
-        resize_ms = (time.perf_counter() - resize_started) * 1000.0
-        boxes: list[OCRBox] = []
-        seen: set[tuple[int, int, int, int, str]] = set()
-        predict_logs: list[str] = []
-
-        for language_hint, engine in self._ocr_engines.items():
-            predict_started = time.perf_counter()
-            results = engine.predict(resized)
-            predict_ms = (time.perf_counter() - predict_started) * 1000.0
-            language_raw = 0
-            for line_index, line in enumerate(results or []):
-                rec_texts = line.get('rec_texts', []) if isinstance(line, dict) else []
-                rec_scores = line.get('rec_scores', []) if isinstance(line, dict) else []
-                rec_polys = line.get('rec_polys', []) if isinstance(line, dict) else []
-                for item_index, text in enumerate(rec_texts):
-                    points = rec_polys[item_index]
-                    confidence = float(rec_scores[item_index]) if item_index < len(rec_scores) else 0.0
-                    normalized = normalize_text(text)
-                    xs = [int(point[0] * scale_back) for point in points]
-                    ys = [int(point[1] * scale_back) for point in points]
-                    bbox = Rect(
-                        x=min(xs),
-                        y=min(ys),
-                        width=max(xs) - min(xs),
-                        height=max(ys) - min(ys),
-                    )
-                    if not self._is_meaningful(normalized, bbox, confidence):
-                        continue
-                    dedupe_key = (bbox.x, bbox.y, bbox.width, bbox.height, normalized)
-                    if dedupe_key in seen:
-                        continue
-                    seen.add(dedupe_key)
-                    language_raw += 1
-                    boxes.append(
-                        OCRBox(
-                            id="",
-                            source_text=normalized,
-                            confidence=confidence,
-                            bbox=bbox,
-                            language_hint=language_hint,
-                            line_id=f"{language_hint}-{line_index}-{item_index}",
-                        )
-                    )
-            predict_logs.append(f"{language_hint}:boxes={language_raw},predict={predict_ms:.0f}ms")
-
-        merge_started = time.perf_counter()
-        merged = self._merge_line_boxes(boxes)
-        paragraph_merge_started = time.perf_counter()
-        paragraph_merged = self._merge_paragraph_boxes(merged) if self._config.paddle_paragraph_merge else merged
-        paragraph_merge_ms = (time.perf_counter() - paragraph_merge_started) * 1000.0
-        merge_ms = (time.perf_counter() - merge_started) * 1000.0
-        details = " ".join(f"[{entry}]" for entry in predict_logs)
-        self._log(
-            f"paddle preprocess={preprocess_ms:.0f}ms resize={resize_ms:.0f}ms merge={merge_ms:.0f}ms paragraph={paragraph_merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} paragraphs={len(paragraph_merged)} {details} total={(time.perf_counter() - started) * 1000.0:.0f}ms"
-        )
-        return paragraph_merged
 

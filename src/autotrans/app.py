@@ -10,7 +10,6 @@ from autotrans.config import AppConfig
 from autotrans.services.capture import WindowsWindowCapture
 from autotrans.services.ocr import (
     MockOCRProvider,
-    PaddleOCRProvider,
     RapidOCRProvider,
 )
 from autotrans.services.orchestrator import PipelineOrchestrator
@@ -26,7 +25,6 @@ def _clear_runtime_path_overrides() -> None:
         "AUTOTRANS_RUNTIME_ROOT_DIR",
         "AUTOTRANS_LOCAL_MODEL_DIR",
         "AUTOTRANS_CACHE_ROOT_DIR",
-        "AUTOTRANS_PADDLE_CACHE_DIR",
         "AUTOTRANS_XDG_DATA_HOME",
         "AUTOTRANS_XDG_CACHE_HOME",
         "AUTOTRANS_XDG_CONFIG_HOME",
@@ -40,7 +38,6 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
         config.runtime_root_dir,
         config.local_model_dir,
         config.cache_root_dir,
-        config.paddle_cache_dir,
         config.xdg_data_home,
         config.xdg_cache_home,
         config.xdg_config_home,
@@ -54,8 +51,6 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
     os.environ["XDG_CACHE_HOME"] = str(config.xdg_cache_home.resolve())
     os.environ["XDG_CONFIG_HOME"] = str(config.xdg_config_home.resolve())
     os.environ["HF_HOME"] = str(config.hf_home.resolve())
-    os.environ["PADDLE_PDX_CACHE_HOME"] = str(config.paddle_cache_dir.resolve())
-    os.environ.setdefault("PADDLE_HOME", str((config.paddle_cache_dir / "paddle-home").resolve()))
 
     setup_runtime_logging(config)
     print(f"[AutoTrans] Runtime root: {config.runtime_root_dir}", flush=True)
@@ -70,15 +65,6 @@ def _build_ocr_provider(config: AppConfig):
             return provider
         except Exception as exc:
             print(f"[AutoTrans] RapidOCR unavailable, falling back to mock OCR: {exc}", flush=True)
-            return MockOCRProvider()
-
-    if config.ocr_provider == "paddle":
-        try:
-            provider = PaddleOCRProvider(config)
-            print("[AutoTrans] OCR provider: paddle", flush=True)
-            return provider
-        except Exception as exc:
-            print(f"[AutoTrans] PaddleOCR unavailable, falling back to mock OCR: {exc}", flush=True)
             return MockOCRProvider()
 
     print("[AutoTrans] OCR provider: mock", flush=True)

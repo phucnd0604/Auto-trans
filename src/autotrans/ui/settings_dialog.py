@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 
 DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
-    "ocr_provider": "paddle",
+    "ocr_provider": "rapidocr",
     "capture_backend": "printwindow",
     "local_translator": "ctranslate2",
     "cloud_provider": "none",
@@ -44,10 +44,10 @@ class SettingsDialog(QDialog):
         self.resize(420, 320)
 
         self.ocr_provider_combo = QComboBox()
-        self.ocr_provider_combo.addItems(["paddle", "rapidocr"])
+        self.ocr_provider_combo.addItems(["rapidocr"])
         selected_ocr_provider = str(settings["ocr_provider"])
-        if selected_ocr_provider not in {"paddle", "rapidocr"}:
-            selected_ocr_provider = "paddle"
+        if selected_ocr_provider not in {"rapidocr"}:
+            selected_ocr_provider = "rapidocr"
         self.ocr_provider_combo.setCurrentText(selected_ocr_provider)
 
         self.capture_backend_combo = QComboBox()

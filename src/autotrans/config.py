@@ -33,12 +33,6 @@ _DEFAULT_CACHE_ROOT_DIR = Path(
         str(_DEFAULT_RUNTIME_ROOT_DIR / "translation-cache"),
     )
 )
-_DEFAULT_PADDLE_CACHE_DIR = Path(
-    getenv(
-        "AUTOTRANS_PADDLE_CACHE_DIR",
-        str(_DEFAULT_RUNTIME_ROOT_DIR / "paddle"),
-    )
-)
 _DEFAULT_XDG_DATA_HOME = Path(
     getenv(
         "AUTOTRANS_XDG_DATA_HOME",
@@ -94,7 +88,7 @@ class AppConfig:
     subtitle_min_chars: int = int(getenv("AUTOTRANS_SUBTITLE_MIN_CHARS", "6"))
     subtitle_max_candidates: int = int(getenv("AUTOTRANS_SUBTITLE_MAX_CANDIDATES", "4"))
     subtitle_hold_frames: int = int(getenv("AUTOTRANS_SUBTITLE_HOLD_FRAMES", "2"))
-    ocr_provider: str = getenv("AUTOTRANS_OCR_PROVIDER", "paddle")
+    ocr_provider: str = getenv("AUTOTRANS_OCR_PROVIDER", "rapidocr")
     ocr_languages: tuple[str, ...] = tuple(
         language.strip()
         for language in getenv("AUTOTRANS_OCR_LANGUAGES", "en,jp").split(",")
@@ -104,14 +98,6 @@ class AppConfig:
     ocr_preprocess: bool = getenv("AUTOTRANS_OCR_PREPROCESS", "0") != "0"
     ocr_max_side: int = int(getenv("AUTOTRANS_OCR_MAX_SIDE", "1280"))
     ocr_max_boxes: int = int(getenv("AUTOTRANS_OCR_MAX_BOXES", "0"))
-    paddle_ocr_version: str = getenv("AUTOTRANS_PADDLE_OCR_VERSION", "PP-OCRv5")
-    paddle_use_textline_orientation: bool = getenv("AUTOTRANS_PADDLE_USE_TEXTLINE_ORIENTATION", "0") != "0"
-    paddle_text_det_limit_side_len: int = int(getenv("AUTOTRANS_PADDLE_TEXT_DET_LIMIT_SIDE_LEN", "1536"))
-    paddle_text_det_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_THRESH", "0.2"))
-    paddle_text_det_box_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_BOX_THRESH", "0.35"))
-    paddle_text_det_unclip_ratio: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_UNCLIP_RATIO", "1.5"))
-    paddle_text_rec_score_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_REC_SCORE_THRESH", "0.2"))
-    paddle_paragraph_merge: bool = getenv("AUTOTRANS_PADDLE_PARAGRAPH_MERGE", "1") != "0"
     ocr_crop_subtitle_only: bool = getenv("AUTOTRANS_OCR_CROP_SUBTITLE_ONLY", "1") != "0"
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
     capture_backend: str = getenv("AUTOTRANS_CAPTURE_BACKEND", "mss")
@@ -125,7 +111,6 @@ class AppConfig:
     local_inter_threads: int = int(getenv("AUTOTRANS_LOCAL_INTER_THREADS", "1"))
     local_intra_threads: int = int(getenv("AUTOTRANS_LOCAL_INTRA_THREADS", _DEFAULT_INTRA_THREADS))
     local_target_prefix: str = getenv("AUTOTRANS_LOCAL_TARGET_PREFIX", ">>vie<<")
-    paddle_cache_dir: Path = _DEFAULT_PADDLE_CACHE_DIR
     xdg_data_home: Path = _DEFAULT_XDG_DATA_HOME
     xdg_cache_home: Path = _DEFAULT_XDG_CACHE_HOME
     xdg_config_home: Path = _DEFAULT_XDG_CONFIG_HOME
@@ -146,7 +131,6 @@ class AppConfig:
         self.runtime_root_dir = _resolve_from_app_root(self.runtime_root_dir)
         self.local_model_dir = _resolve_from_app_root(self.local_model_dir)
         self.cache_root_dir = _resolve_from_app_root(self.cache_root_dir)
-        self.paddle_cache_dir = _resolve_from_app_root(self.paddle_cache_dir)
         self.xdg_data_home = _resolve_from_app_root(self.xdg_data_home)
         self.xdg_cache_home = _resolve_from_app_root(self.xdg_cache_home)
         self.xdg_config_home = _resolve_from_app_root(self.xdg_config_home)

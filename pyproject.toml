@@ -21,8 +21,6 @@ dependencies = [
 
 [project.optional-dependencies]
 ocr = [
-  "paddleocr>=2.8",
-  "paddlepaddle>=3.3",
   "rapidocr_onnxruntime>=1.2",
 ]
 local_translate = ["ctranslate2>=4.5", "sentencepiece>=0.2", "huggingface_hub>=0.36"]
