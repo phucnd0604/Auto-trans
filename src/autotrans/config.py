@@ -24,7 +24,7 @@ _DEFAULT_RUNTIME_ROOT_DIR = _resolve_from_app_root(getenv("AUTOTRANS_RUNTIME_ROO
 _DEFAULT_MODEL_DIR = Path(
     getenv(
         "AUTOTRANS_LOCAL_MODEL_DIR",
-        str(_DEFAULT_RUNTIME_ROOT_DIR / "models" / "opus-mt-en-vi-ctranslate2"),
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "models" / "quickmt-en-vi"),
     )
 )
 _DEFAULT_ARGOS_PACKAGES_DIR = Path(
@@ -115,9 +115,9 @@ class AppConfig:
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
     capture_backend: str = getenv("AUTOTRANS_CAPTURE_BACKEND", "mss")
     local_model_enabled: bool = getenv("AUTOTRANS_LOCAL_MODEL_ENABLED", "0") != "0"
-    local_translator_backend: str = getenv("AUTOTRANS_LOCAL_TRANSLATOR", "argos")
+    local_translator_backend: str = getenv("AUTOTRANS_LOCAL_TRANSLATOR", "ctranslate2")
     local_model_path: str | None = getenv("AUTOTRANS_LOCAL_MODEL_PATH") or None
-    local_model_repo: str = getenv("AUTOTRANS_LOCAL_MODEL_REPO", "manancode/opus-mt-en-vi-ctranslate2-android")
+    local_model_repo: str = getenv("AUTOTRANS_LOCAL_MODEL_REPO", "quickmt/quickmt-en-vi")
     local_model_dir: Path = _DEFAULT_MODEL_DIR
     local_model_device: str = getenv("AUTOTRANS_LOCAL_MODEL_DEVICE", "cpu")
     local_model_compute_type: str = getenv("AUTOTRANS_LOCAL_MODEL_COMPUTE_TYPE", "int8")

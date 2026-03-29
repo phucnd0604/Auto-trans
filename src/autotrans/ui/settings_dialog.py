@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "ocr_provider": "paddle",
     "capture_backend": "printwindow",
-    "local_translator": "argos",
+    "local_translator": "ctranslate2",
     "cloud_provider": "none",
     "subtitle_mode": False,
     "ocr_crop_subtitle_only": False,
@@ -52,8 +52,11 @@ class SettingsDialog(QDialog):
         self.capture_backend_combo.setCurrentText(str(settings["capture_backend"]))
 
         self.local_translator_combo = QComboBox()
-        self.local_translator_combo.addItems(["argos", "word"])
-        self.local_translator_combo.setCurrentText(str(settings["local_translator"]))
+        self.local_translator_combo.addItems(["ctranslate2", "argos", "word"])
+        selected_local_translator = str(settings["local_translator"])
+        if selected_local_translator not in {"ctranslate2", "argos", "word"}:
+            selected_local_translator = "ctranslate2"
+        self.local_translator_combo.setCurrentText(selected_local_translator)
 
         self.cloud_provider_combo = QComboBox()
         self.cloud_provider_combo.addItems(["none", "openai"])

@@ -25,6 +25,122 @@ class TranslatorProvider(Protocol):
         ...
 
 
+class CTranslate2Translator:
+    name = "local-ctranslate2"
+    _MODEL_PATTERNS = [
+        "*.json",
+        "*.txt",
+        "*.spm",
+        "*.model",
+        "model.bin",
+        "shared_vocabulary.json",
+        "shared_vocabulary.txt",
+        "source_vocabulary.txt",
+        "target_vocabulary.txt",
+    ]
+
+    def __init__(self, config: AppConfig) -> None:
+        import ctranslate2
+        import sentencepiece as spm
+        from huggingface_hub import snapshot_download
+
+        self._model_dir = Path(config.local_model_dir)
+        self._model_dir.mkdir(parents=True, exist_ok=True)
+        if not any(self._model_dir.iterdir()):
+            snapshot_download(
+                repo_id=config.local_model_repo,
+                local_dir=str(self._model_dir),
+                allow_patterns=self._MODEL_PATTERNS,
+            )
+        self._cleanup_stale_vocab_files()
+
+        source_tokenizer_path = self._find_first_existing(
+            "source.spm",
+            "source.model",
+            "src.spm.model",
+            "sentencepiece.model",
+            "spm.model",
+        )
+        target_tokenizer_path = self._find_first_existing(
+            "target.spm",
+            "target.model",
+            "tgt.spm.model",
+            source_tokenizer_path.name if source_tokenizer_path is not None else "sentencepiece.model",
+        )
+        if source_tokenizer_path is None or target_tokenizer_path is None:
+            raise RuntimeError(f"CTranslate2 tokenizer files not found in {self._model_dir}")
+
+        self._source_sp = spm.SentencePieceProcessor(model_file=str(source_tokenizer_path))
+        self._target_sp = spm.SentencePieceProcessor(model_file=str(target_tokenizer_path))
+        self._translator = ctranslate2.Translator(
+            str(self._model_dir),
+            device=config.local_model_device,
+            compute_type=config.local_model_compute_type,
+            inter_threads=config.local_inter_threads,
+            intra_threads=config.local_intra_threads,
+        )
+
+    def _find_first_existing(self, *names: str) -> Path | None:
+        for name in names:
+            candidate = self._model_dir / name
+            if candidate.exists():
+                return candidate
+        return None
+
+    def _cleanup_stale_vocab_files(self) -> None:
+        shared_txt = self._model_dir / "shared_vocabulary.txt"
+        shared_json = self._model_dir / "shared_vocabulary.json"
+        source_vocab = self._model_dir / "source_vocabulary.json"
+        target_vocab = self._model_dir / "target_vocabulary.json"
+        if shared_txt.exists() and not shared_json.exists() and source_vocab.exists() and target_vocab.exists():
+            shared_txt.unlink()
+
+    def _translate_texts(self, texts: list[str]) -> list[str]:
+        tokenized = [self._source_sp.encode(normalize_text(text), out_type=str) for text in texts]
+        results = self._translator.translate_batch(
+            tokenized,
+            beam_size=1,
+            max_decoding_length=128,
+            return_scores=False,
+        )
+        outputs: list[str] = []
+        for result in results:
+            hypothesis = result.hypotheses[0] if result.hypotheses else []
+            outputs.append(normalize_text(self._target_sp.decode(hypothesis)))
+        return outputs
+
+    def translate_batch(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+        mode: QualityMode,
+    ) -> list[TranslationResult]:
+        started = time.perf_counter()
+        translated_texts = self._translate_texts([item.source_text for item in items])
+        results: list[TranslationResult] = []
+        for item, translated in zip(items, translated_texts, strict=False):
+            results.append(
+                TranslationResult(
+                    source_text=item.source_text,
+                    translated_text=translated or normalize_text(item.source_text),
+                    provider=self.name,
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                )
+            )
+        elapsed_ms = (time.perf_counter() - started) * 1000
+        print(
+            f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms",
+            flush=True,
+        )
+        for item, result in list(zip(items, results, strict=False))[:6]:
+            print(
+                f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
+                flush=True,
+            )
+        return results
+
+
 class WordByWordTranslator:
     name = "local-word-by-word"
 
@@ -342,6 +458,12 @@ class OpenAITranslator:
 
 def build_default_local_translator(config: AppConfig) -> TranslatorProvider:
     backend = config.local_translator_backend.strip().lower()
+    if backend == "ctranslate2":
+        try:
+            return CTranslate2Translator(config)
+        except Exception as exc:
+            print(f"[AutoTrans] CTranslate2 unavailable, falling back: {exc}", flush=True)
+
     if backend == "word":
         return WordByWordTranslator()
 
