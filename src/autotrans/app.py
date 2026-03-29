@@ -19,6 +19,7 @@ from autotrans.services.translation import OpenAITranslator, build_default_local
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
 from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
+from autotrans.utils.runtime_logging import setup_runtime_logging
 
 
 def _clear_runtime_path_overrides() -> None:
@@ -45,6 +46,7 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
         config.xdg_cache_home,
         config.xdg_config_home,
         config.hf_home,
+        config.log_dir,
     ]
     for path in runtime_dirs:
         path.mkdir(parents=True, exist_ok=True)
@@ -56,6 +58,7 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
     os.environ["PADDLE_PDX_CACHE_HOME"] = str(config.paddle_cache_dir.resolve())
     os.environ.setdefault("PADDLE_HOME", str((config.paddle_cache_dir / "paddle-home").resolve()))
 
+    setup_runtime_logging(config)
     print(f"[AutoTrans] Runtime root: {config.runtime_root_dir}", flush=True)
     print(f"[AutoTrans] Cache root: {config.cache_root_dir}", flush=True)
 

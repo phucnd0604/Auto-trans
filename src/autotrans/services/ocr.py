@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from typing import Protocol
 
 import numpy as np
@@ -63,6 +64,10 @@ class FallbackOCRProvider:
 class BaseOCRProvider:
     def __init__(self, config: AppConfig) -> None:
         self._config = config
+
+    def _log(self, message: str) -> None:
+        if self._config.translation_log_enabled:
+            print(f"[AutoTrans][OCR] {message}", flush=True)
 
     @staticmethod
     def _text_score(text: str) -> int:
@@ -159,10 +164,16 @@ class RapidOCRProvider(BaseOCRProvider):
         return resized, 1.0 / scale
 
     def recognize(self, frame: Frame) -> list[OCRBox]:
+        started = time.perf_counter()
+        resize_started = started
         image, scale_back = self._resize_for_ocr(frame.image)
+        resize_ms = (time.perf_counter() - resize_started) * 1000.0
+        predict_started = time.perf_counter()
         result, _ = self._engine(image)
+        predict_ms = (time.perf_counter() - predict_started) * 1000.0
         boxes: list[OCRBox] = []
         if not result:
+            self._log(f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms raw=0 merged=0 total={(time.perf_counter() - started) * 1000.0:.0f}ms")
             return boxes
 
         for index, item in enumerate(result):
@@ -190,7 +201,13 @@ class RapidOCRProvider(BaseOCRProvider):
                 )
             )
 
-        return self._merge_line_boxes(boxes)
+        merge_started = time.perf_counter()
+        merged = self._merge_line_boxes(boxes)
+        merge_ms = (time.perf_counter() - merge_started) * 1000.0
+        self._log(
+            f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} total={(time.perf_counter() - started) * 1000.0:.0f}ms"
+        )
+        return merged
 
 
 class PaddleOCRProvider(BaseOCRProvider):
@@ -260,13 +277,22 @@ class PaddleOCRProvider(BaseOCRProvider):
         return cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
 
     def recognize(self, frame: Frame) -> list[OCRBox]:
+        started = time.perf_counter()
+        preprocess_started = started
         processed = self._preprocess(frame.image)
+        preprocess_ms = (time.perf_counter() - preprocess_started) * 1000.0
+        resize_started = time.perf_counter()
         resized, scale_back = self._resize_for_ocr(processed)
+        resize_ms = (time.perf_counter() - resize_started) * 1000.0
         boxes: list[OCRBox] = []
         seen: set[tuple[int, int, int, int, str]] = set()
+        predict_logs: list[str] = []
 
         for language_hint, engine in self._ocr_engines.items():
+            predict_started = time.perf_counter()
             results = engine.predict(resized)
+            predict_ms = (time.perf_counter() - predict_started) * 1000.0
+            language_raw = 0
             for line_index, line in enumerate(results or []):
                 rec_texts = line.get('rec_texts', []) if isinstance(line, dict) else []
                 rec_scores = line.get('rec_scores', []) if isinstance(line, dict) else []
@@ -289,6 +315,7 @@ class PaddleOCRProvider(BaseOCRProvider):
                     if dedupe_key in seen:
                         continue
                     seen.add(dedupe_key)
+                    language_raw += 1
                     boxes.append(
                         OCRBox(
                             id="",
@@ -299,6 +326,14 @@ class PaddleOCRProvider(BaseOCRProvider):
                             line_id=f"{language_hint}-{line_index}-{item_index}",
                         )
                     )
+            predict_logs.append(f"{language_hint}:boxes={language_raw},predict={predict_ms:.0f}ms")
 
-        return self._merge_line_boxes(boxes)
+        merge_started = time.perf_counter()
+        merged = self._merge_line_boxes(boxes)
+        merge_ms = (time.perf_counter() - merge_started) * 1000.0
+        details = " ".join(f"[{entry}]" for entry in predict_logs)
+        self._log(
+            f"paddle preprocess={preprocess_ms:.0f}ms resize={resize_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} {details} total={(time.perf_counter() - started) * 1000.0:.0f}ms"
+        )
+        return merged
 

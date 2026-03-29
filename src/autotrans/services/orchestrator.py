@@ -192,27 +192,40 @@ class PipelineOrchestrator:
         emit_overlay: Callable[[list[OverlayItem]], None] | None = None,
     ) -> list[OverlayItem]:
         started = time.perf_counter()
+        capture_started = started
         frame = self.capture_service.capture_window(hwnd)
+        capture_elapsed_ms = (time.perf_counter() - capture_started) * 1000.0
         if frame is None:
+            self._log(f"timing capture={capture_elapsed_ms:.0f}ms total={capture_elapsed_ms:.0f}ms boxes=0->0->0 items=0")
             return []
 
+        ocr_started = time.perf_counter()
         ocr_frame, y_offset = self._crop_ocr_frame(frame)
         ocr_boxes = self.ocr_provider.recognize(ocr_frame)
         ocr_boxes = self._offset_boxes(ocr_boxes, y_offset)
         ocr_boxes = self._dedupe_boxes(ocr_boxes)
+        ocr_elapsed_ms = (time.perf_counter() - ocr_started) * 1000.0
 
+        select_started = time.perf_counter()
         if self.config.overlay_source_text:
             selected_boxes = self._select_boxes(frame, ocr_boxes)
             tracked_boxes = self._track_boxes(selected_boxes)
             stable_boxes = tracked_boxes
+            select_elapsed_ms = (time.perf_counter() - select_started) * 1000.0
+            overlay_started = time.perf_counter()
             overlay_items = self._build_source_overlay(stable_boxes)
+            translate_elapsed_ms = 0.0
         else:
             selected_boxes = self._select_boxes(frame, ocr_boxes)
             self._log(f"selected {len(selected_boxes)}/{len(ocr_boxes)} OCR boxes for translation")
             stable_boxes = self._stabilize_boxes(selected_boxes)
             tracked_boxes = self._track_boxes(stable_boxes)
+            select_elapsed_ms = (time.perf_counter() - select_started) * 1000.0
+            overlay_started = time.perf_counter()
             overlay_items = self._translate_and_build_overlay(tracked_boxes)
             stable_boxes = tracked_boxes
+            translate_elapsed_ms = getattr(self, "_last_translate_step_ms", 0.0)
+        overlay_elapsed_ms = (time.perf_counter() - overlay_started) * 1000.0
 
         if emit_overlay is not None:
             emit_overlay(overlay_items)
@@ -222,6 +235,17 @@ class PipelineOrchestrator:
         self.stats.ocr_fps = 1.0 / elapsed
         self.stats.box_count = len(stable_boxes)
         self.stats.cache_hits = self.cache.hits
+        self._log(
+            "timing "
+            f"capture={capture_elapsed_ms:.0f}ms "
+            f"ocr={ocr_elapsed_ms:.0f}ms "
+            f"select={select_elapsed_ms:.0f}ms "
+            f"translate={translate_elapsed_ms:.0f}ms "
+            f"overlay={overlay_elapsed_ms:.0f}ms "
+            f"total={elapsed * 1000.0:.0f}ms "
+            f"boxes={len(ocr_boxes)}->{len(selected_boxes)}->{len(stable_boxes)} "
+            f"items={len(overlay_items)}"
+        )
         return overlay_items
 
     def _translate_pending(self, pending: list[OCRBox], request: TranslationRequest):
@@ -415,7 +439,10 @@ class PipelineOrchestrator:
         self._log(f"cache hits={cache_hits} misses={cache_misses}")
 
         if pending:
+            translate_started = time.perf_counter()
             translated = self._translate_pending(pending, request)
+            self._last_translate_step_ms = (time.perf_counter() - translate_started) * 1000.0
+            self._log(f"translate step took {self._last_translate_step_ms:.0f}ms for {len(pending)} item(s)")
             for item in translated:
                 key = canonicalize_text(item.source_text)
                 if not key:
@@ -433,6 +460,8 @@ class PipelineOrchestrator:
                     provider=item.provider,
                 )
                 self.stats.translation_latency_ms = item.latency_ms
+        else:
+            self._last_translate_step_ms = 0.0
 
         style = OverlayStyle(
             font_size=self.config.font_size,

@@ -63,6 +63,12 @@ _DEFAULT_HF_HOME = Path(
         str(_DEFAULT_RUNTIME_ROOT_DIR / "huggingface"),
     )
 )
+_DEFAULT_LOG_DIR = Path(
+    getenv(
+        "AUTOTRANS_LOG_DIR",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "logs"),
+    )
+)
 _DEFAULT_INTRA_THREADS = str(max((cpu_count() or 4) - 1, 1))
 
 
@@ -123,6 +129,8 @@ class AppConfig:
     xdg_cache_home: Path = _DEFAULT_XDG_CACHE_HOME
     xdg_config_home: Path = _DEFAULT_XDG_CONFIG_HOME
     hf_home: Path = _DEFAULT_HF_HOME
+    log_dir: Path = _DEFAULT_LOG_DIR
+    log_max_bytes: int = int(getenv("AUTOTRANS_LOG_MAX_BYTES", str(1024 * 1024)))
     cloud_provider: str = getenv("AUTOTRANS_CLOUD_PROVIDER", "none")
     openai_base_url: str = getenv("AUTOTRANS_OPENAI_BASE_URL", "https://api.openai.com/v1")
     openai_api_key: str | None = getenv("AUTOTRANS_OPENAI_API_KEY") or getenv("OPENAI_API_KEY") or None
@@ -142,6 +150,7 @@ class AppConfig:
         self.xdg_cache_home = _resolve_from_app_root(self.xdg_cache_home)
         self.xdg_config_home = _resolve_from_app_root(self.xdg_config_home)
         self.hf_home = _resolve_from_app_root(self.hf_home)
+        self.log_dir = _resolve_from_app_root(self.log_dir)
 
     @property
     def translation_mode(self) -> str:
