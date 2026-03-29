@@ -139,6 +139,75 @@ class BaseOCRProvider:
         output.sort(key=lambda item: (item.bbox.y, item.bbox.x))
         return output
 
+    def _merge_paragraph_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
+        if len(boxes) <= 1:
+            return boxes
+
+        ordered = sorted(boxes, key=lambda item: (item.bbox.y, item.bbox.x))
+        groups: list[list[OCRBox]] = []
+        for box in ordered:
+            placed = False
+            for group in groups:
+                anchor = group[0]
+                previous = group[-1]
+                if self._same_paragraph(anchor, previous, box):
+                    group.append(box)
+                    placed = True
+                    break
+            if not placed:
+                groups.append([box])
+
+        if len(groups) == len(boxes):
+            return boxes
+
+        merged: list[OCRBox] = []
+        for index, group in enumerate(groups):
+            if len(group) == 1:
+                merged.append(group[0])
+                continue
+            x = min(item.bbox.x for item in group)
+            y = min(item.bbox.y for item in group)
+            right = max(item.bbox.right for item in group)
+            bottom = max(item.bbox.bottom for item in group)
+            merged.append(
+                OCRBox(
+                    id="",
+                    source_text=normalize_text(" ".join(item.source_text for item in group)),
+                    confidence=sum(item.confidence for item in group) / len(group),
+                    bbox=Rect(x=x, y=y, width=right - x, height=bottom - y),
+                    language_hint=group[0].language_hint,
+                    line_id=f"paragraph-{index}",
+                )
+            )
+        return merged
+
+    @staticmethod
+    def _same_paragraph(anchor: OCRBox, previous: OCRBox, candidate: OCRBox) -> bool:
+        anchor_box = anchor.bbox
+        previous_box = previous.bbox
+        candidate_box = candidate.bbox
+
+        vertical_gap = candidate_box.y - previous_box.bottom
+        if vertical_gap < -max(previous_box.height, candidate_box.height) * 0.20:
+            return False
+        if vertical_gap > max(previous_box.height, candidate_box.height) * 1.20 + 8:
+            return False
+
+        left_delta = abs(anchor_box.x - candidate_box.x)
+        allowed_left_delta = max(20, int(min(anchor_box.width, candidate_box.width) * 0.15))
+        if left_delta > allowed_left_delta:
+            return False
+
+        overlap_x = min(anchor_box.right, candidate_box.right) - max(anchor_box.x, candidate_box.x)
+        if overlap_x <= 0 and left_delta > 12:
+            return False
+
+        width_ratio = candidate_box.width / max(anchor_box.width, 1)
+        if width_ratio < 0.35:
+            return False
+
+        return True
+
 
 class RapidOCRProvider(BaseOCRProvider):
     name = "rapidocr"
@@ -330,10 +399,13 @@ class PaddleOCRProvider(BaseOCRProvider):
 
         merge_started = time.perf_counter()
         merged = self._merge_line_boxes(boxes)
+        paragraph_merge_started = time.perf_counter()
+        paragraph_merged = self._merge_paragraph_boxes(merged) if self._config.paddle_paragraph_merge else merged
+        paragraph_merge_ms = (time.perf_counter() - paragraph_merge_started) * 1000.0
         merge_ms = (time.perf_counter() - merge_started) * 1000.0
         details = " ".join(f"[{entry}]" for entry in predict_logs)
         self._log(
-            f"paddle preprocess={preprocess_ms:.0f}ms resize={resize_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} {details} total={(time.perf_counter() - started) * 1000.0:.0f}ms"
+            f"paddle preprocess={preprocess_ms:.0f}ms resize={resize_ms:.0f}ms merge={merge_ms:.0f}ms paragraph={paragraph_merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} paragraphs={len(paragraph_merged)} {details} total={(time.perf_counter() - started) * 1000.0:.0f}ms"
         )
-        return merged
+        return paragraph_merged
 

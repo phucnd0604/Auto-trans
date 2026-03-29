@@ -9,7 +9,6 @@ from PySide6.QtWidgets import QApplication
 from autotrans.config import AppConfig
 from autotrans.services.capture import WindowsWindowCapture
 from autotrans.services.ocr import (
-    FallbackOCRProvider,
     MockOCRProvider,
     PaddleOCRProvider,
     RapidOCRProvider,
@@ -75,19 +74,12 @@ def _build_ocr_provider(config: AppConfig):
 
     if config.ocr_provider == "paddle":
         try:
-            primary = PaddleOCRProvider(config)
-            fallback = RapidOCRProvider(config)
-            print("[AutoTrans] OCR provider: paddle with rapidocr fallback", flush=True)
-            return FallbackOCRProvider(primary, fallback)
+            provider = PaddleOCRProvider(config)
+            print("[AutoTrans] OCR provider: paddle", flush=True)
+            return provider
         except Exception as exc:
-            print(f"[AutoTrans] PaddleOCR unavailable, falling back to RapidOCR: {exc}", flush=True)
-            try:
-                provider = RapidOCRProvider(config)
-                print("[AutoTrans] OCR provider: rapidocr", flush=True)
-                return provider
-            except Exception as rapid_exc:
-                print(f"[AutoTrans] RapidOCR unavailable, falling back to mock OCR: {rapid_exc}", flush=True)
-                return MockOCRProvider()
+            print(f"[AutoTrans] PaddleOCR unavailable, falling back to mock OCR: {exc}", flush=True)
+            return MockOCRProvider()
 
     print("[AutoTrans] OCR provider: mock", flush=True)
     return MockOCRProvider()

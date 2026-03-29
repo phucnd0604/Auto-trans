@@ -111,6 +111,7 @@ class AppConfig:
     paddle_text_det_box_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_BOX_THRESH", "0.35"))
     paddle_text_det_unclip_ratio: float = float(getenv("AUTOTRANS_PADDLE_TEXT_DET_UNCLIP_RATIO", "1.5"))
     paddle_text_rec_score_thresh: float = float(getenv("AUTOTRANS_PADDLE_TEXT_REC_SCORE_THRESH", "0.2"))
+    paddle_paragraph_merge: bool = getenv("AUTOTRANS_PADDLE_PARAGRAPH_MERGE", "1") != "0"
     ocr_crop_subtitle_only: bool = getenv("AUTOTRANS_OCR_CROP_SUBTITLE_ONLY", "1") != "0"
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
     capture_backend: str = getenv("AUTOTRANS_CAPTURE_BACKEND", "mss")

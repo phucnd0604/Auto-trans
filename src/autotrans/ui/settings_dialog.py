@@ -44,8 +44,11 @@ class SettingsDialog(QDialog):
         self.resize(420, 320)
 
         self.ocr_provider_combo = QComboBox()
-        self.ocr_provider_combo.addItems(["paddle", "rapidocr", "mock"])
-        self.ocr_provider_combo.setCurrentText(str(settings["ocr_provider"]))
+        self.ocr_provider_combo.addItems(["paddle", "rapidocr"])
+        selected_ocr_provider = str(settings["ocr_provider"])
+        if selected_ocr_provider not in {"paddle", "rapidocr"}:
+            selected_ocr_provider = "paddle"
+        self.ocr_provider_combo.setCurrentText(selected_ocr_provider)
 
         self.capture_backend_combo = QComboBox()
         self.capture_backend_combo.addItems(["printwindow", "mss"])
