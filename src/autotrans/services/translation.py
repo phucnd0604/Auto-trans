@@ -22,6 +22,14 @@ class TranslatorProvider(Protocol):
     ) -> list[TranslationResult]:
         ...
 
+    def translate_screen_blocks(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+    ) -> list[TranslationResult]:
+        ...
+
 
 class CTranslate2Translator:
     name = "local-ctranslate2"
@@ -137,6 +145,14 @@ class CTranslate2Translator:
                 flush=True,
             )
         return results
+
+    def translate_screen_blocks(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+    ) -> list[TranslationResult]:
+        return self.translate_batch(items, source_lang, target_lang, QualityMode.HIGH_QUALITY)
 
 
 class WordByWordTranslator:
@@ -263,11 +279,20 @@ class WordByWordTranslator:
             )
         return results
 
+    def translate_screen_blocks(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+    ) -> list[TranslationResult]:
+        return self.translate_batch(items, source_lang, target_lang, QualityMode.HIGH_QUALITY)
+
 
 class OpenAITranslator:
     name = "cloud"
     _LEADING_NUMBER_RE = re.compile(r"^\s*[\"'`]*\s*\d+[\.\):\-]\s*")
     _LEADING_BULLET_RE = re.compile(r"^\s*[\"'`]*\s*[-*]+\s*")
+    _BLOCK_RE = re.compile(r"<BLOCK_(\d+)>\s*(.*?)\s*</BLOCK_\1>", re.DOTALL)
 
     def __init__(
         self,
@@ -298,6 +323,23 @@ class OpenAITranslator:
         cleaned = cls._LEADING_BULLET_RE.sub("", cleaned)
         cleaned = cleaned.strip(" \"'`")
         return normalize_text(cleaned)
+
+    @classmethod
+    def _parse_block_response(cls, output_text: str, expected_count: int) -> list[str]:
+        matches = cls._BLOCK_RE.findall(output_text or "")
+        parsed: dict[int, str] = {}
+        for raw_index, raw_text in matches:
+            try:
+                parsed[int(raw_index)] = normalize_text(raw_text)
+            except ValueError:
+                continue
+        if parsed:
+            return [cls._sanitize_line(parsed.get(index, "")) for index in range(1, expected_count + 1)]
+        return [
+            cls._sanitize_line(line)
+            for line in (output_text or "").splitlines()
+            if cls._sanitize_line(line)
+        ]
 
     def translate_batch(
         self,
@@ -350,6 +392,63 @@ class OpenAITranslator:
             for item, result in list(zip(items, results, strict=False))[: self._max_logged_items]:
                 print(
                     f"[AutoTrans][{self._model}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
+                    flush=True,
+                )
+        return results
+
+    def translate_screen_blocks(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+    ) -> list[TranslationResult]:
+        started = time.perf_counter()
+        prompt_lines = [
+            "You are translating OCR text blocks captured from a single video game screen into natural Vietnamese.",
+            "All blocks belong to the same screen, so use shared context to keep terminology, tone, and naming consistent.",
+            "This feature is for dense UI such as story logs, lore pages, quests, codex entries, menus, and item descriptions.",
+            "Rules:",
+            "- Return exactly one output block for each input block, in the same order.",
+            "- Keep game-specific names, factions, places, and skill/item names when appropriate.",
+            "- Translate accurately, preserve intent, and keep a style that matches the game's context.",
+            "- If a block is a menu label or short UI phrase, translate it naturally and concisely.",
+            "- If OCR is noisy, infer only the readable intent from the current screen and do not invent extra facts.",
+            "- Do not add notes, explanations, numbering, or commentary.",
+            "- Output using the same tags shown below.",
+            "",
+            "Input blocks:",
+        ]
+        for index, item in enumerate(items, start=1):
+            prompt_lines.append(f"<BLOCK_{index}>")
+            prompt_lines.append(item.source_text)
+            prompt_lines.append(f"</BLOCK_{index}>")
+        response = self._client.responses.create(
+            model=self._model,
+            input="\n".join(prompt_lines),
+            timeout=max(self._timeout_s, 15.0),
+        )
+        output_text = getattr(response, "output_text", "").strip()
+        translated_blocks = self._parse_block_response(output_text, len(items))
+        results: list[TranslationResult] = []
+        for index, item in enumerate(items):
+            translated = translated_blocks[index] if index < len(translated_blocks) else ""
+            results.append(
+                TranslationResult(
+                    source_text=item.source_text,
+                    translated_text=translated or normalize_text(item.source_text),
+                    provider=self.name,
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                )
+            )
+        if self._verbose:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            print(
+                f"[AutoTrans][{self._model}] deep-translated {len(items)} block(s) in {elapsed_ms:.0f}ms",
+                flush=True,
+            )
+            for item, result in list(zip(items, results, strict=False))[: self._max_logged_items]:
+                print(
+                    f"[AutoTrans][{self._model}] {normalize_text(item.source_text)!r} => {normalize_text(result.translated_text)!r}",
                     flush=True,
                 )
         return results

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QLabel,
+    QLineEdit,
     QSpinBox,
     QVBoxLayout,
 )
@@ -23,6 +24,9 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "capture_backend": "bettercam",
     "local_translator": "ctranslate2",
     "cloud_provider": "none",
+    "openai_base_url": "https://api.openai.com/v1",
+    "openai_api_key": "",
+    "openai_model": "gpt-5-mini",
     "subtitle_mode": False,
     "ocr_crop_subtitle_only": False,
     "capture_fps": 1.0,
@@ -55,6 +59,12 @@ def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
         settings["ocr_provider"] = ocr["provider"]
     if "local_translator" in translation:
         settings["local_translator"] = translation["local_translator"]
+    if "cloud_provider" in translation:
+        settings["cloud_provider"] = translation["cloud_provider"]
+    if "openai_base_url" in translation:
+        settings["openai_base_url"] = translation["openai_base_url"]
+    if "openai_model" in translation:
+        settings["openai_model"] = translation["openai_model"]
     if "mode" in subtitle:
         settings["subtitle_mode"] = bool(subtitle["mode"])
     if "crop_subtitle_only" in subtitle:
@@ -81,7 +91,7 @@ class SettingsDialog(QDialog):
             settings.update(initial_settings)
 
         self.setWindowTitle("AutoTrans Settings")
-        self.resize(420, 320)
+        self.resize(520, 420)
 
         self.ocr_provider_combo = QComboBox()
         self.ocr_provider_combo.addItems(["rapidocr"])
@@ -104,6 +114,16 @@ class SettingsDialog(QDialog):
         self.cloud_provider_combo = QComboBox()
         self.cloud_provider_combo.addItems(["none", "openai"])
         self.cloud_provider_combo.setCurrentText(str(settings["cloud_provider"]))
+
+        self.openai_base_url_edit = QLineEdit(str(settings["openai_base_url"]))
+        self.openai_base_url_edit.setPlaceholderText("https://openrouter.ai/api/v1")
+
+        self.openai_api_key_edit = QLineEdit(str(settings["openai_api_key"]))
+        self.openai_api_key_edit.setEchoMode(QLineEdit.Password)
+        self.openai_api_key_edit.setPlaceholderText("sk-or-v1-...")
+
+        self.openai_model_edit = QLineEdit(str(settings["openai_model"]))
+        self.openai_model_edit.setPlaceholderText("openai/gpt-4.1-mini")
 
         self.subtitle_mode_check = QCheckBox("Enable subtitle mode")
         self.subtitle_mode_check.setChecked(bool(settings["subtitle_mode"]))
@@ -139,6 +159,9 @@ class SettingsDialog(QDialog):
         form.addRow("Capture Backend", self.capture_backend_combo)
         form.addRow("Local Translator", self.local_translator_combo)
         form.addRow("Cloud Provider", self.cloud_provider_combo)
+        form.addRow("Cloud Base URL", self.openai_base_url_edit)
+        form.addRow("Cloud API Key", self.openai_api_key_edit)
+        form.addRow("Cloud Model", self.openai_model_edit)
         form.addRow("Capture FPS", self.capture_fps_spin)
         form.addRow("Overlay FPS", self.overlay_fps_spin)
         form.addRow("Overlay TTL (s)", self.overlay_ttl_spin)
@@ -163,6 +186,9 @@ class SettingsDialog(QDialog):
             "capture_backend": self.capture_backend_combo.currentText(),
             "local_translator": self.local_translator_combo.currentText(),
             "cloud_provider": self.cloud_provider_combo.currentText(),
+            "openai_base_url": self.openai_base_url_edit.text().strip(),
+            "openai_api_key": self.openai_api_key_edit.text().strip(),
+            "openai_model": self.openai_model_edit.text().strip(),
             "subtitle_mode": self.subtitle_mode_check.isChecked(),
             "ocr_crop_subtitle_only": self.crop_subtitle_check.isChecked(),
             "capture_fps": self.capture_fps_spin.value(),

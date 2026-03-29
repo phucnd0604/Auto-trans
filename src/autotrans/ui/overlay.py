@@ -7,6 +7,7 @@ from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from autotrans.models import OverlayItem, Rect
+from autotrans.models import VisibilityState
 from autotrans.utils.text import normalize_text
 
 
@@ -14,6 +15,7 @@ class OverlayWindow(QWidget):
     def __init__(self, ttl_seconds: float = 1.5, overlay_fps: int = 30) -> None:
         super().__init__()
         self._items: list[OverlayItem] = []
+        self._persistent_items: list[OverlayItem] = []
         self._window_rect = Rect(0, 0, 1, 1)
         self._ttl_seconds = ttl_seconds
         self._fade_in_seconds = 0.12
@@ -67,6 +69,19 @@ class OverlayWindow(QWidget):
             self._live_items[key] = (item, first_seen, now, linger_seconds)
         self._prune_expired_items()
         self._items = [item for item, _, _, _ in self._live_items.values()]
+        self.update(self.rect())
+
+    def clear_overlay_items(self) -> None:
+        self._live_items.clear()
+        self._items = []
+        self.update(self.rect())
+
+    def set_persistent_overlay_items(self, items: list[OverlayItem]) -> None:
+        self._persistent_items = list(items)
+        self.update(self.rect())
+
+    def clear_persistent_overlay_items(self) -> None:
+        self._persistent_items = []
         self.update(self.rect())
 
     def _font_for_size(self, size: int) -> QFont:
@@ -276,10 +291,16 @@ class OverlayWindow(QWidget):
         )
         painter.setFont(font)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(0, 0, 0, int(235 * item.style.background_opacity * alpha)))
+        if item.visibility_state == VisibilityState.PENDING:
+            painter.setBrush(QColor(18, 24, 38, int(245 * item.style.background_opacity * alpha)))
+        else:
+            painter.setBrush(QColor(0, 0, 0, int(235 * item.style.background_opacity * alpha)))
         painter.drawRoundedRect(QRectF(panel_rect), 6, 6)
 
-        border_pen = QPen(QColor(90, 180, 120, int(255 * alpha)))
+        if item.visibility_state == VisibilityState.PENDING:
+            border_pen = QPen(QColor(90, 220, 255, int(255 * alpha)))
+        else:
+            border_pen = QPen(QColor(90, 180, 120, int(255 * alpha)))
         border_pen.setWidth(1)
         painter.setPen(border_pen)
         painter.setBrush(Qt.NoBrush)
@@ -295,13 +316,14 @@ class OverlayWindow(QWidget):
         painter.fillRect(self.rect(), Qt.transparent)
         painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
 
-        if not self._items:
+        all_items = [*self._items, *self._persistent_items]
+        if not all_items:
             painter.end()
             return
 
         subtitle_items: list[OverlayItem] = []
         normal_items: list[OverlayItem] = []
-        for item in self._items:
+        for item in all_items:
             if self._is_subtitle_item(item):
                 subtitle_items.append(item)
             else:

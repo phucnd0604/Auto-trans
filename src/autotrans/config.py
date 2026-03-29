@@ -125,6 +125,7 @@ class AppConfig:
     openai_api_key: str | None = getenv("AUTOTRANS_OPENAI_API_KEY") or getenv("OPENAI_API_KEY") or None
     openai_model: str = getenv("AUTOTRANS_OPENAI_MODEL", "gpt-5-mini")
     cloud_timeout_ms: int = int(getenv("AUTOTRANS_CLOUD_TIMEOUT_MS", "2500"))
+    deep_translation_timeout_ms: int = int(getenv("AUTOTRANS_DEEP_TRANSLATION_TIMEOUT_MS", "15000"))
     local_max_chars_balanced: int = int(getenv("AUTOTRANS_LOCAL_MAX_CHARS_BALANCED", "64"))
     debounce_frames: int = int(getenv("AUTOTRANS_DEBOUNCE_FRAMES", "1"))
     cache_size: int = int(getenv("AUTOTRANS_CACHE_SIZE", "1024"))

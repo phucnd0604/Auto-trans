@@ -24,7 +24,7 @@ from autotrans.services.ocr import OCRProvider
 from autotrans.services.policy import ProviderPolicy
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.tracker import OCRTracker
-from autotrans.services.translation import TranslatorProvider
+from autotrans.services.translation import OpenAITranslator, TranslatorProvider
 from autotrans.utils.text import canonicalize_text, is_probably_garbage_text, normalize_text, tokenize_words
 
 
@@ -59,6 +59,12 @@ class PipelineOrchestrator:
         self._last_overlay_items: list[OverlayItem] = []
         self._last_window_height = 1080
         self._last_window_width = 1920
+
+    def _select_deep_translator(self) -> tuple[TranslatorProvider, str]:
+        translator = self.cloud_translator
+        if isinstance(translator, OpenAITranslator) and self.config.openai_api_key and self._network_available():
+            return translator, "cloud"
+        return self.local_translator, "local"
 
     def _log(self, message: str) -> None:
         if self.config.translation_log_enabled:
@@ -224,6 +230,81 @@ class PipelineOrchestrator:
             self.tracker.debounce_frames = original_debounce
 
     @staticmethod
+    def _boxes_form_block(anchor: OCRBox, previous: OCRBox, candidate: OCRBox) -> bool:
+        vertical_gap = candidate.bbox.y - previous.bbox.bottom
+        if vertical_gap < -max(previous.bbox.height, candidate.bbox.height) * 0.25:
+            return False
+        if vertical_gap > max(previous.bbox.height, candidate.bbox.height) * 1.3 + 14:
+            return False
+
+        left_delta = abs(anchor.bbox.x - candidate.bbox.x)
+        allowed_left_delta = max(32, int(min(anchor.bbox.width, candidate.bbox.width) * 0.18))
+        if left_delta > allowed_left_delta:
+            return False
+
+        horizontal_overlap = min(previous.bbox.right, candidate.bbox.right) - max(previous.bbox.x, candidate.bbox.x)
+        if horizontal_overlap <= 0 and left_delta > 16:
+            return False
+
+        return True
+
+    def _group_boxes_for_deep_translation(self, boxes: list[OCRBox]) -> list[OCRBox]:
+        if len(boxes) <= 1:
+            return boxes
+
+        ordered = sorted(boxes, key=lambda item: (item.bbox.y, item.bbox.x))
+        groups: list[list[OCRBox]] = []
+        for box in ordered:
+            placed = False
+            for group in groups:
+                anchor = group[0]
+                previous = group[-1]
+                if self._boxes_form_block(anchor, previous, box):
+                    group.append(box)
+                    placed = True
+                    break
+            if not placed:
+                groups.append([box])
+
+        merged: list[OCRBox] = []
+        for index, group in enumerate(groups, start=1):
+            x = min(item.bbox.x for item in group)
+            y = min(item.bbox.y for item in group)
+            right = max(item.bbox.right for item in group)
+            bottom = max(item.bbox.bottom for item in group)
+            merged.append(
+                OCRBox(
+                    id=f"deep-block-{index}",
+                    source_text="\n".join(
+                        normalize_text(item.source_text)
+                        for item in group
+                        if normalize_text(item.source_text)
+                    ),
+                    confidence=min(item.confidence for item in group),
+                    bbox=Rect(x=x, y=y, width=right - x, height=bottom - y),
+                    language_hint=group[0].language_hint,
+                    line_id="deep-ui-block",
+                )
+            )
+        return merged
+
+    def _select_deep_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
+        filtered: list[OCRBox] = []
+        for box in boxes:
+            normalized = normalize_text(box.source_text)
+            if not normalized:
+                continue
+            alnum_count = sum(char.isalnum() for char in normalized)
+            if alnum_count <= 2:
+                continue
+            if len(normalized) <= 3 and any(char.isdigit() for char in normalized):
+                continue
+            if is_probably_garbage_text(normalized):
+                continue
+            filtered.append(box)
+        return filtered
+
+    @staticmethod
     def _smooth_rect(previous: Rect, current: Rect) -> Rect:
         return Rect(
             x=int(round((previous.x * 0.65) + (current.x * 0.35))),
@@ -303,6 +384,42 @@ class PipelineOrchestrator:
             )
         return "|".join(parts)
 
+    def _collect_deep_grouped_boxes(self, hwnd: int) -> list[OCRBox]:
+        frame = self.capture_service.capture_window(hwnd)
+        if frame is None:
+            return []
+
+        self._last_window_height = max(frame.window_rect.height, 1)
+        self._last_window_width = max(frame.window_rect.width, 1)
+        ocr_boxes = self.ocr_provider.recognize(frame)
+        ocr_boxes = self._dedupe_boxes(ocr_boxes)
+        selected_boxes = self._select_deep_boxes(ocr_boxes)
+        grouped_boxes = self._group_boxes_for_deep_translation(selected_boxes)
+        return [box for box in grouped_boxes if normalize_text(box.source_text)]
+
+    def _deep_overlay_style(self) -> OverlayStyle:
+        return OverlayStyle(
+            font_size=max(self.config.font_size, 18),
+            background_opacity=min(0.96, max(self.config.overlay_background_opacity, 0.82)),
+        )
+
+    def build_pending_deep_overlay(self, boxes: list[OCRBox]) -> list[OverlayItem]:
+        style = self._deep_overlay_style()
+        pending_overlay_items = [
+            OverlayItem(
+                bbox=box.bbox,
+                translated_text="Dang dich...",
+                style=style,
+                visibility_state=VisibilityState.PENDING,
+                source_text=box.source_text,
+                tracking_key=box.id or canonicalize_text(box.source_text),
+                linger_seconds=0.0,
+                region="deep-ui",
+            )
+            for box in boxes
+        ]
+        return self._limit_overlay_groups(sorted(pending_overlay_items, key=lambda item: (item.bbox.y, item.bbox.x)))
+
     def process_window(
         self,
         hwnd: int,
@@ -376,6 +493,102 @@ class PipelineOrchestrator:
             f"items={len(overlay_items)}"
         )
         return overlay_items
+
+    def prepare_deep_translation(self, hwnd: int) -> tuple[list[OCRBox], list[OverlayItem]]:
+        grouped_boxes = self._collect_deep_grouped_boxes(hwnd)
+        if not grouped_boxes:
+            self._log("deep translate skipped: no usable OCR blocks")
+            return [], []
+        return grouped_boxes, self.build_pending_deep_overlay(grouped_boxes)
+
+    def translate_deep_boxes(self, grouped_boxes: list[OCRBox]) -> list[OverlayItem]:
+        started = time.perf_counter()
+        translator, translator_kind = self._select_deep_translator()
+        if not grouped_boxes:
+            return []
+
+        results_by_key: dict[str, tuple[str, str, float]] = {}
+        pending: list[OCRBox] = []
+        deep_glossary_version = f"{self.config.glossary_version}:deep"
+        for box in grouped_boxes:
+            key = canonicalize_text(box.source_text)
+            if not key:
+                continue
+            cache_entry = self.cache.get(
+                text=box.source_text,
+                source_lang=self.config.source_lang,
+                target_lang=self.config.target_lang,
+                glossary_version=deep_glossary_version,
+            )
+            if cache_entry is not None:
+                results_by_key[key] = (cache_entry.translated_text, cache_entry.provider, 0.0)
+            else:
+                pending.append(box)
+
+        if pending:
+            translate_started = time.perf_counter()
+            try:
+                translated = translator.translate_screen_blocks(
+                    items=pending,
+                    source_lang=self.config.source_lang,
+                    target_lang=self.config.target_lang,
+                )
+            except Exception as exc:
+                if translator is self.local_translator:
+                    raise
+                self._log(f"deep cloud fallback triggered: {exc}")
+                translator = self.local_translator
+                translator_kind = "local"
+                translated = translator.translate_screen_blocks(
+                    items=pending,
+                    source_lang=self.config.source_lang,
+                    target_lang=self.config.target_lang,
+                )
+            self._last_translate_step_ms = (time.perf_counter() - translate_started) * 1000.0
+            for item in translated:
+                key = canonicalize_text(item.source_text)
+                if not key or not self._translation_is_usable(item.source_text, item.translated_text):
+                    continue
+                results_by_key[key] = (item.translated_text, item.provider, item.latency_ms)
+                self.cache.put(
+                    text=item.source_text,
+                    source_lang=self.config.source_lang,
+                    target_lang=self.config.target_lang,
+                    glossary_version=deep_glossary_version,
+                    translated_text=item.translated_text,
+                    provider=item.provider,
+                )
+
+        style = self._deep_overlay_style()
+        overlay_items: list[OverlayItem] = []
+        for box in grouped_boxes:
+            key = canonicalize_text(box.source_text)
+            translated_entry = results_by_key.get(key)
+            translated_text = translated_entry[0] if translated_entry else ""
+            if not translated_text:
+                continue
+            overlay_items.append(
+                OverlayItem(
+                    bbox=box.bbox,
+                    translated_text=translated_text,
+                    style=style,
+                    visibility_state=VisibilityState.VISIBLE,
+                    source_text=box.source_text,
+                    tracking_key=box.id or key,
+                    linger_seconds=0.0,
+                    region="deep-ui",
+                )
+            )
+
+        overlay_items = self._limit_overlay_groups(sorted(overlay_items, key=lambda item: (item.bbox.y, item.bbox.x)))
+        elapsed_ms = (time.perf_counter() - started) * 1000.0
+        self._log(
+            f"deep translate completed in {elapsed_ms:.0f}ms "
+            f"translator={translator_kind} "
+            f"grouped={len(grouped_boxes)} shown={len(overlay_items)}"
+        )
+        return overlay_items
+
 
     def _translate_pending(self, pending: list[OCRBox], request: TranslationRequest):
         decision = self.policy.select(

@@ -14,6 +14,7 @@ from autotrans.services.ocr import (
 )
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.translation import OpenAITranslator, build_default_local_translator
+from autotrans.ui.global_hotkeys import GlobalHotkeyManager
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
 from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
@@ -84,6 +85,7 @@ def _build_cloud_translator(config: AppConfig):
                 model=config.openai_model,
                 base_url=config.openai_base_url,
                 api_key=config.openai_api_key,
+                timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
                 verbose=config.translation_log_enabled,
                 max_logged_items=config.translation_log_max_items,
             )
@@ -98,6 +100,10 @@ def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> A
     config.capture_backend = str(settings.get("capture_backend", config.capture_backend))
     config.local_translator_backend = str(settings.get("local_translator", config.local_translator_backend))
     config.cloud_provider = str(settings.get("cloud_provider", config.cloud_provider))
+    config.openai_base_url = str(settings.get("openai_base_url", config.openai_base_url)).strip() or config.openai_base_url
+    raw_api_key = str(settings.get("openai_api_key", config.openai_api_key or "")).strip()
+    config.openai_api_key = raw_api_key or None
+    config.openai_model = str(settings.get("openai_model", config.openai_model)).strip() or config.openai_model
     config.subtitle_mode = bool(settings.get("subtitle_mode", config.subtitle_mode))
     config.ocr_crop_subtitle_only = bool(settings.get("ocr_crop_subtitle_only", config.ocr_crop_subtitle_only))
     config.capture_fps = float(settings.get("capture_fps", config.capture_fps))
@@ -122,6 +128,8 @@ def main() -> int:
     _prepare_runtime_environment(config)
     capture_service = WindowsWindowCapture(config)
     overlay = OverlayWindow(ttl_seconds=config.overlay_ttl_seconds, overlay_fps=config.overlay_fps)
+    hotkeys = GlobalHotkeyManager()
+    app.installNativeEventFilter(hotkeys)
     orchestrator = PipelineOrchestrator(
         config=config,
         capture_service=capture_service,
@@ -134,9 +142,13 @@ def main() -> int:
         capture_service=capture_service,
         orchestrator=orchestrator,
         overlay=overlay,
+        global_hotkeys=hotkeys,
     )
     window.show()
-    return app.exec()
+    try:
+        return app.exec()
+    finally:
+        hotkeys.unregister_all()
 
 
 if __name__ == "__main__":
