@@ -22,7 +22,9 @@ src/autotrans/services/translation.py
 src/autotrans/ui/__init__.py
 src/autotrans/ui/main_window.py
 src/autotrans/ui/overlay.py
+src/autotrans/ui/settings_dialog.py
 src/autotrans/utils/__init__.py
+src/autotrans/utils/runtime_logging.py
 src/autotrans/utils/text.py
 tests/test_cache.py
 tests/test_orchestrator.py
