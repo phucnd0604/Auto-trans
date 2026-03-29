@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import os
 import re
-import threading
 import time
 from pathlib import Path
 from typing import Protocol
@@ -266,105 +264,6 @@ class WordByWordTranslator:
         return results
 
 
-class ArgosTranslator:
-    name = "local-argos"
-
-    def __init__(
-        self,
-        packages_dir: Path,
-        auto_install: bool = True,
-        compute_type: str = "int8",
-        inter_threads: int = 1,
-        intra_threads: int = 0,
-    ) -> None:
-        self._packages_dir = Path(packages_dir)
-        self._packages_dir.mkdir(parents=True, exist_ok=True)
-        os.environ["ARGOS_PACKAGES_DIR"] = str(self._packages_dir.resolve())
-        os.environ.setdefault("ARGOS_DEVICE_TYPE", "cpu")
-        os.environ.setdefault("ARGOS_CHUNK_TYPE", "MINISBD")
-        os.environ.setdefault("ARGOS_COMPUTE_TYPE", compute_type)
-        os.environ.setdefault("ARGOS_INTER_THREADS", str(inter_threads))
-        os.environ.setdefault("ARGOS_INTRA_THREADS", str(intra_threads))
-
-        from argostranslate import package, translate
-
-        self._package = package
-        self._translate = translate
-        self._auto_install = auto_install
-        self._lock = threading.RLock()
-        self._translation_cache: dict[tuple[str, str], object] = {}
-
-    @staticmethod
-    def _sanitize_line(text: str) -> str:
-        cleaned = normalize_text(text)
-        cleaned = re.sub(r"^\s*[>\-*]+\s*", "", cleaned)
-        return normalize_text(cleaned)
-
-    def _resolve_translation(self, source_lang: str, target_lang: str):
-        key = (source_lang, target_lang)
-        cached = self._translation_cache.get(key)
-        if cached is not None:
-            return cached
-
-        with self._lock:
-            cached = self._translation_cache.get(key)
-            if cached is not None:
-                return cached
-
-            self._translate.get_installed_languages.cache_clear()
-            from_lang = self._translate.get_language_from_code(source_lang)
-            to_lang = self._translate.get_language_from_code(target_lang)
-            translation = None if from_lang is None or to_lang is None else from_lang.get_translation(to_lang)
-
-            if translation is None and self._auto_install:
-                self._package.update_package_index()
-                installed = self._package.install_package_for_language_pair(source_lang, target_lang)
-                if installed:
-                    self._translate.get_installed_languages.cache_clear()
-                    from_lang = self._translate.get_language_from_code(source_lang)
-                    to_lang = self._translate.get_language_from_code(target_lang)
-                    translation = None if from_lang is None or to_lang is None else from_lang.get_translation(to_lang)
-
-            if translation is None:
-                raise RuntimeError(f"Argos package unavailable for {source_lang}->{target_lang}")
-
-            self._translation_cache[key] = translation
-            return translation
-
-    def translate_batch(
-        self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-        mode: QualityMode,
-    ) -> list[TranslationResult]:
-        started = time.perf_counter()
-        translation = self._resolve_translation(source_lang, target_lang)
-        results: list[TranslationResult] = []
-        for item in items:
-            source_text = normalize_text(item.source_text)
-            translated = self._sanitize_line(translation.translate(source_text)) if source_text else ""
-            results.append(
-                TranslationResult(
-                    source_text=item.source_text,
-                    translated_text=translated or source_text,
-                    provider=self.name,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                )
-            )
-        elapsed_ms = (time.perf_counter() - started) * 1000
-        print(
-            f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms",
-            flush=True,
-        )
-        for item, result in list(zip(items, results, strict=False))[:6]:
-            print(
-                f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
-                flush=True,
-            )
-        return results
-
-
 class OpenAITranslator:
     name = "cloud"
     _LEADING_NUMBER_RE = re.compile(r"^\s*[\"'`]*\s*\d+[\.\):\-]\s*")
@@ -462,22 +361,9 @@ def build_default_local_translator(config: AppConfig) -> TranslatorProvider:
         try:
             return CTranslate2Translator(config)
         except Exception as exc:
-            print(f"[AutoTrans] CTranslate2 unavailable, falling back: {exc}", flush=True)
+            print(f"[AutoTrans] CTranslate2 unavailable, falling back to word-by-word: {exc}", flush=True)
 
     if backend == "word":
         return WordByWordTranslator()
-
-    if backend == "argos":
-        try:
-            return ArgosTranslator(
-                packages_dir=config.argos_packages_dir,
-                auto_install=config.argos_auto_install,
-                compute_type=config.local_model_compute_type,
-                inter_threads=config.local_inter_threads,
-                intra_threads=config.local_intra_threads,
-            )
-        except Exception as exc:
-            print(f"[AutoTrans] Argos unavailable, falling back to word-by-word: {exc}", flush=True)
-            return WordByWordTranslator()
 
     return WordByWordTranslator()

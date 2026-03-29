@@ -25,7 +25,7 @@ ocr = [
   "paddlepaddle>=3.3",
   "rapidocr_onnxruntime>=1.2",
 ]
-local_translate = ["ctranslate2>=4.5", "sentencepiece>=0.2", "huggingface_hub>=0.36", "argostranslate>=1.11"]
+local_translate = ["ctranslate2>=4.5", "sentencepiece>=0.2", "huggingface_hub>=0.36"]
 openai = ["openai>=1.68"]
 dev = ["pytest>=8.3", "pytest-qt>=4.4"]
 

@@ -52,9 +52,9 @@ class SettingsDialog(QDialog):
         self.capture_backend_combo.setCurrentText(str(settings["capture_backend"]))
 
         self.local_translator_combo = QComboBox()
-        self.local_translator_combo.addItems(["ctranslate2", "argos", "word"])
+        self.local_translator_combo.addItems(["ctranslate2", "word"])
         selected_local_translator = str(settings["local_translator"])
-        if selected_local_translator not in {"ctranslate2", "argos", "word"}:
+        if selected_local_translator not in {"ctranslate2", "word"}:
             selected_local_translator = "ctranslate2"
         self.local_translator_combo.setCurrentText(selected_local_translator)
 

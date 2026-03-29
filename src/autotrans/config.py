@@ -27,12 +27,6 @@ _DEFAULT_MODEL_DIR = Path(
         str(_DEFAULT_RUNTIME_ROOT_DIR / "models" / "quickmt-en-vi"),
     )
 )
-_DEFAULT_ARGOS_PACKAGES_DIR = Path(
-    getenv(
-        "AUTOTRANS_ARGOS_PACKAGES_DIR",
-        str(_DEFAULT_RUNTIME_ROOT_DIR / "argos" / "packages"),
-    )
-)
 _DEFAULT_CACHE_ROOT_DIR = Path(
     getenv(
         "AUTOTRANS_CACHE_ROOT_DIR",
@@ -124,8 +118,6 @@ class AppConfig:
     local_inter_threads: int = int(getenv("AUTOTRANS_LOCAL_INTER_THREADS", "1"))
     local_intra_threads: int = int(getenv("AUTOTRANS_LOCAL_INTRA_THREADS", _DEFAULT_INTRA_THREADS))
     local_target_prefix: str = getenv("AUTOTRANS_LOCAL_TARGET_PREFIX", ">>vie<<")
-    argos_packages_dir: Path = _DEFAULT_ARGOS_PACKAGES_DIR
-    argos_auto_install: bool = getenv("AUTOTRANS_ARGOS_AUTO_INSTALL", "1") != "0"
     paddle_cache_dir: Path = _DEFAULT_PADDLE_CACHE_DIR
     xdg_data_home: Path = _DEFAULT_XDG_DATA_HOME
     xdg_cache_home: Path = _DEFAULT_XDG_CACHE_HOME
@@ -144,7 +136,6 @@ class AppConfig:
     def __post_init__(self) -> None:
         self.runtime_root_dir = _resolve_from_app_root(self.runtime_root_dir)
         self.local_model_dir = _resolve_from_app_root(self.local_model_dir)
-        self.argos_packages_dir = _resolve_from_app_root(self.argos_packages_dir)
         self.cache_root_dir = _resolve_from_app_root(self.cache_root_dir)
         self.paddle_cache_dir = _resolve_from_app_root(self.paddle_cache_dir)
         self.xdg_data_home = _resolve_from_app_root(self.xdg_data_home)

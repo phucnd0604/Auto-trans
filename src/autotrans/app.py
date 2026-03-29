@@ -25,7 +25,6 @@ def _clear_runtime_path_overrides() -> None:
     for key in (
         "AUTOTRANS_RUNTIME_ROOT_DIR",
         "AUTOTRANS_LOCAL_MODEL_DIR",
-        "AUTOTRANS_ARGOS_PACKAGES_DIR",
         "AUTOTRANS_CACHE_ROOT_DIR",
         "AUTOTRANS_PADDLE_CACHE_DIR",
         "AUTOTRANS_XDG_DATA_HOME",
@@ -40,7 +39,6 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
     runtime_dirs = [
         config.runtime_root_dir,
         config.local_model_dir,
-        config.argos_packages_dir,
         config.cache_root_dir,
         config.paddle_cache_dir,
         config.xdg_data_home,
@@ -57,8 +55,6 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
     os.environ["HF_HOME"] = str(config.hf_home.resolve())
     os.environ["PADDLE_PDX_CACHE_HOME"] = str(config.paddle_cache_dir.resolve())
     os.environ.setdefault("PADDLE_HOME", str((config.paddle_cache_dir / "paddle-home").resolve()))
-    os.environ["ARGOS_PACKAGES_DIR"] = str(config.argos_packages_dir.resolve())
-    os.environ.setdefault("ARGOS_TRANSLATE_PACKAGE_DIR", str(config.argos_packages_dir.resolve()))
 
     print(f"[AutoTrans] Runtime root: {config.runtime_root_dir}", flush=True)
     print(f"[AutoTrans] Cache root: {config.cache_root_dir}", flush=True)
