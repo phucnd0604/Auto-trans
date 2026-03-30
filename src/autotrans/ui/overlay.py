@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from PySide6.QtCore import QTimer, Qt, QRect, QRectF
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QWidget
 
 from autotrans.models import OverlayItem, Rect
@@ -26,6 +27,7 @@ class OverlayWindow(QWidget):
         self._prune_timer.setInterval(prune_interval_ms)
         self._prune_timer.timeout.connect(self._prune_expired_items)
         self._prune_timer.start()
+        self._overlay_brush = QPixmap(str(Path(__file__).resolve().parent / "assets" / "overlay-brush.png"))
         self.setWindowFlags(
             Qt.FramelessWindowHint
             | Qt.WindowStaysOnTopHint
@@ -124,13 +126,17 @@ class OverlayWindow(QWidget):
             max_font = 22
             min_font = 22
         elif is_paragraph:
-            preferred_width = max(min(rect.width() - 4, int(rect.width() * 0.92)), 80)
-            max_font = min(24, max(16, int(rect.height() * 0.9)))
-            min_font = 12
+            max_panel_width = max(max_panel_width, min(max(rect.width() + 72, int(self.width() * 0.36)), max(self.width() - 24, 1)))
+            max_panel_height = max(max_panel_height, min(max(rect.height() + 16, 56), max(self.height() - 24, 1)))
+            preferred_width = max(min(max_panel_width - 8, int(max_panel_width * 0.92)), 100)
+            max_font = min(18, max(12, int(rect.height() * 0.54)))
+            min_font = 11
         else:
-            preferred_width = max(min(rect.width() - 4, int(rect.width() * 0.95)), 40)
-            max_font = min(28, max(16, int(rect.height() * 1.05)))
-            min_font = 12
+            max_panel_width = max(max_panel_width, min(max(rect.width() + 56, 120), max(self.width() - 24, 1)))
+            max_panel_height = max(max_panel_height, min(max(rect.height() + 14, 42), max(self.height() - 24, 1)))
+            preferred_width = max(min(max_panel_width - 8, int(max_panel_width * 0.95)), 60)
+            max_font = min(16, max(10, int(rect.height() * 0.54)))
+            min_font = 9
 
         best_font = self._styled_font(min_font, subtitle=is_subtitle)
         best_bounds = QRect(0, 0, max(rect.width(), 1), max(rect.height(), 1))
@@ -169,8 +175,10 @@ class OverlayWindow(QWidget):
         panel_x = rect.x() + ((rect.width() - best_panel_width) // 2)
         panel_y = rect.y() + ((rect.height() - best_panel_height) // 2)
         if not is_subtitle:
-            panel_x = max(rect.x(), min(panel_x, rect.right() - best_panel_width))
-            panel_y = max(rect.y(), min(panel_y, rect.bottom() - best_panel_height))
+            allowed_shift_x = max(32, rect.width() // 3)
+            allowed_shift_y = max(18, rect.height() // 2)
+            panel_x = max(rect.x() - allowed_shift_x, min(panel_x, rect.right() - best_panel_width + allowed_shift_x))
+            panel_y = max(rect.y() - allowed_shift_y, min(panel_y, rect.bottom() - best_panel_height + allowed_shift_y))
         panel_x = max(0, min(panel_x, max(self.width() - best_panel_width, 0)))
         panel_y = max(0, min(panel_y, max(self.height() - best_panel_height, 0)))
 
@@ -218,6 +226,40 @@ class OverlayWindow(QWidget):
             remaining = max((ttl_seconds + self._fade_out_seconds) - since_seen, 0.0)
             fade_out = min(remaining / self._fade_out_seconds, 1.0) if self._fade_out_seconds > 0 else 1.0
         return max(0.0, min(fade_in, fade_out))
+
+    def _expanded_text_rect(
+        self,
+        text: str,
+        font: QFont,
+        text_rect: QRect,
+        text_flags: int,
+        *,
+        is_subtitle: bool,
+    ) -> QRect:
+        metrics = QFontMetrics(font)
+        expanded = QRect(text_rect)
+        if text_flags & Qt.TextWordWrap:
+            preferred_width = expanded.width()
+            if not is_subtitle:
+                preferred_width = min(max(expanded.width() + 120, int(expanded.width() * 1.35)), max(self.width() - 24, 1))
+            measure = metrics.boundingRect(QRect(0, 0, max(preferred_width, 1), max(self.height(), 80)), text_flags, text)
+        else:
+            measure = metrics.boundingRect(text)
+
+        if measure.width() > expanded.width():
+            extra_width = measure.width() - expanded.width()
+            expanded.adjust(-(extra_width // 2) - 4, 0, (extra_width - (extra_width // 2)) + 4, 0)
+        if measure.height() > expanded.height():
+            extra_height = measure.height() - expanded.height()
+            expanded.adjust(0, -(extra_height // 2) - 2, 0, (extra_height - (extra_height // 2)) + 2)
+
+        if expanded.width() > self.width():
+            expanded.setWidth(max(self.width() - 8, 1))
+        if expanded.height() > self.height():
+            expanded.setHeight(max(self.height() - 8, 1))
+        expanded.moveLeft(max(0, min(expanded.x(), max(self.width() - expanded.width(), 0))))
+        expanded.moveTop(max(0, min(expanded.y(), max(self.height() - expanded.height(), 0))))
+        return expanded
 
     def _timing_data(self, item: OverlayItem) -> tuple[float, float, float] | None:
         key = self._item_key(item)
@@ -290,24 +332,33 @@ class OverlayWindow(QWidget):
             is_subtitle=self._is_subtitle_item(item),
         )
         painter.setFont(font)
-        painter.setPen(Qt.NoPen)
-        if item.visibility_state == VisibilityState.PENDING:
-            painter.setBrush(QColor(18, 24, 38, int(245 * item.style.background_opacity * alpha)))
+        draw_rect = self._expanded_text_rect(
+            item.translated_text,
+            font,
+            QRect(text_rect),
+            text_flags,
+            is_subtitle=self._is_subtitle_item(item),
+        )
+        background_rect = draw_rect.adjusted(-12, -6, 12, 6)
+        painter.save()
+        painter.setOpacity(max(0.0, min(alpha, 1.0)))
+        if not self._overlay_brush.isNull():
+            painter.drawPixmap(background_rect, self._overlay_brush)
         else:
-            painter.setBrush(QColor(0, 0, 0, int(235 * item.style.background_opacity * alpha)))
-        painter.drawRoundedRect(QRectF(panel_rect), 6, 6)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(0, 0, 0, int(255 * alpha)))
+            painter.drawRoundedRect(QRectF(background_rect), 6, 6)
+        painter.restore()
 
         if item.visibility_state == VisibilityState.PENDING:
             border_pen = QPen(QColor(90, 220, 255, int(255 * alpha)))
-        else:
-            border_pen = QPen(QColor(90, 180, 120, int(255 * alpha)))
-        border_pen.setWidth(1)
-        painter.setPen(border_pen)
-        painter.setBrush(Qt.NoBrush)
-        painter.drawRoundedRect(QRectF(panel_rect), 6, 6)
+            border_pen.setWidth(1)
+            painter.setPen(border_pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(QRectF(background_rect), 6, 6)
 
         painter.setPen(QColor(text_color.red(), text_color.green(), text_color.blue(), int(255 * alpha)))
-        painter.drawText(QRect(text_rect), text_flags, item.translated_text)
+        painter.drawText(draw_rect, text_flags, item.translated_text)
 
     def paintEvent(self, event) -> None:  # noqa: N802
         painter = QPainter(self)

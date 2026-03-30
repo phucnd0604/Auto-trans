@@ -406,12 +406,21 @@ class GeminiTranslator:
 
     def _build_deep_system_instruction(self) -> str:
         system_lines = [GEMINI_DEEP_SYSTEM_PROMPT]
+        system_lines.extend(
+            [
+                "",
+                "Ưu tiên trung thành với OCR hơn văn phong.",
+                "Không được tự ý thêm ý, thêm chi tiết, thêm chủ ngữ, hay điền phần bị cắt mất.",
+                "Nếu input là nhãn menu, tên vật phẩm, tên kỹ năng, mục tiêu ngắn, hoặc cụm từ rút gọn thì phải dịch ngắn gọn tương ứng, không biến thành câu văn dài.",
+                "Không ép thêm xưng hô hoặc văn cổ phong vào mọi block. Chỉ dùng văn phong cổ phong khi input thực sự là câu hội thoại hoàn chỉnh.",
+            ]
+        )
         game_profile_lines = self._build_game_profile_lines()
         if game_profile_lines:
             system_lines.extend(
                 [
                     "",
-                    "Game Profile va ngu canh:",
+                    "Game Profile và ngữ cảnh:",
                     *game_profile_lines,
                 ]
             )
@@ -421,11 +430,16 @@ class GeminiTranslator:
         prompt_lines: list[str] = []
         prompt_lines.extend(
             [
-                "Quy tac output:",
-                "- Tra ve dung 1 block output cho moi block input, dung thu tu.",
-                "- Giu nguyen tag <BLOCK_n> va </BLOCK_n> trong output.",
-                "- Chi viet noi dung dich nam ben trong tung tag.",
-                "- Khong them ghi chu, khong giai thich, khong doi thu tu.",
+                "Quy tắc output:",
+                "- Trả về đúng 1 block output cho mỗi block input, đúng thứ tự.",
+                "- Giữ nguyên tag <BLOCK_n> và </BLOCK_n> trong output.",
+                "- Chỉ viết nội dung dịch nằm bên trong từng tag.",
+                "- Không thêm ghi chú, không giải thích, không đổi thứ tự.",
+                "- Dịch sát nghĩa và ngắn gọn. Không được diễn giải, phóng tác, hay viết dài hơn cần thiết.",
+                "- Nếu input là menu label, tên vật phẩm, tên kỹ năng, tên nhiệm vụ, hoặc cụm ngắn thì output phải là một nhãn ngắn tương ứng, không thành câu dài.",
+                "- Nếu input bị cắt do OCR thì chỉ dịch phần nhìn thấy, không được suy đoán phần bị thiếu.",
+                "- Không thêm thông tin không xuất hiện trong block input.",
+                "- Cố gắng giữ độ dài output gần với input. Input rất ngắn thì output cũng phải rất ngắn.",
                 "",
                 "Input blocks:",
             ]

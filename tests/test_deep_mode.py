@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 
 import numpy as np
+import pytest
+from PySide6.QtCore import QRect
 
 from autotrans.config import AppConfig
 from autotrans.models import Frame, OCRBox, OverlayItem, OverlayStyle, QualityMode, Rect, TranslationResult
+from autotrans.services.ocr import BaseOCRProvider, RapidOCRProvider
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiRestTranslator, GeminiTranslator
 from autotrans.ui.overlay import OverlayWindow
@@ -29,6 +32,22 @@ class StubOCRProvider:
 
     def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
         return list(self._boxes)
+
+
+class BasicOCRProvider:
+    def __init__(self, boxes: list[OCRBox]) -> None:
+        self._boxes = boxes
+
+    def recognize(self, frame: Frame) -> list[OCRBox]:
+        return list(self._boxes)
+
+
+class LayoutAwareTestOCRProvider(BaseOCRProvider):
+    def recognize(self, frame: Frame) -> list[OCRBox]:
+        return []
+
+    def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
+        return []
 
 
 class StubLocalTranslator:
@@ -162,6 +181,20 @@ def test_translate_deep_boxes_prefers_cloud_when_available() -> None:
     assert all(item.translated_text.startswith("CLOUD:") for item in items)
 
 
+def test_deep_overlay_limit_is_more_permissive_than_live_limit() -> None:
+    config = _make_config()
+    config.overlay_max_groups = 8
+    orchestrator = PipelineOrchestrator(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        ocr_provider=StubOCRProvider(_make_boxes()),
+        local_translator=StubLocalTranslator(),
+        cloud_translator=StubCloudTranslator(),
+    )
+
+    assert orchestrator._deep_overlay_max_groups() == 24
+
+
 def test_prepare_deep_translation_uses_paragraph_ocr_when_available() -> None:
     config = _make_config()
     paragraph_boxes = [
@@ -185,6 +218,137 @@ def test_prepare_deep_translation_uses_paragraph_ocr_when_available() -> None:
     assert len(grouped_boxes) == 1
     assert grouped_boxes[0].source_text == "Quest Objective\nFind the lost relic"
     assert preview_items
+
+
+def test_prepare_deep_translation_does_not_fallback_to_heuristic_grouping() -> None:
+    config = _make_config()
+    separate_lines = [
+        OCRBox(
+            id="line-1",
+            source_text="Quest Objective",
+            confidence=0.95,
+            bbox=Rect(x=20, y=30, width=160, height=24),
+        ),
+        OCRBox(
+            id="line-2",
+            source_text="Find the lost relic",
+            confidence=0.94,
+            bbox=Rect(x=20, y=60, width=180, height=24),
+        ),
+    ]
+    orchestrator = PipelineOrchestrator(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        ocr_provider=BasicOCRProvider(separate_lines),
+        local_translator=StubLocalTranslator(),
+        cloud_translator=StubCloudTranslator(),
+    )
+
+    grouped_boxes, preview_items = orchestrator.prepare_deep_translation(100)
+
+    assert len(grouped_boxes) == 2
+    assert grouped_boxes[0].source_text == "Quest Objective"
+    assert grouped_boxes[1].source_text == "Find the lost relic"
+    assert preview_items
+
+
+def test_layout_region_merge_groups_lines_inside_text_region() -> None:
+    provider = LayoutAwareTestOCRProvider(_make_config())
+    line_boxes = [
+        OCRBox(
+            id="line-1",
+            source_text="Clan Adachi has been massacred.",
+            confidence=0.95,
+            bbox=Rect(x=40, y=40, width=220, height=24),
+        ),
+        OCRBox(
+            id="line-2",
+            source_text="Lady Masako is the only survivor.",
+            confidence=0.94,
+            bbox=Rect(x=42, y=70, width=240, height=24),
+        ),
+        OCRBox(
+            id="line-3",
+            source_text="REWARDS",
+            confidence=0.93,
+            bbox=Rect(x=340, y=42, width=100, height=24),
+        ),
+    ]
+    layout_regions = [
+        (Rect(x=20, y=20, width=280, height=100), "Text", 0.96),
+        (Rect(x=320, y=20, width=140, height=60), "Title", 0.92),
+    ]
+
+    merged = provider._merge_layout_regions(line_boxes, layout_regions)
+
+    assert len(merged) == 2
+    assert merged[0].source_text == "Clan Adachi has been massacred. Lady Masako is the only survivor."
+    assert merged[1].source_text == "REWARDS"
+
+
+def test_detect_layout_regions_accepts_numpy_arrays() -> None:
+    class LayoutResult:
+        def __init__(self) -> None:
+            self.boxes = np.array([[20, 30, 140, 90]], dtype=np.float32)
+            self.class_names = np.array(["Text"], dtype=object)
+            self.scores = np.array([0.91], dtype=np.float32)
+
+    class FakeRapidOCRProvider(RapidOCRProvider):
+        def __init__(self, config: AppConfig, result) -> None:
+            BaseOCRProvider.__init__(self, config)
+            self._layout_result = result
+            self._paddlex_layout_disabled = True
+            self._paddlex_layout_model = None
+            self._layout_disabled = False
+            self._layout_engine = None
+
+        def _get_layout_engine(self):
+            return lambda _image: self._layout_result
+
+    provider = FakeRapidOCRProvider(_make_config(), LayoutResult())
+
+    regions, elapsed_ms = provider._detect_layout_regions(_make_frame())
+
+    assert elapsed_ms >= 0.0
+    assert len(regions) == 1
+    assert regions[0][0] == Rect(x=20, y=30, width=120, height=60)
+    assert regions[0][1] == "Text"
+    assert regions[0][2] == pytest.approx(0.91)
+
+
+def test_detect_paddlex_layout_regions_parses_box_dicts() -> None:
+    class PaddleXModel:
+        def predict(self, _image):
+            yield {
+                "boxes": [
+                    {
+                        "label": "text",
+                        "score": 0.88,
+                        "coordinate": [30, 40, 180, 120],
+                    }
+                ]
+            }
+
+    class FakeRapidOCRProvider(RapidOCRProvider):
+        def __init__(self, config: AppConfig) -> None:
+            BaseOCRProvider.__init__(self, config)
+            self._paddlex_layout_model = PaddleXModel()
+            self._paddlex_layout_disabled = False
+            self._layout_disabled = True
+            self._layout_engine = None
+
+        def _get_paddlex_layout_model(self):
+            return self._paddlex_layout_model
+
+    provider = FakeRapidOCRProvider(_make_config())
+
+    regions, elapsed_ms = provider._detect_paddlex_layout_regions(_make_frame())
+
+    assert elapsed_ms >= 0.0
+    assert len(regions) == 1
+    assert regions[0][0] == Rect(x=30, y=40, width=150, height=80)
+    assert regions[0][1] == "text"
+    assert regions[0][2] == pytest.approx(0.88)
 
 
 def test_settings_dialog_hides_advanced_controls_by_default(qtbot, tmp_path) -> None:
@@ -272,13 +436,17 @@ def test_gemini_translator_builds_deep_contents_with_game_profile() -> None:
     system_instruction = translator._build_deep_system_instruction()
     prompt = translator._build_deep_translation_contents(_make_boxes())
 
-    assert "Game Profile va ngu canh:" in system_instruction
+    assert "Game Profile và ngữ cảnh:" in system_instruction
     assert "Game Title: Phi Tien Truyen" in system_instruction
     assert "World / Setting: The gioi tu tien, canh gioi phan minh" in system_instruction
     assert "Factions / Organizations: Thanh Van Mon, Huyet Sat Tông" in system_instruction
     assert "Characters & Honorifics: Han Lap - dao huu, su huynh" in system_instruction
     assert "Terms / Items / Skills: Linh thach, phap bao, ket dan" in system_instruction
-    assert "Game Profile va ngu canh:" not in prompt
+    assert "Ưu tiên trung thành với OCR hơn văn phong." in system_instruction
+    assert "Không được tự ý thêm ý" in system_instruction
+    assert "Game Profile và ngữ cảnh:" not in prompt
+    assert "Dịch sát nghĩa và ngắn gọn." in prompt
+    assert "Nếu input bị cắt do OCR thì chỉ dịch phần nhìn thấy" in prompt
     assert "<BLOCK_1>" in prompt
     assert "</BLOCK_2>" in prompt
 
@@ -295,9 +463,9 @@ def test_gemini_translator_omits_empty_game_profile_lines() -> None:
     prompt = translator._build_deep_translation_contents(_make_boxes())
 
     assert GEMINI_DEEP_SYSTEM_PROMPT in system_instruction
-    assert "Game Profile va ngu canh:" not in system_instruction
+    assert "Game Profile và ngữ cảnh:" not in system_instruction
     assert "Game Title:" not in system_instruction
-    assert "Game Profile va ngu canh:" not in prompt
+    assert "Game Profile và ngữ cảnh:" not in prompt
 
 
 def test_gemini_rest_translator_extracts_standard_message_content() -> None:
@@ -360,3 +528,39 @@ def test_overlay_keeps_persistent_items_after_live_items_clear(qtbot) -> None:
 
     assert overlay._persistent_items == [persistent]
     assert overlay._items == []
+
+
+def test_overlay_expands_text_rect_beyond_panel_when_needed(qtbot) -> None:
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+    overlay.resize(800, 600)
+
+    font, panel_rect, text_rect, text_flags = overlay._fit_font_and_panel(
+        "Ngu phong huong toi bo bien gan Kishi thao nguyen",
+        QRect(100, 100, 120, 28),
+        is_subtitle=False,
+    )
+    expanded = overlay._expanded_text_rect(
+        "Ngu phong huong toi bo bien gan Kishi thao nguyen",
+        font,
+        text_rect,
+        text_flags,
+        is_subtitle=False,
+    )
+
+    assert expanded.width() >= text_rect.width()
+    assert expanded.height() >= text_rect.height()
+
+
+def test_overlay_prefers_smaller_font_for_compact_box(qtbot) -> None:
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+    overlay.resize(800, 600)
+
+    font, _, _, _ = overlay._fit_font_and_panel(
+        "Hoi 1: Giai cuu Shimura lanh chua",
+        QRect(100, 100, 220, 28),
+        is_subtitle=False,
+    )
+
+    assert font.pointSize() <= 18

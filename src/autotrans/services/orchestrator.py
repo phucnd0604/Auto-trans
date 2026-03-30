@@ -416,7 +416,7 @@ class PipelineOrchestrator:
             ocr_boxes = self.ocr_provider.recognize(frame)
         ocr_boxes = self._dedupe_boxes(ocr_boxes)
         selected_boxes = self._select_deep_boxes(ocr_boxes)
-        grouped_boxes = selected_boxes if used_paragraph_ocr else self._group_boxes_for_deep_translation(selected_boxes)
+        grouped_boxes = selected_boxes
         self._log(
             f"deep ocr blocks raw={len(ocr_boxes)} selected={len(selected_boxes)} grouped={len(grouped_boxes)} paragraph_ocr={used_paragraph_ocr}"
         )
@@ -443,7 +443,10 @@ class PipelineOrchestrator:
             )
             for box in boxes
         ]
-        return self._limit_overlay_groups(sorted(pending_overlay_items, key=lambda item: (item.bbox.y, item.bbox.x)))
+        return self._limit_overlay_groups(
+            sorted(pending_overlay_items, key=lambda item: (item.bbox.y, item.bbox.x)),
+            max_groups=self._deep_overlay_max_groups(),
+        )
 
     def process_window(
         self,
@@ -611,7 +614,10 @@ class PipelineOrchestrator:
                 )
             )
 
-        overlay_items = self._limit_overlay_groups(sorted(overlay_items, key=lambda item: (item.bbox.y, item.bbox.x)))
+        overlay_items = self._limit_overlay_groups(
+            sorted(overlay_items, key=lambda item: (item.bbox.y, item.bbox.x)),
+            max_groups=self._deep_overlay_max_groups(),
+        )
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         self._log(
             f"deep translate completed in {elapsed_ms:.0f}ms "
@@ -802,8 +808,17 @@ class PipelineOrchestrator:
             self._log(f"grouped {merged_count} overlay box(es) into paragraph blocks")
         return self._limit_overlay_groups(merged_items)
 
-    def _limit_overlay_groups(self, items: list[OverlayItem]) -> list[OverlayItem]:
-        max_groups = max(self.config.overlay_max_groups, 0)
+    def _deep_overlay_max_groups(self) -> int:
+        base = max(self.config.overlay_max_groups, 0)
+        if base == 0:
+            return 0
+        return max(base * 3, 24)
+
+    def _limit_overlay_groups(self, items: list[OverlayItem], max_groups: int | None = None) -> list[OverlayItem]:
+        if max_groups is None:
+            max_groups = max(self.config.overlay_max_groups, 0)
+        else:
+            max_groups = max(max_groups, 0)
         if max_groups == 0 or len(items) <= max_groups:
             return items
 
