@@ -559,6 +559,17 @@ class GeminiRestTranslator(GeminiTranslator):
     name = "gemini-rest"
     _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
 
+    @staticmethod
+    def _normalize_response_payload(payload: object) -> dict[str, object]:
+        if isinstance(payload, dict):
+            return payload
+        if isinstance(payload, list):
+            for item in payload:
+                if isinstance(item, dict):
+                    return item
+            raise RuntimeError("Gemini REST returned a list without any object payload")
+        raise RuntimeError(f"Gemini REST returned unsupported payload type: {type(payload).__name__}")
+
     def _post_json(self, payload: dict[str, object]) -> dict[str, object]:
         if not self._api_key:
             raise RuntimeError("Gemini API key is required")
@@ -599,13 +610,33 @@ class GeminiRestTranslator(GeminiTranslator):
             parsed = json.loads(raw)
         except json.JSONDecodeError as exc:
             raise RuntimeError(f"Gemini REST invalid JSON response: {raw[:400]}") from exc
+        parsed = self._normalize_response_payload(parsed)
         error_payload = parsed.get("error")
         if isinstance(error_payload, dict):
             raise RuntimeError(f"Gemini REST API error: {json.dumps(error_payload, ensure_ascii=False)}")
         return parsed
 
     @staticmethod
-    def _extract_message_text(payload: dict[str, object]) -> str:
+    def _extract_content_text(content: object) -> str:
+        if isinstance(content, str):
+            return normalize_text(content).strip()
+        if isinstance(content, list):
+            fragments: list[str] = []
+            for item in content:
+                if isinstance(item, dict):
+                    item_type = normalize_text(str(item.get("type", ""))).strip().lower()
+                    if item_type not in {"", "text", "output_text"}:
+                        continue
+                    text_value = item.get("text")
+                    if isinstance(text_value, str) and text_value.strip():
+                        fragments.append(normalize_text(text_value).strip())
+            return normalize_text("\n".join(fragment for fragment in fragments if fragment)).strip()
+        return ""
+
+    @classmethod
+    def _extract_standard_choice_text(cls, payload: object) -> str:
+        if not isinstance(payload, dict):
+            return ""
         choices = payload.get("choices")
         if not isinstance(choices, list) or not choices:
             return ""
@@ -615,8 +646,31 @@ class GeminiRestTranslator(GeminiTranslator):
         message = first.get("message")
         if not isinstance(message, dict):
             return ""
-        content = message.get("content", "")
-        return normalize_text(str(content)).strip()
+        return cls._extract_content_text(message.get("content"))
+
+    @staticmethod
+    def _extract_message_text(payload: object) -> str:
+        if isinstance(payload, list):
+            for item in payload:
+                text = GeminiRestTranslator._extract_message_text(item)
+                if text:
+                    return text
+            return ""
+        text = GeminiRestTranslator._extract_standard_choice_text(payload)
+        if text:
+            return text
+        if not isinstance(payload, dict):
+            return ""
+        candidates = [
+            payload.get("output_text"),
+            payload.get("text"),
+            payload.get("content"),
+        ]
+        for candidate in candidates:
+            text = GeminiRestTranslator._extract_content_text(candidate)
+            if text:
+                return text
+        return ""
 
     def _generate_batch_text(self, contents: str) -> str:
         payload: dict[str, object] = {

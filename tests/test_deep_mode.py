@@ -7,7 +7,7 @@ import numpy as np
 from autotrans.config import AppConfig
 from autotrans.models import Frame, OCRBox, OverlayItem, OverlayStyle, QualityMode, Rect, TranslationResult
 from autotrans.services.orchestrator import PipelineOrchestrator
-from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiTranslator
+from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiRestTranslator, GeminiTranslator
 from autotrans.ui.overlay import OverlayWindow
 from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
 
@@ -25,6 +25,9 @@ class StubOCRProvider:
         self._boxes = boxes
 
     def recognize(self, frame: Frame) -> list[OCRBox]:
+        return list(self._boxes)
+
+    def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
         return list(self._boxes)
 
 
@@ -159,6 +162,31 @@ def test_translate_deep_boxes_prefers_cloud_when_available() -> None:
     assert all(item.translated_text.startswith("CLOUD:") for item in items)
 
 
+def test_prepare_deep_translation_uses_paragraph_ocr_when_available() -> None:
+    config = _make_config()
+    paragraph_boxes = [
+        OCRBox(
+            id="paragraph-1",
+            source_text="Quest Objective\nFind the lost relic",
+            confidence=0.95,
+            bbox=Rect(x=20, y=30, width=220, height=60),
+        )
+    ]
+    orchestrator = PipelineOrchestrator(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        ocr_provider=StubOCRProvider(paragraph_boxes),
+        local_translator=StubLocalTranslator(),
+        cloud_translator=StubCloudTranslator(),
+    )
+
+    grouped_boxes, preview_items = orchestrator.prepare_deep_translation(100)
+
+    assert len(grouped_boxes) == 1
+    assert grouped_boxes[0].source_text == "Quest Objective\nFind the lost relic"
+    assert preview_items
+
+
 def test_settings_dialog_hides_advanced_controls_by_default(qtbot, tmp_path) -> None:
     dialog = SettingsDialog(settings_path=tmp_path / "ui-settings.json")
     qtbot.addWidget(dialog)
@@ -270,6 +298,41 @@ def test_gemini_translator_omits_empty_game_profile_lines() -> None:
     assert "Game Profile va ngu canh:" not in system_instruction
     assert "Game Title:" not in system_instruction
     assert "Game Profile va ngu canh:" not in prompt
+
+
+def test_gemini_rest_translator_extracts_standard_message_content() -> None:
+    payload = {
+        "choices": [
+            {
+                "message": {
+                    "content": "<BLOCK_1>\nNHAT KY\n</BLOCK_1>",
+                }
+            }
+        ]
+    }
+
+    text = GeminiRestTranslator._extract_message_text(payload)
+
+    assert text == "<BLOCK_1> NHAT KY </BLOCK_1>"
+
+
+def test_gemini_rest_translator_extracts_text_parts_content() -> None:
+    payload = {
+        "choices": [
+            {
+                "message": {
+                    "content": [
+                        {"type": "text", "text": "<BLOCK_1>\nNHAT KY\n</BLOCK_1>"},
+                        {"type": "image", "image_url": "ignored"},
+                    ]
+                }
+            }
+        ]
+    }
+
+    text = GeminiRestTranslator._extract_message_text(payload)
+
+    assert text == "<BLOCK_1> NHAT KY </BLOCK_1>"
 
 
 def test_overlay_keeps_persistent_items_after_live_items_clear(qtbot) -> None:

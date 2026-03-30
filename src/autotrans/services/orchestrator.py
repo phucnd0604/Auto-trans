@@ -408,10 +408,18 @@ class PipelineOrchestrator:
 
         self._last_window_height = max(frame.window_rect.height, 1)
         self._last_window_width = max(frame.window_rect.width, 1)
-        ocr_boxes = self.ocr_provider.recognize(frame)
+        recognize_paragraphs = getattr(self.ocr_provider, "recognize_paragraphs", None)
+        used_paragraph_ocr = callable(recognize_paragraphs)
+        if used_paragraph_ocr:
+            ocr_boxes = recognize_paragraphs(frame)
+        else:
+            ocr_boxes = self.ocr_provider.recognize(frame)
         ocr_boxes = self._dedupe_boxes(ocr_boxes)
         selected_boxes = self._select_deep_boxes(ocr_boxes)
-        grouped_boxes = self._group_boxes_for_deep_translation(selected_boxes)
+        grouped_boxes = selected_boxes if used_paragraph_ocr else self._group_boxes_for_deep_translation(selected_boxes)
+        self._log(
+            f"deep ocr blocks raw={len(ocr_boxes)} selected={len(selected_boxes)} grouped={len(grouped_boxes)} paragraph_ocr={used_paragraph_ocr}"
+        )
         return [box for box in grouped_boxes if normalize_text(box.source_text)]
 
     def _deep_overlay_style(self) -> OverlayStyle:

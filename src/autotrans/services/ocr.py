@@ -16,6 +16,9 @@ class OCRProvider(Protocol):
     def recognize(self, frame: Frame) -> list[OCRBox]:
         ...
 
+    def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
+        ...
+
 
 class MockOCRProvider:
     name = "mock"
@@ -41,6 +44,9 @@ class MockOCRProvider:
                 line_id="line-1",
             ),
         ]
+
+    def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
+        return self.recognize(frame)
 
 
 class BaseOCRProvider:
@@ -214,7 +220,7 @@ class RapidOCRProvider(BaseOCRProvider):
         resized = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
         return resized, 1.0 / scale
 
-    def recognize(self, frame: Frame) -> list[OCRBox]:
+    def _run_engine(self, frame: Frame) -> tuple[list[OCRBox], float, float, float]:
         started = time.perf_counter()
         resize_started = started
         image, scale_back = self._resize_for_ocr(frame.image)
@@ -224,8 +230,7 @@ class RapidOCRProvider(BaseOCRProvider):
         predict_ms = (time.perf_counter() - predict_started) * 1000.0
         boxes: list[OCRBox] = []
         if not result:
-            self._log(f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms raw=0 merged=0 total={(time.perf_counter() - started) * 1000.0:.0f}ms")
-            return boxes
+            return boxes, resize_ms, predict_ms, (time.perf_counter() - started) * 1000.0
 
         for index, item in enumerate(result):
             points, text, confidence = item
@@ -251,12 +256,41 @@ class RapidOCRProvider(BaseOCRProvider):
                     line_id=f"rapid-{index}",
                 )
             )
+        total_ms = (time.perf_counter() - started) * 1000.0
+        return boxes, resize_ms, predict_ms, total_ms
 
+    def recognize(self, frame: Frame) -> list[OCRBox]:
+        boxes, resize_ms, predict_ms, total_ms = self._run_engine(frame)
+        if not boxes:
+            self._log(f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms raw=0 merged=0 total={total_ms:.0f}ms")
+            return boxes
         merge_started = time.perf_counter()
         merged = self._merge_line_boxes(boxes)
         merge_ms = (time.perf_counter() - merge_started) * 1000.0
         self._log(
-            f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} total={(time.perf_counter() - started) * 1000.0:.0f}ms"
+            f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} total={total_ms:.0f}ms"
         )
         return merged
+
+    def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
+        boxes, resize_ms, predict_ms, total_ms = self._run_engine(frame)
+        if not boxes:
+            self._log(f"rapid-deep resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms raw=0 lines=0 paragraphs=0 total={total_ms:.0f}ms")
+            return boxes
+        line_merge_started = time.perf_counter()
+        line_boxes = self._merge_line_boxes(boxes)
+        line_merge_ms = (time.perf_counter() - line_merge_started) * 1000.0
+        paragraph_merge_started = time.perf_counter()
+        paragraph_boxes = self._merge_paragraph_boxes(line_boxes)
+        paragraph_merge_ms = (time.perf_counter() - paragraph_merge_started) * 1000.0
+        self._log(
+            "rapid-deep "
+            f"resize={resize_ms:.0f}ms "
+            f"predict={predict_ms:.0f}ms "
+            f"line_merge={line_merge_ms:.0f}ms "
+            f"paragraph_merge={paragraph_merge_ms:.0f}ms "
+            f"raw={len(boxes)} lines={len(line_boxes)} paragraphs={len(paragraph_boxes)} "
+            f"total={total_ms:.0f}ms"
+        )
+        return paragraph_boxes
 
