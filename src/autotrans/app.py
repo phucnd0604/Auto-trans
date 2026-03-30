@@ -13,7 +13,7 @@ from autotrans.services.ocr import (
     RapidOCRProvider,
 )
 from autotrans.services.orchestrator import PipelineOrchestrator
-from autotrans.services.translation import OllamaTranslator, OpenAITranslator, build_default_local_translator
+from autotrans.services.translation import GeminiRestTranslator, GeminiTranslator, build_default_local_translator
 from autotrans.ui.global_hotkeys import GlobalHotkeyManager
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
@@ -74,48 +74,59 @@ def _build_ocr_provider(config: AppConfig):
 
 def _build_local_translator(config: AppConfig):
     provider = build_default_local_translator(config)
-    print(f"[AutoTrans] Local translator: {provider.name}", flush=True)
+    print("[AutoTrans] Local translator: ctranslate2", flush=True)
     return provider
 
 
 def _build_cloud_translator(config: AppConfig):
-    if config.cloud_provider == "openai":
-        try:
-            return OpenAITranslator(
-                model=config.openai_model,
-                base_url=config.openai_base_url,
-                api_key=config.openai_api_key,
-                timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
-                verbose=config.translation_log_enabled,
-                max_logged_items=config.translation_log_max_items,
-            )
-        except Exception as exc:
-            print(f"[AutoTrans] Cloud translator unavailable: {exc}", flush=True)
-            return None
-    if config.cloud_provider == "ollama":
-        try:
-            return OllamaTranslator(
-                model=config.openai_model,
-                base_url=config.openai_base_url,
-                timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
-                verbose=config.translation_log_enabled,
-                max_logged_items=config.translation_log_max_items,
-            )
-        except Exception as exc:
-            print(f"[AutoTrans] Ollama translator unavailable: {exc}", flush=True)
-            return None
-    return None
+    if not config.deep_translation_api_key:
+        print("[AutoTrans] Deep translator: disabled, fallback to ctranslate2", flush=True)
+        return None
+
+    try:
+        transport = config.deep_translation_transport.strip().lower() or "sdk"
+        translator_cls = GeminiRestTranslator if transport == "rest" else GeminiTranslator
+        translator = translator_cls(
+            model=config.deep_translation_model,
+            api_key=config.deep_translation_api_key,
+            config=config,
+            timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
+            verbose=config.translation_log_enabled,
+            max_logged_items=config.translation_log_max_items,
+        )
+        print(
+            f"[AutoTrans] Deep translator: {translator.name} model={config.deep_translation_model} transport={transport}",
+            flush=True,
+        )
+        return translator
+    except Exception as exc:
+        print(f"[AutoTrans] Deep translator unavailable, fallback to ctranslate2: {exc}", flush=True)
+        return None
 
 
 def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> AppConfig:
     config.ocr_provider = str(settings.get("ocr_provider", config.ocr_provider))
     config.capture_backend = str(settings.get("capture_backend", config.capture_backend))
-    config.local_translator_backend = str(settings.get("local_translator", config.local_translator_backend))
-    config.cloud_provider = str(settings.get("cloud_provider", config.cloud_provider))
-    config.openai_base_url = str(settings.get("openai_base_url", config.openai_base_url)).strip() or config.openai_base_url
-    raw_api_key = str(settings.get("openai_api_key", config.openai_api_key or "")).strip()
-    config.openai_api_key = raw_api_key or None
-    config.openai_model = str(settings.get("openai_model", config.openai_model)).strip() or config.openai_model
+    config.local_translator_backend = "ctranslate2"
+    raw_api_key = str(settings.get("deep_translation_api_key", config.deep_translation_api_key or "")).strip()
+    config.deep_translation_api_key = raw_api_key or None
+    config.deep_translation_model = (
+        str(settings.get("deep_translation_model", config.deep_translation_model)).strip()
+        or config.deep_translation_model
+    )
+    config.deep_translation_transport = (
+        str(settings.get("deep_translation_transport", config.deep_translation_transport)).strip().lower()
+        or config.deep_translation_transport
+    )
+    config.game_profile_title = str(settings.get("game_profile_title", config.game_profile_title)).strip()
+    config.game_profile_world = str(settings.get("game_profile_world", config.game_profile_world)).strip()
+    config.game_profile_factions = str(settings.get("game_profile_factions", config.game_profile_factions)).strip()
+    config.game_profile_characters_honorifics = str(
+        settings.get("game_profile_characters_honorifics", config.game_profile_characters_honorifics)
+    ).strip()
+    config.game_profile_terms_items_skills = str(
+        settings.get("game_profile_terms_items_skills", config.game_profile_terms_items_skills)
+    ).strip()
     config.subtitle_mode = bool(settings.get("subtitle_mode", config.subtitle_mode))
     config.ocr_crop_subtitle_only = bool(settings.get("ocr_crop_subtitle_only", config.ocr_crop_subtitle_only))
     config.capture_fps = float(settings.get("capture_fps", config.capture_fps))

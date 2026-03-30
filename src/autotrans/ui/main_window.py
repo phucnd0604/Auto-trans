@@ -2,6 +2,7 @@
 
 import ctypes
 import threading
+import time
 
 from PySide6.QtCore import QTimer, Qt, Signal
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from autotrans.config import AppConfig
+from autotrans.models import OverlayItem, OverlayStyle, Rect, VisibilityState
 from autotrans.services.capture import WindowInfo, WindowsWindowCapture
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.ui.global_hotkeys import GlobalHotkeyManager
@@ -29,9 +31,9 @@ from autotrans.ui.overlay import OverlayWindow
 class MainWindow(QMainWindow):
     pipeline_result = Signal(list)
     pipeline_error = Signal(str)
-    deep_translation_preview = Signal(object, list)
-    deep_translation_result = Signal(list)
-    deep_translation_error = Signal(str)
+    deep_translation_preview = Signal(int, object, list)
+    deep_translation_result = Signal(int, list)
+    deep_translation_error = Signal(int, str)
     _VK_CONTROL = 0x11
     _VK_SHIFT = 0x10
     _VK_INSERT = 0x2D
@@ -62,6 +64,9 @@ class MainWindow(QMainWindow):
         self._deep_translation_active = False
         self._deep_translation_visible = False
         self._deep_translation_processing = False
+        self._deep_translation_job_id = 0
+        self._deep_translation_started_at = 0.0
+        self._deep_translation_stage = ""
         self._hotkey_poll_state = {"pause": False, "overlay": False, "deep": False}
         self._user32 = getattr(ctypes, "windll", None)
 
@@ -131,6 +136,10 @@ class MainWindow(QMainWindow):
         self.follow_timer = QTimer(self)
         self.follow_timer.setInterval(100)
         self.follow_timer.timeout.connect(self._sync_overlay_geometry)
+
+        self.deep_translation_watchdog = QTimer(self)
+        self.deep_translation_watchdog.setInterval(500)
+        self.deep_translation_watchdog.timeout.connect(self._check_deep_translation_timeout)
 
         self.hotkey_poll_timer = QTimer(self)
         self.hotkey_poll_timer.setInterval(75)
@@ -309,10 +318,63 @@ class MainWindow(QMainWindow):
             self.overlay_button.setText("Hide Overlay")
             self.status_label.setText("Overlay visible")
 
+    def _current_deep_translation_timeout_ms(self) -> int:
+        return max(self.config.deep_translation_timeout_ms + 5000, 15000)
+
+    def _cancel_deep_translation(self) -> None:
+        self._deep_translation_processing = False
+        self._deep_translation_active = False
+        self._deep_translation_visible = False
+        self._deep_translation_job_id += 1
+        self.deep_translation_watchdog.stop()
+
+    def _build_deep_translation_message_overlay(self, message: str) -> list[OverlayItem]:
+        width = max(self.overlay.width(), 640)
+        height = max(self.overlay.height(), 360)
+        box_width = max(min(width - 48, 900), 320)
+        box_height = max(min(height // 4, 160), 72)
+        box_x = max((width - box_width) // 2, 24)
+        box_y = max((height - box_height) // 2, 24)
+        return [
+            OverlayItem(
+                bbox=Rect(x=box_x, y=box_y, width=box_width, height=box_height),
+                translated_text=message,
+                style=OverlayStyle(font_size=max(self.config.font_size, 18), background_opacity=0.9),
+                visibility_state=VisibilityState.PENDING,
+                tracking_key="deep-translation-status",
+                linger_seconds=0.0,
+                region="deep-ui",
+            )
+        ]
+
+    def _show_deep_translation_message(self, message: str) -> None:
+        self.overlay.clear_overlay_items()
+        self.overlay.set_persistent_overlay_items(self._build_deep_translation_message_overlay(message))
+        if self._overlay_enabled and not self.overlay.isVisible():
+            self.overlay.show()
+
+    def _check_deep_translation_timeout(self) -> None:
+        if not self._deep_translation_processing:
+            self.deep_translation_watchdog.stop()
+            return
+        elapsed_ms = (time.monotonic() - self._deep_translation_started_at) * 1000.0
+        timeout_ms = self._current_deep_translation_timeout_ms()
+        if elapsed_ms < timeout_ms:
+            return
+        stage = self._deep_translation_stage or "request"
+        self._cancel_deep_translation()
+        self.deep_translate_button.setText("Deep Translate")
+        message = (
+            f"Deep translation timeout sau {int(elapsed_ms)}ms o buoc {stage}. "
+            "Kiem tra Gemini API key, mang va log."
+        )
+        print(f"[AutoTrans] {message}", flush=True)
+        self.status_label.setText(message)
+        self._show_deep_translation_message(message)
+
     def toggle_deep_translation(self) -> None:
         if self._deep_translation_active:
-            self._deep_translation_active = False
-            self._deep_translation_visible = False
+            self._cancel_deep_translation()
             self.overlay.clear_persistent_overlay_items()
             self.deep_translate_button.setText("Deep Translate")
             self.status_label.setText("Deep translation hidden")
@@ -328,13 +390,21 @@ class MainWindow(QMainWindow):
 
         self._deep_translation_active = True
         self._deep_translation_processing = True
+        self._deep_translation_job_id += 1
+        self._deep_translation_started_at = time.monotonic()
+        self._deep_translation_stage = "prepare"
         self.deep_translate_button.setText("Translating...")
         self.status_label.setText("Running deep translation for the full game screen...")
-        self.overlay.clear_overlay_items()
+        self._show_deep_translation_message("Dang phan tich man hinh de dich chuyen sau...")
+        self.deep_translation_watchdog.start()
         if self._overlay_enabled and not self.overlay.isVisible():
             self.overlay.show()
         print(f"[AutoTrans] Starting deep translation for hwnd {self._selected_hwnd}", flush=True)
-        worker = threading.Thread(target=self._prepare_deep_translation_background, args=(self._selected_hwnd,), daemon=True)
+        worker = threading.Thread(
+            target=self._prepare_deep_translation_background,
+            args=(self._deep_translation_job_id, self._selected_hwnd),
+            daemon=True,
+        )
         worker.start()
 
     def _on_window_selected(self) -> None:
@@ -398,21 +468,24 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             self.pipeline_error.emit(str(exc))
 
-    def _prepare_deep_translation_background(self, hwnd: int) -> None:
+    def _prepare_deep_translation_background(self, job_id: int, hwnd: int) -> None:
         try:
             grouped_boxes, preview_items = self.orchestrator.prepare_deep_translation(hwnd)
-            self.deep_translation_preview.emit(grouped_boxes, preview_items)
+            self.deep_translation_preview.emit(job_id, grouped_boxes, preview_items)
         except Exception as exc:
-            self.deep_translation_error.emit(str(exc))
+            self.deep_translation_error.emit(job_id, str(exc))
 
-    def _translate_deep_translation_background(self, grouped_boxes) -> None:
+    def _translate_deep_translation_background(self, job_id: int, grouped_boxes) -> None:
         try:
             overlay_items = self.orchestrator.translate_deep_boxes(grouped_boxes)
-            self.deep_translation_result.emit(overlay_items)
+            self.deep_translation_result.emit(job_id, overlay_items)
         except Exception as exc:
-            self.deep_translation_error.emit(str(exc))
+            self.deep_translation_error.emit(job_id, str(exc))
 
-    def _apply_deep_translation_preview(self, grouped_boxes, overlay_items) -> None:
+    def _apply_deep_translation_preview(self, job_id: int, grouped_boxes, overlay_items) -> None:
+        if job_id != self._deep_translation_job_id:
+            return
+        self._deep_translation_stage = "translate"
         self.overlay.clear_overlay_items()
         self.overlay.set_persistent_overlay_items(overlay_items)
         if self._overlay_enabled and not self.overlay.isVisible():
@@ -421,12 +494,13 @@ class MainWindow(QMainWindow):
             self.status_label.setText(f"Detected {len(overlay_items)} deep text block(s), translating...")
             worker = threading.Thread(
                 target=self._translate_deep_translation_background,
-                args=(grouped_boxes,),
+                args=(job_id, grouped_boxes),
                 daemon=True,
             )
             worker.start()
         else:
             self._deep_translation_processing = False
+            self.deep_translation_watchdog.stop()
             self.deep_translate_button.setText("Deep Translate")
             self.status_label.setText("Deep translation found no usable text blocks.")
 
@@ -461,8 +535,11 @@ class MainWindow(QMainWindow):
         if self._running and self._rerun_requested and self._selected_hwnd is not None:
             self._start_pipeline_worker(self._selected_hwnd)
 
-    def _apply_deep_translation_result(self, overlay_items) -> None:
+    def _apply_deep_translation_result(self, job_id: int, overlay_items) -> None:
+        if job_id != self._deep_translation_job_id:
+            return
         self._deep_translation_processing = False
+        self.deep_translation_watchdog.stop()
         self.overlay.clear_overlay_items()
         self.overlay.set_persistent_overlay_items(overlay_items)
         self._deep_translation_visible = bool(overlay_items)
@@ -477,12 +554,13 @@ class MainWindow(QMainWindow):
         else:
             self.status_label.setText("Deep translation found no usable text blocks.")
 
-    def _apply_deep_translation_error(self, message: str) -> None:
-        self._deep_translation_processing = False
-        self._deep_translation_active = False
-        self._deep_translation_visible = False
+    def _apply_deep_translation_error(self, job_id: int, message: str) -> None:
+        if job_id != self._deep_translation_job_id:
+            return
+        self._cancel_deep_translation()
         self.deep_translate_button.setText("Deep Translate")
-        self.overlay.clear_persistent_overlay_items()
         print(f"[AutoTrans] Deep translation error: {message}", flush=True)
-        self.status_label.setText(f"Deep translation error: {message}")
+        error_message = f"Deep translation error: {message}"
+        self.status_label.setText(error_message)
+        self._show_deep_translation_message(error_message)
 

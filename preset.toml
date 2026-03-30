@@ -4,9 +4,7 @@
 # - tests/videos/test.mp4
 # - tests/videos/test2.mp4
 #
-# It is not auto-loaded by the app yet.
-# Use it as a single place to review and tweak the values before copying them
-# into env vars, startup settings, or future preset-loading code.
+# Startup settings load this file as the default baseline.
 
 [capture]
 # Capture backend:
@@ -46,11 +44,14 @@ preprocess = false
 languages = ["en", "jp"]
 
 [translation]
-# Local translator backend.
+# Local translation is fixed to ctranslate2 in the runtime app.
 local_translator = "ctranslate2"
 
-# Current local model.
-model_repo = "quickmt/quickmt-en-vi"
+# Deep translation uses Gemini when an API key is provided in startup settings.
+# The preset still keeps the legacy key name `openai_model` for compatibility.
+openai_model = "gemini-2.0-flash"
+
+# Game-specific Gemini context is stored in ui-settings.json via game_profile_* fields.
 
 # Stable scans before translation/render.
 # 1 keeps response immediate; raising it reduces flicker but delays updates.

@@ -24,7 +24,7 @@ from autotrans.services.ocr import OCRProvider
 from autotrans.services.policy import ProviderPolicy
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.tracker import OCRTracker
-from autotrans.services.translation import OllamaTranslator, OpenAITranslator, TranslatorProvider
+from autotrans.services.translation import TranslatorProvider
 from autotrans.utils.text import canonicalize_text, is_probably_garbage_text, normalize_text, tokenize_words
 
 
@@ -62,9 +62,7 @@ class PipelineOrchestrator:
 
     def _select_deep_translator(self) -> tuple[TranslatorProvider, str]:
         translator = self.cloud_translator
-        if isinstance(translator, OllamaTranslator) and self._network_available():
-            return translator, "cloud"
-        if isinstance(translator, OpenAITranslator) and self.config.openai_api_key and self._network_available():
+        if translator is not None and self._network_available():
             return translator, "cloud"
         return self.local_translator, "local"
 
@@ -73,10 +71,8 @@ class PipelineOrchestrator:
             print(f"[AutoTrans] {message}", flush=True)
 
     def _network_available(self) -> bool:
-        if self.config.cloud_is_localhost():
-            return True
         try:
-            socket.gethostbyname(self.config.cloud_base_host())
+            socket.gethostbyname(self.config.deep_translation_host())
             return True
         except OSError:
             return False
@@ -552,17 +548,12 @@ class PipelineOrchestrator:
         if pending:
             translate_started = time.perf_counter()
             try:
-                translated: list[TranslationResult] = []
-                batches = self._split_deep_batches(pending)
-                self._log(f"deep batches={len(batches)} pending={len(pending)} translator={translator_name}")
-                for batch in batches:
-                    translated.extend(
-                        translator.translate_screen_blocks(
-                            items=batch,
-                            source_lang=self.config.source_lang,
-                            target_lang=self.config.target_lang,
-                        )
-                    )
+                self._log(f"deep request pending={len(pending)} translator={translator_name}")
+                translated = translator.translate_screen_blocks(
+                    items=pending,
+                    source_lang=self.config.source_lang,
+                    target_lang=self.config.target_lang,
+                )
             except Exception as exc:
                 if translator is self.local_translator:
                     raise
@@ -571,15 +562,11 @@ class PipelineOrchestrator:
                 translator_kind = "local"
                 translator_name = getattr(translator, "name", translator_kind)
                 deep_glossary_version = f"{self.config.glossary_version}:deep:{translator_name}"
-                translated = []
-                for batch in self._split_deep_batches(pending):
-                    translated.extend(
-                        translator.translate_screen_blocks(
-                            items=batch,
-                            source_lang=self.config.source_lang,
-                            target_lang=self.config.target_lang,
-                        )
-                    )
+                translated = translator.translate_screen_blocks(
+                    items=pending,
+                    source_lang=self.config.source_lang,
+                    target_lang=self.config.target_lang,
+                )
             self._last_translate_step_ms = (time.perf_counter() - translate_started) * 1000.0
             for item in translated:
                 key = canonicalize_text(item.source_text)

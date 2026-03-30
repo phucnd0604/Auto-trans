@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from autotrans.config import AppConfig
 from autotrans.models import Frame, QualityMode, Rect
 from autotrans.services.ocr import RapidOCRProvider
-from autotrans.services.translation import OpenAITranslator, build_default_local_translator
+from autotrans.services.translation import GeminiTranslator, build_default_local_translator
 
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -118,11 +118,11 @@ def main() -> None:
     config = AppConfig()
     config.ocr_provider = "rapidocr"
     provider = RapidOCRProvider(config)
-    if config.cloud_provider == "openai" and config.openai_base_url:
-        translator = OpenAITranslator(
-            model=config.openai_model,
-            base_url=config.openai_base_url,
-            api_key=config.openai_api_key,
+    if config.deep_translation_api_key:
+        translator = GeminiTranslator(
+            model=config.deep_translation_model,
+            api_key=config.deep_translation_api_key,
+            config=config,
         )
     else:
         translator = build_default_local_translator(config)

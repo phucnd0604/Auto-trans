@@ -4,7 +4,6 @@ import sys
 from dataclasses import dataclass
 from os import cpu_count, getenv
 from pathlib import Path
-from urllib.parse import urlparse
 
 
 def _default_app_root_dir() -> Path:
@@ -104,7 +103,7 @@ class AppConfig:
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
     capture_backend: str = getenv("AUTOTRANS_CAPTURE_BACKEND", "mss")
     local_model_enabled: bool = getenv("AUTOTRANS_LOCAL_MODEL_ENABLED", "0") != "0"
-    local_translator_backend: str = getenv("AUTOTRANS_LOCAL_TRANSLATOR", "ctranslate2")
+    local_translator_backend: str = "ctranslate2"
     local_model_path: str | None = getenv("AUTOTRANS_LOCAL_MODEL_PATH") or None
     local_model_repo: str = getenv("AUTOTRANS_LOCAL_MODEL_REPO", "quickmt/quickmt-en-vi")
     local_model_dir: Path = _DEFAULT_MODEL_DIR
@@ -120,12 +119,16 @@ class AppConfig:
     log_dir: Path = _DEFAULT_LOG_DIR
     log_max_lines: int = int(getenv("AUTOTRANS_LOG_MAX_LINES", "10000"))
     log_trim_to_lines: int = int(getenv("AUTOTRANS_LOG_TRIM_TO_LINES", "5000"))
-    cloud_provider: str = getenv("AUTOTRANS_CLOUD_PROVIDER", "none")
-    openai_base_url: str = getenv("AUTOTRANS_OPENAI_BASE_URL", "https://api.openai.com/v1")
-    openai_api_key: str | None = getenv("AUTOTRANS_OPENAI_API_KEY") or getenv("OPENAI_API_KEY") or None
-    openai_model: str = getenv("AUTOTRANS_OPENAI_MODEL", "gpt-5-mini")
+    deep_translation_api_key: str | None = getenv("AUTOTRANS_DEEP_TRANSLATION_API_KEY") or None
+    deep_translation_model: str = getenv("AUTOTRANS_DEEP_TRANSLATION_MODEL", "gemini-2.0-flash")
+    deep_translation_transport: str = getenv("AUTOTRANS_DEEP_TRANSLATION_TRANSPORT", "sdk")
+    game_profile_title: str = getenv("AUTOTRANS_GAME_PROFILE_TITLE", "")
+    game_profile_world: str = getenv("AUTOTRANS_GAME_PROFILE_WORLD", "")
+    game_profile_factions: str = getenv("AUTOTRANS_GAME_PROFILE_FACTIONS", "")
+    game_profile_characters_honorifics: str = getenv("AUTOTRANS_GAME_PROFILE_CHARACTERS_HONORIFICS", "")
+    game_profile_terms_items_skills: str = getenv("AUTOTRANS_GAME_PROFILE_TERMS_ITEMS_SKILLS", "")
     cloud_timeout_ms: int = int(getenv("AUTOTRANS_CLOUD_TIMEOUT_MS", "2500"))
-    deep_translation_timeout_ms: int = int(getenv("AUTOTRANS_DEEP_TRANSLATION_TIMEOUT_MS", "15000"))
+    deep_translation_timeout_ms: int = int(getenv("AUTOTRANS_DEEP_TRANSLATION_TIMEOUT_MS", "90000"))
     local_max_chars_balanced: int = int(getenv("AUTOTRANS_LOCAL_MAX_CHARS_BALANCED", "64"))
     debounce_frames: int = int(getenv("AUTOTRANS_DEBOUNCE_FRAMES", "1"))
     cache_size: int = int(getenv("AUTOTRANS_CACHE_SIZE", "1024"))
@@ -145,11 +148,8 @@ class AppConfig:
     def translation_mode(self) -> str:
         return self.mode
 
-    def cloud_is_localhost(self) -> bool:
-        hostname = (urlparse(self.openai_base_url).hostname or "").lower()
-        return hostname in {"localhost", "127.0.0.1", "::1"}
-
-    def cloud_base_host(self) -> str:
-        return (urlparse(self.openai_base_url).hostname or "").strip()
+    @staticmethod
+    def deep_translation_host() -> str:
+        return "generativelanguage.googleapis.com"
 
 

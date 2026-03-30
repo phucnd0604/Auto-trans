@@ -15,26 +15,48 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QSpinBox,
+    QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 
 DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "ocr_provider": "rapidocr",
-    "capture_backend": "bettercam",
-    "local_translator": "ctranslate2",
-    "cloud_provider": "none",
-    "openai_base_url": "https://api.openai.com/v1",
-    "openai_api_key": "",
-    "openai_model": "gpt-5-mini",
-    "subtitle_mode": False,
-    "ocr_crop_subtitle_only": False,
-    "capture_fps": 1.0,
+    "capture_backend": "printwindow",
+    "capture_fps": 4.0,
+    "subtitle_mode": True,
+    "ocr_crop_subtitle_only": True,
     "overlay_fps": 30,
     "overlay_ttl_seconds": 1.5,
     "translation_log_enabled": True,
     "font_size": 18,
+    "deep_translation_api_key": "",
+    "deep_translation_model": "gemini-2.0-flash",
+    "deep_translation_transport": "sdk",
+    "game_profile_title": "",
+    "game_profile_world": "",
+    "game_profile_factions": "",
+    "game_profile_characters_honorifics": "",
+    "game_profile_terms_items_skills": "",
+    "advanced_settings": False,
 }
+
+
+def _normalize_loaded_settings(settings: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(settings)
+    if "deep_translation_api_key" not in normalized:
+        normalized["deep_translation_api_key"] = str(normalized.get("openai_api_key", "")).strip()
+    if "deep_translation_model" not in normalized:
+        model = str(normalized.get("openai_model", "")).strip()
+        normalized["deep_translation_model"] = model or DEFAULT_STARTUP_SETTINGS["deep_translation_model"]
+    transport = str(normalized.get("deep_translation_transport", DEFAULT_STARTUP_SETTINGS["deep_translation_transport"])).strip().lower()
+    normalized["deep_translation_transport"] = transport if transport in {"sdk", "rest"} else DEFAULT_STARTUP_SETTINGS["deep_translation_transport"]
+    normalized.pop("local_translator", None)
+    normalized.pop("cloud_provider", None)
+    normalized.pop("deep_translation_base_url", None)
+    normalized.pop("openai_base_url", None)
+    return normalized
 
 
 def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
@@ -57,20 +79,12 @@ def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
         settings["capture_backend"] = capture["backend"]
     if "provider" in ocr:
         settings["ocr_provider"] = ocr["provider"]
-    if "local_translator" in translation:
-        settings["local_translator"] = translation["local_translator"]
-    if "cloud_provider" in translation:
-        settings["cloud_provider"] = translation["cloud_provider"]
-    if "openai_base_url" in translation:
-        settings["openai_base_url"] = translation["openai_base_url"]
-    if "openai_model" in translation:
-        settings["openai_model"] = translation["openai_model"]
+    if "fps" in capture:
+        settings["capture_fps"] = float(capture["fps"])
     if "mode" in subtitle:
         settings["subtitle_mode"] = bool(subtitle["mode"])
     if "crop_subtitle_only" in subtitle:
         settings["ocr_crop_subtitle_only"] = bool(subtitle["crop_subtitle_only"])
-    if "fps" in capture:
-        settings["capture_fps"] = float(capture["fps"])
     if "fps" in overlay:
         settings["overlay_fps"] = int(overlay["fps"])
     if "ttl_seconds" in overlay:
@@ -79,7 +93,9 @@ def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
         settings["font_size"] = int(overlay["font_size"])
     if "translation_log_enabled" in logging:
         settings["translation_log_enabled"] = bool(logging["translation_log_enabled"])
-    return settings
+    if "openai_model" in translation:
+        settings["deep_translation_model"] = str(translation["openai_model"]).strip()
+    return _normalize_loaded_settings(settings)
 
 
 class SettingsDialog(QDialog):
@@ -88,54 +104,60 @@ class SettingsDialog(QDialog):
         self._settings_path = settings_path
         settings = dict(DEFAULT_STARTUP_SETTINGS)
         if initial_settings:
-            settings.update(initial_settings)
+            settings.update(_normalize_loaded_settings(initial_settings))
 
         self.setWindowTitle("AutoTrans Settings")
         self.resize(520, 420)
 
+        self.deep_translation_api_key_edit = QLineEdit(str(settings["deep_translation_api_key"]))
+        self.deep_translation_api_key_edit.setEchoMode(QLineEdit.Password)
+        self.deep_translation_api_key_edit.setPlaceholderText("Nhap Gemini API key, de trong se fallback sang ctranslate2")
+
+        self.game_profile_title_edit = QLineEdit(str(settings["game_profile_title"]))
+        self.game_profile_title_edit.setPlaceholderText("Ten game")
+
+        self.game_profile_world_edit = QTextEdit()
+        self.game_profile_world_edit.setPlainText(str(settings["game_profile_world"]))
+        self.game_profile_world_edit.setPlaceholderText("Bo canh, the gioi, thoi dai, he thong suc manh")
+        self.game_profile_world_edit.setFixedHeight(56)
+
+        self.game_profile_factions_edit = QTextEdit()
+        self.game_profile_factions_edit.setPlainText(str(settings["game_profile_factions"]))
+        self.game_profile_factions_edit.setPlaceholderText("Tong mon, the luc, to chuc, phe phai")
+        self.game_profile_factions_edit.setFixedHeight(56)
+
+        self.game_profile_characters_honorifics_edit = QTextEdit()
+        self.game_profile_characters_honorifics_edit.setPlainText(str(settings["game_profile_characters_honorifics"]))
+        self.game_profile_characters_honorifics_edit.setPlaceholderText("Nhan vat chinh va danh xung nen dung")
+        self.game_profile_characters_honorifics_edit.setFixedHeight(56)
+
+        self.game_profile_terms_items_skills_edit = QTextEdit()
+        self.game_profile_terms_items_skills_edit.setPlainText(str(settings["game_profile_terms_items_skills"]))
+        self.game_profile_terms_items_skills_edit.setPlaceholderText("Thuat ngu, vat pham, ky nang, canh gioi")
+        self.game_profile_terms_items_skills_edit.setFixedHeight(56)
+
+        self.advanced_check = QCheckBox("Advanced")
+        self.advanced_check.setChecked(bool(settings["advanced_settings"]))
+
         self.ocr_provider_combo = QComboBox()
         self.ocr_provider_combo.addItems(["rapidocr"])
-        selected_ocr_provider = str(settings["ocr_provider"])
-        if selected_ocr_provider not in {"rapidocr"}:
-            selected_ocr_provider = "rapidocr"
-        self.ocr_provider_combo.setCurrentText(selected_ocr_provider)
+        self.ocr_provider_combo.setCurrentText(str(settings["ocr_provider"]))
 
         self.capture_backend_combo = QComboBox()
-        self.capture_backend_combo.addItems(["bettercam", "printwindow", "mss"])
+        self.capture_backend_combo.addItems(["printwindow", "bettercam", "mss"])
         self.capture_backend_combo.setCurrentText(str(settings["capture_backend"]))
-
-        self.local_translator_combo = QComboBox()
-        self.local_translator_combo.addItems(["ctranslate2", "word"])
-        selected_local_translator = str(settings["local_translator"])
-        if selected_local_translator not in {"ctranslate2", "word"}:
-            selected_local_translator = "ctranslate2"
-        self.local_translator_combo.setCurrentText(selected_local_translator)
-
-        self.cloud_provider_combo = QComboBox()
-        self.cloud_provider_combo.addItems(["none", "openai", "ollama"])
-        self.cloud_provider_combo.setCurrentText(str(settings["cloud_provider"]))
-
-        self.openai_base_url_edit = QLineEdit(str(settings["openai_base_url"]))
-        self.openai_base_url_edit.setPlaceholderText("https://openrouter.ai/api/v1 or http://ubuntu-server:11434")
-
-        self.openai_api_key_edit = QLineEdit(str(settings["openai_api_key"]))
-        self.openai_api_key_edit.setEchoMode(QLineEdit.Password)
-        self.openai_api_key_edit.setPlaceholderText("OpenAI/OpenRouter key, or leave empty for Ollama")
-
-        self.openai_model_edit = QLineEdit(str(settings["openai_model"]))
-        self.openai_model_edit.setPlaceholderText("openai/gpt-4.1-mini or qwen2.5:3b")
-
-        self.subtitle_mode_check = QCheckBox("Enable subtitle mode")
-        self.subtitle_mode_check.setChecked(bool(settings["subtitle_mode"]))
-
-        self.crop_subtitle_check = QCheckBox("Crop OCR to subtitle region only")
-        self.crop_subtitle_check.setChecked(bool(settings["ocr_crop_subtitle_only"]))
 
         self.capture_fps_spin = QDoubleSpinBox()
         self.capture_fps_spin.setRange(0.2, 10.0)
         self.capture_fps_spin.setDecimals(1)
         self.capture_fps_spin.setSingleStep(0.5)
         self.capture_fps_spin.setValue(float(settings["capture_fps"]))
+
+        self.subtitle_mode_check = QCheckBox("Enable subtitle mode")
+        self.subtitle_mode_check.setChecked(bool(settings["subtitle_mode"]))
+
+        self.crop_subtitle_check = QCheckBox("Crop OCR to subtitle region only")
+        self.crop_subtitle_check.setChecked(bool(settings["ocr_crop_subtitle_only"]))
 
         self.overlay_fps_spin = QSpinBox()
         self.overlay_fps_spin.setRange(5, 60)
@@ -154,29 +176,51 @@ class SettingsDialog(QDialog):
         self.translation_log_check = QCheckBox("Enable translation log")
         self.translation_log_check.setChecked(bool(settings["translation_log_enabled"]))
 
-        form = QFormLayout()
-        form.addRow("OCR Provider", self.ocr_provider_combo)
-        form.addRow("Capture Backend", self.capture_backend_combo)
-        form.addRow("Local Translator", self.local_translator_combo)
-        form.addRow("Cloud Provider", self.cloud_provider_combo)
-        form.addRow("Cloud Base URL", self.openai_base_url_edit)
-        form.addRow("Cloud API Key", self.openai_api_key_edit)
-        form.addRow("Cloud Model", self.openai_model_edit)
-        form.addRow("Capture FPS", self.capture_fps_spin)
-        form.addRow("Overlay FPS", self.overlay_fps_spin)
-        form.addRow("Overlay TTL (s)", self.overlay_ttl_spin)
-        form.addRow("Font Size", self.font_size_spin)
-        form.addRow("Subtitle Mode", self.subtitle_mode_check)
-        form.addRow("Subtitle Crop", self.crop_subtitle_check)
-        form.addRow("Logging", self.translation_log_check)
+        self.deep_translation_model_edit = QLineEdit(str(settings["deep_translation_model"]))
+        self.deep_translation_model_edit.setPlaceholderText("gemini-2.0-flash")
+
+        self.deep_translation_transport_combo = QComboBox()
+        self.deep_translation_transport_combo.addItems(["sdk", "rest"])
+        self.deep_translation_transport_combo.setCurrentText(str(settings["deep_translation_transport"]))
+
+        deep_form = QFormLayout()
+        deep_form.addRow("Gemini API Key", self.deep_translation_api_key_edit)
+        deep_form.addRow("Game Title", self.game_profile_title_edit)
+        deep_form.addRow("World / Setting", self.game_profile_world_edit)
+        deep_form.addRow("Factions / Organizations", self.game_profile_factions_edit)
+        deep_form.addRow("Characters & Honorifics", self.game_profile_characters_honorifics_edit)
+        deep_form.addRow("Terms / Items / Skills", self.game_profile_terms_items_skills_edit)
+
+        advanced_form = QFormLayout()
+        advanced_form.addRow("OCR Provider", self.ocr_provider_combo)
+        advanced_form.addRow("Capture Backend", self.capture_backend_combo)
+        advanced_form.addRow("Capture FPS", self.capture_fps_spin)
+        advanced_form.addRow("Subtitle Mode", self.subtitle_mode_check)
+        advanced_form.addRow("Subtitle Crop", self.crop_subtitle_check)
+        advanced_form.addRow("Overlay FPS", self.overlay_fps_spin)
+        advanced_form.addRow("Overlay TTL (s)", self.overlay_ttl_spin)
+        advanced_form.addRow("Font Size", self.font_size_spin)
+        advanced_form.addRow("Logging", self.translation_log_check)
+        advanced_form.addRow("Gemini Model", self.deep_translation_model_edit)
+        advanced_form.addRow("Gemini Transport", self.deep_translation_transport_combo)
+
+        self.advanced_container = QWidget()
+        self.advanced_container.setLayout(advanced_form)
+        self.advanced_container.setVisible(self.advanced_check.isChecked())
+        self.advanced_check.toggled.connect(self.advanced_container.setVisible)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Review startup settings, then press OK to open AutoTrans."))
-        layout.addLayout(form)
+        layout.addWidget(QLabel("Deep Translation"))
+        layout.addWidget(
+            QLabel("Deep translation mac dinh dung Gemini. Neu khong nhap API key, he thong se fallback sang ctranslate2.")
+        )
+        layout.addLayout(deep_form)
+        layout.addWidget(self.advanced_check)
+        layout.addWidget(self.advanced_container)
         layout.addWidget(buttons)
         self.setLayout(layout)
 
@@ -184,18 +228,22 @@ class SettingsDialog(QDialog):
         return {
             "ocr_provider": self.ocr_provider_combo.currentText(),
             "capture_backend": self.capture_backend_combo.currentText(),
-            "local_translator": self.local_translator_combo.currentText(),
-            "cloud_provider": self.cloud_provider_combo.currentText(),
-            "openai_base_url": self.openai_base_url_edit.text().strip(),
-            "openai_api_key": self.openai_api_key_edit.text().strip(),
-            "openai_model": self.openai_model_edit.text().strip(),
+            "capture_fps": self.capture_fps_spin.value(),
             "subtitle_mode": self.subtitle_mode_check.isChecked(),
             "ocr_crop_subtitle_only": self.crop_subtitle_check.isChecked(),
-            "capture_fps": self.capture_fps_spin.value(),
             "overlay_fps": self.overlay_fps_spin.value(),
             "overlay_ttl_seconds": self.overlay_ttl_spin.value(),
             "translation_log_enabled": self.translation_log_check.isChecked(),
             "font_size": self.font_size_spin.value(),
+            "deep_translation_api_key": self.deep_translation_api_key_edit.text().strip(),
+            "deep_translation_model": self.deep_translation_model_edit.text().strip(),
+            "deep_translation_transport": self.deep_translation_transport_combo.currentText(),
+            "game_profile_title": self.game_profile_title_edit.text().strip(),
+            "game_profile_world": self.game_profile_world_edit.toPlainText().strip(),
+            "game_profile_factions": self.game_profile_factions_edit.toPlainText().strip(),
+            "game_profile_characters_honorifics": self.game_profile_characters_honorifics_edit.toPlainText().strip(),
+            "game_profile_terms_items_skills": self.game_profile_terms_items_skills_edit.toPlainText().strip(),
+            "advanced_settings": self.advanced_check.isChecked(),
         }
 
     def accept(self) -> None:
@@ -215,7 +263,7 @@ def load_startup_settings(settings_path: Path) -> dict[str, Any]:
         try:
             loaded = json.loads(settings_path.read_text(encoding="utf-8"))
             if isinstance(loaded, dict):
-                settings.update(loaded)
+                settings.update(_normalize_loaded_settings(loaded))
         except Exception:
             pass
-    return settings
+    return _normalize_loaded_settings(settings)
