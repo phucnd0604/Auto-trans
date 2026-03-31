@@ -354,9 +354,8 @@ class OverlayWindow(QWidget):
         current_top = max(base_bottom - total_height, 0)
 
         colors = [
-            QColor(90, 220, 255),
-                QColor(90, 220, 255),
-            ]
+            QColor(255, 251, 0),
+        ]
         layout: list[tuple[OverlayItem, QRect, QRect, float, QColor]] = []
         for index, (item, panel_rect, text_rect, alpha, _) in enumerate(prepared):
             resolved_panel = QRect(panel_rect)

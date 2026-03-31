@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 import tomllib
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -12,8 +13,10 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
+    QSizePolicy,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,
@@ -106,7 +109,8 @@ class SettingsDialog(QDialog):
             settings.update(_normalize_loaded_settings(initial_settings))
 
         self.setWindowTitle("AutoTrans Settings")
-        self.resize(520, 420)
+        self.resize(760, 420)
+        self.setMinimumWidth(720)
 
         self.deep_translation_api_key_edit = QLineEdit(str(settings["deep_translation_api_key"]))
         self.deep_translation_api_key_edit.setEchoMode(QLineEdit.Password)
@@ -178,7 +182,31 @@ class SettingsDialog(QDialog):
         self.deep_translation_model_edit = QLineEdit(str(settings["deep_translation_model"]))
         self.deep_translation_model_edit.setPlaceholderText("gemini-2.0-flash")
 
+        expanding_fields = (
+            self.deep_translation_api_key_edit,
+            self.game_profile_title_edit,
+            self.game_profile_world_edit,
+            self.game_profile_factions_edit,
+            self.game_profile_characters_honorifics_edit,
+            self.game_profile_terms_items_skills_edit,
+            self.ocr_provider_combo,
+            self.capture_backend_combo,
+            self.capture_fps_spin,
+            self.subtitle_mode_check,
+            self.crop_subtitle_check,
+            self.overlay_fps_spin,
+            self.overlay_ttl_spin,
+            self.font_size_spin,
+            self.translation_log_check,
+            self.deep_translation_model_edit,
+        )
+        for widget in expanding_fields:
+            widget.setSizePolicy(QSizePolicy.Expanding, widget.sizePolicy().verticalPolicy())
+
         deep_form = QFormLayout()
+        deep_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        deep_form.setFormAlignment(Qt.AlignTop | Qt.AlignLeft)
+        deep_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         deep_form.addRow("Gemini API Key", self.deep_translation_api_key_edit)
         deep_form.addRow("Game Title", self.game_profile_title_edit)
         deep_form.addRow("World / Setting", self.game_profile_world_edit)
@@ -187,6 +215,9 @@ class SettingsDialog(QDialog):
         deep_form.addRow("Terms / Items / Skills", self.game_profile_terms_items_skills_edit)
 
         advanced_form = QFormLayout()
+        advanced_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        advanced_form.setFormAlignment(Qt.AlignTop | Qt.AlignLeft)
+        advanced_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         advanced_form.addRow("OCR Provider", self.ocr_provider_combo)
         advanced_form.addRow("Capture Backend", self.capture_backend_combo)
         advanced_form.addRow("Capture FPS", self.capture_fps_spin)
@@ -198,22 +229,45 @@ class SettingsDialog(QDialog):
         advanced_form.addRow("Logging", self.translation_log_check)
         advanced_form.addRow("Gemini Model", self.deep_translation_model_edit)
         self.advanced_container = QWidget()
+        self.advanced_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.advanced_container.setLayout(advanced_form)
         self.advanced_container.setVisible(self.advanced_check.isChecked())
         self.advanced_check.toggled.connect(self.advanced_container.setVisible)
+
+        deep_column = QWidget()
+        deep_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        deep_column_layout = QVBoxLayout()
+        deep_column_layout.setContentsMargins(0, 0, 0, 0)
+        deep_column_layout.addWidget(QLabel("Deep Translation"))
+        deep_column_layout.addWidget(
+            QLabel("Deep translation mac dinh dung Gemini. Neu khong nhap API key, he thong se fallback sang ctranslate2.")
+        )
+        deep_column_layout.addLayout(deep_form)
+        deep_column_layout.addWidget(self.advanced_check)
+        deep_column_layout.addStretch(1)
+        deep_column.setLayout(deep_column_layout)
+
+        self.advanced_column = QWidget()
+        self.advanced_column.setVisible(self.advanced_check.isChecked())
+        self.advanced_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        advanced_column_layout = QVBoxLayout()
+        advanced_column_layout.setContentsMargins(0, 0, 0, 0)
+        advanced_column_layout.addWidget(QLabel("Advanced Settings"))
+        advanced_column_layout.addWidget(self.advanced_container)
+        advanced_column_layout.addStretch(1)
+        self.advanced_column.setLayout(advanced_column_layout)
+        self.advanced_check.toggled.connect(self.advanced_column.setVisible)
+
+        columns_layout = QHBoxLayout()
+        columns_layout.addWidget(deep_column, 3)
+        columns_layout.addWidget(self.advanced_column, 2)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Deep Translation"))
-        layout.addWidget(
-            QLabel("Deep translation mac dinh dung Gemini. Neu khong nhap API key, he thong se fallback sang ctranslate2.")
-        )
-        layout.addLayout(deep_form)
-        layout.addWidget(self.advanced_check)
-        layout.addWidget(self.advanced_container)
+        layout.addLayout(columns_layout)
         layout.addWidget(buttons)
         self.setLayout(layout)
 
