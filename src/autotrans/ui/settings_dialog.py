@@ -45,6 +45,25 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "advanced_settings": False,
 }
 
+SETTING_TOOLTIPS: dict[str, str] = {
+    "Gemini API Key": "API key cho deep mode Gemini. Realtime translation van dung ctranslate2, khong dung key nay.",
+    "Game Title": "Ten game de bo sung ngu canh cho deep mode, giup Gemini giu dung thuat ngu va khong khi.",
+    "World / Setting": "Mo ta boi canh, thoi dai, the gioi, he thong suc manh va tone chung cua game cho deep mode.",
+    "Factions / Organizations": "Danh sach phe phai, to chuc, tong mon, quoc gia hoac nhom quan trong de deep mode dich on dinh hon.",
+    "Characters & Honorifics": "Nhan vat chinh, cach xung ho, danh xung va honorific can uu tien khi deep mode dich hoi thoai.",
+    "Terms / Items / Skills": "Thuat ngu rieng, vat pham, ky nang, canh gioi, ten ky nang va cach viet mong muon trong deep mode.",
+    "OCR Provider": "OCR engine cho realtime translation. PaddleOCR dang nhanh hon tren bo test subtitle hien tai; deep mode van co dinh dung RapidOCR.",
+    "Capture Backend": "Cach chup hinh cua cua so game. PrintWindow on dinh hon, BetterCam nhanh hon voi mot so game, MSS la fallback tong quat.",
+    "Capture FPS": "Tan suat chup hinh cho pipeline realtime. Tang cao hon se cap nhat nhanh hon nhung ton CPU/GPU hon.",
+    "Subtitle Mode": "Bat bo loc subtitle. Khi bat, pipeline uu tien text o vung subtitle thay vi HUD/menu text.",
+    "Subtitle Crop": "Chi OCR vung subtitle o phia duoi man hinh. Thuong giup tang toc do rat nhieu va giam nhieu text rac.",
+    "Overlay FPS": "Tan suat ve lai overlay ban dich. Cao hon cho cam giac muot hon nhung co them chi phi render.",
+    "Overlay TTL (s)": "Thoi gian giu mot overlay tren man hinh truoc khi tu dong an di.",
+    "Font Size": "Co chu mac dinh cua overlay ban dich.",
+    "Logging": "Ghi log runtime va chi tiet OCR/translation vao file .runtime/logs/autotrans.log de debug va benchmark.",
+    "Gemini Model": "Model Gemini dung cho deep mode. Khong anh huong toi realtime ctranslate2.",
+}
+
 
 def _normalize_loaded_settings(settings: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(settings)
@@ -143,7 +162,7 @@ class SettingsDialog(QDialog):
         self.advanced_check.setChecked(bool(settings["advanced_settings"]))
 
         self.ocr_provider_combo = QComboBox()
-        self.ocr_provider_combo.addItems(["rapidocr"])
+        self.ocr_provider_combo.addItems(["rapidocr", "paddleocr"])
         self.ocr_provider_combo.setCurrentText(str(settings["ocr_provider"]))
 
         self.capture_backend_combo = QComboBox()
@@ -207,27 +226,27 @@ class SettingsDialog(QDialog):
         deep_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         deep_form.setFormAlignment(Qt.AlignTop | Qt.AlignLeft)
         deep_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        deep_form.addRow("Gemini API Key", self.deep_translation_api_key_edit)
-        deep_form.addRow("Game Title", self.game_profile_title_edit)
-        deep_form.addRow("World / Setting", self.game_profile_world_edit)
-        deep_form.addRow("Factions / Organizations", self.game_profile_factions_edit)
-        deep_form.addRow("Characters & Honorifics", self.game_profile_characters_honorifics_edit)
-        deep_form.addRow("Terms / Items / Skills", self.game_profile_terms_items_skills_edit)
+        self._add_labeled_row(deep_form, "Gemini API Key", self.deep_translation_api_key_edit)
+        self._add_labeled_row(deep_form, "Game Title", self.game_profile_title_edit)
+        self._add_labeled_row(deep_form, "World / Setting", self.game_profile_world_edit)
+        self._add_labeled_row(deep_form, "Factions / Organizations", self.game_profile_factions_edit)
+        self._add_labeled_row(deep_form, "Characters & Honorifics", self.game_profile_characters_honorifics_edit)
+        self._add_labeled_row(deep_form, "Terms / Items / Skills", self.game_profile_terms_items_skills_edit)
 
         advanced_form = QFormLayout()
         advanced_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         advanced_form.setFormAlignment(Qt.AlignTop | Qt.AlignLeft)
         advanced_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        advanced_form.addRow("OCR Provider", self.ocr_provider_combo)
-        advanced_form.addRow("Capture Backend", self.capture_backend_combo)
-        advanced_form.addRow("Capture FPS", self.capture_fps_spin)
-        advanced_form.addRow("Subtitle Mode", self.subtitle_mode_check)
-        advanced_form.addRow("Subtitle Crop", self.crop_subtitle_check)
-        advanced_form.addRow("Overlay FPS", self.overlay_fps_spin)
-        advanced_form.addRow("Overlay TTL (s)", self.overlay_ttl_spin)
-        advanced_form.addRow("Font Size", self.font_size_spin)
-        advanced_form.addRow("Logging", self.translation_log_check)
-        advanced_form.addRow("Gemini Model", self.deep_translation_model_edit)
+        self._add_labeled_row(advanced_form, "OCR Provider", self.ocr_provider_combo)
+        self._add_labeled_row(advanced_form, "Capture Backend", self.capture_backend_combo)
+        self._add_labeled_row(advanced_form, "Capture FPS", self.capture_fps_spin)
+        self._add_labeled_row(advanced_form, "Subtitle Mode", self.subtitle_mode_check)
+        self._add_labeled_row(advanced_form, "Subtitle Crop", self.crop_subtitle_check)
+        self._add_labeled_row(advanced_form, "Overlay FPS", self.overlay_fps_spin)
+        self._add_labeled_row(advanced_form, "Overlay TTL (s)", self.overlay_ttl_spin)
+        self._add_labeled_row(advanced_form, "Font Size", self.font_size_spin)
+        self._add_labeled_row(advanced_form, "Logging", self.translation_log_check)
+        self._add_labeled_row(advanced_form, "Gemini Model", self.deep_translation_model_edit)
         self.advanced_container = QWidget()
         self.advanced_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.advanced_container.setLayout(advanced_form)
@@ -270,6 +289,14 @@ class SettingsDialog(QDialog):
         layout.addLayout(columns_layout)
         layout.addWidget(buttons)
         self.setLayout(layout)
+
+    def _add_labeled_row(self, form: QFormLayout, title: str, field: QWidget) -> None:
+        tooltip = SETTING_TOOLTIPS.get(title, "")
+        label = QLabel(title)
+        if tooltip:
+            label.setToolTip(tooltip)
+            field.setToolTip(tooltip)
+        form.addRow(label, field)
 
     def values(self) -> dict[str, Any]:
         return {

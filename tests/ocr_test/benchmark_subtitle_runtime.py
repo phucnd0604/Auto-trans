@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import time
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
@@ -11,7 +12,7 @@ import onnxruntime as ort
 
 from autotrans.config import AppConfig
 from autotrans.models import Frame, OCRBox, QualityMode, Rect, TranslationResult
-from autotrans.services.ocr import RapidOCRProvider
+from autotrans.services.ocr import PaddleOCRProvider, RapidOCRProvider
 from autotrans.services.orchestrator import PipelineOrchestrator
 
 
@@ -66,6 +67,11 @@ class _BenchmarkRapidOCRProvider(RapidOCRProvider):
 
             with _rapidocr_directml_patch(enabled=use_directml):
                 self._engine = RapidOCR(**(engine_kwargs or {}))
+
+
+class _BenchmarkPaddleOCRProvider(PaddleOCRProvider):
+    def __init__(self, config: AppConfig) -> None:
+        super().__init__(config)
 
 
 @contextmanager
@@ -248,6 +254,7 @@ def _run_subtitle_runtime_pass(
 
 
 def _run_scenario(
+    provider_name: str,
     name: str,
     *,
     crop_subtitle_only: bool,
@@ -256,12 +263,17 @@ def _run_scenario(
     use_directml: bool = False,
 ) -> dict[str, object]:
     config = _make_config(crop_subtitle_only=crop_subtitle_only, ocr_max_side=ocr_max_side)
+    config.ocr_provider = provider_name
     frames = {index: _load_frame(path) for index, path in enumerate(sorted(ROOT.glob(IMAGE_GLOB)), start=1)}
     capture_service = _StaticCaptureService(frames)
+    if provider_name == "paddleocr":
+        realtime_provider = _BenchmarkPaddleOCRProvider(config)
+    else:
+        realtime_provider = _BenchmarkRapidOCRProvider(config, engine_kwargs, use_directml=use_directml)
     orchestrator = PipelineOrchestrator(
         config=config,
         capture_service=capture_service,
-        ocr_provider=_BenchmarkRapidOCRProvider(config, engine_kwargs, use_directml=use_directml),
+        ocr_provider=realtime_provider,
         local_translator=_NoopTranslator(),
         cloud_translator=None,
     )
@@ -275,6 +287,7 @@ def _run_scenario(
     average_selected = sum(item.selected_boxes for item in snapshots) / max(len(snapshots), 1)
     return {
         "scenario": name,
+        "provider": provider_name,
         "config": {
             "ocr_crop_subtitle_only": crop_subtitle_only,
             "ocr_max_side": ocr_max_side,
@@ -386,33 +399,39 @@ def main() -> None:
     ]
 
     available_providers = set(ort.get_available_providers())
-    filtered_scenarios: list[tuple[str, dict[str, object]]] = []
-    for scenario_name, kwargs in scenarios:
-        engine_kwargs = kwargs.get("engine_kwargs", {})
-        required_paths = [
-            Path(str(value))
-            for key, value in engine_kwargs.items()
-            if key.endswith("_model_path") and value
-        ]
-        if any(not path.exists() for path in required_paths):
-            print(f"- {scenario_name}: skipped (missing model file)")
+    filtered_scenarios: list[tuple[str, str, dict[str, object]]] = []
+    for provider_name in ("rapidocr", "paddleocr"):
+        if provider_name == "paddleocr" and importlib.util.find_spec("paddleocr") is None:
+            print("- paddleocr: skipped (dependency not installed)")
             continue
-        if kwargs.get("use_directml") and "DmlExecutionProvider" not in available_providers:
-            print(f"- {scenario_name}: skipped (DmlExecutionProvider unavailable)")
-            continue
-        filtered_scenarios.append((scenario_name, kwargs))
+        for scenario_name, kwargs in scenarios:
+            if provider_name == "paddleocr" and kwargs.get("use_directml"):
+                continue
+            engine_kwargs = kwargs.get("engine_kwargs", {})
+            required_paths = [
+                Path(str(value))
+                for key, value in engine_kwargs.items()
+                if key.endswith("_model_path") and value
+            ]
+            if any(not path.exists() for path in required_paths):
+                print(f"- {provider_name}/{scenario_name}: skipped (missing model file)")
+                continue
+            if kwargs.get("use_directml") and "DmlExecutionProvider" not in available_providers:
+                print(f"- {provider_name}/{scenario_name}: skipped (DmlExecutionProvider unavailable)")
+                continue
+            filtered_scenarios.append((provider_name, scenario_name, kwargs))
 
     report = {"root": str(ROOT), "results": []}
     print("Subtitle OCR runtime benchmark")
     print(f"Image root: {ROOT}")
-    for scenario_name, kwargs in filtered_scenarios:
+    for provider_name, scenario_name, kwargs in filtered_scenarios:
         started = time.perf_counter()
-        result = _run_scenario(scenario_name, **kwargs)
+        result = _run_scenario(provider_name, scenario_name, **kwargs)
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         report["results"].append(result)
         summary = result["summary"]
         print(
-            f"- {scenario_name}: avg_total={summary['avg_total_ms']}ms "
+            f"- {provider_name}/{scenario_name}: avg_total={summary['avg_total_ms']}ms "
             f"avg_ocr={summary['avg_ocr_ms']}ms avg_selected={summary['avg_selected_boxes']} "
             f"scenario_wall={elapsed_ms:.0f}ms"
         )

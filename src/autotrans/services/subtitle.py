@@ -30,26 +30,37 @@ class SubtitleDetector:
         uppercase = sum(1 for char in letters if char.isupper())
         return uppercase / max(len(letters), 1) >= 0.85
 
-    def _is_subtitle_candidate(self, frame: Frame, box: OCRBox) -> bool:
+    def explain_rejection(self, frame: Frame, box: OCRBox) -> str | None:
         text_len = self._normalized_length(box.source_text)
-        if text_len <= 1 or is_probably_garbage_text(box.source_text):
-            return False
+        if text_len <= 1:
+            return "text_too_short"
+        if is_probably_garbage_text(box.source_text):
+            return "garbage_text"
         if self._looks_like_uppercase_label(box.source_text):
-            return False
+            return "uppercase_label"
 
         region_top = int(frame.window_rect.height * self._config.subtitle_region_top_ratio)
+        if box.bbox.y < region_top:
+            return "above_subtitle_region"
+
+        if text_len < self._config.subtitle_min_chars:
+            return "below_min_chars"
+
+        width_ratio = box.bbox.width / max(frame.window_rect.width, 1)
+        if width_ratio < self._config.subtitle_min_width_ratio:
+            return "below_min_width_ratio"
+
         center_x = frame.window_rect.width / 2
         box_center_x = box.bbox.x + (box.bbox.width / 2)
         center_offset = abs(box_center_x - center_x)
-        width_ratio = box.bbox.width / max(frame.window_rect.width, 1)
         crosses_center = box.bbox.x < center_x < box.bbox.right
         near_center = center_offset <= self._config.subtitle_center_tolerance_px
-        return (
-            box.bbox.y >= region_top
-            and text_len >= self._config.subtitle_min_chars
-            and width_ratio >= self._config.subtitle_min_width_ratio
-            and (crosses_center or near_center)
-        )
+        if not (crosses_center or near_center):
+            return "outside_center_tolerance"
+        return None
+
+    def _is_subtitle_candidate(self, frame: Frame, box: OCRBox) -> bool:
+        return self.explain_rejection(frame, box) is None
 
     def _merge_candidates(self, boxes: list[OCRBox]) -> list[OCRBox]:
         if not boxes:

@@ -1,0 +1,4047 @@
+{
+  "root": "E:\\GameDownload\\AutoTrans\\tests\\ocr_test",
+  "results": [
+    {
+      "scenario": "runtime-default",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {},
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 542.31,
+        "avg_ocr_ms": 541.12,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8145999745465815,
+          "crop_ms": 0.015099998563528061,
+          "ocr_ms": 767.8037000005133,
+          "dedupe_ms": 0.1023999648168683,
+          "select_ms": 0.2962000435218215,
+          "stabilize_ms": 0.0016999547369778156,
+          "track_ms": 0.09839999256655574,
+          "total_ms": 769.1394999856129,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.448199967853725,
+          "crop_ms": 0.01079996582120657,
+          "ocr_ms": 604.7887000022456,
+          "dedupe_ms": 0.024200009647756815,
+          "select_ms": 0.09809999028220773,
+          "stabilize_ms": 0.001400010660290718,
+          "track_ms": 0.019199971575289965,
+          "total_ms": 606.3955999561585,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 0.894299999345094,
+          "crop_ms": 0.004599976819008589,
+          "ocr_ms": 506.60429999697953,
+          "dedupe_ms": 0.014899997040629387,
+          "select_ms": 0.06550003308802843,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.020599982235580683,
+          "total_ms": 507.6065000030212,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 0.8988000336103141,
+          "crop_ms": 0.004799978341907263,
+          "ocr_ms": 586.7021000012755,
+          "dedupe_ms": 0.015500001609325409,
+          "select_ms": 0.07269997149705887,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.012100033927708864,
+          "total_ms": 587.7078000339679,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 0.862100045196712,
+          "crop_ms": 0.005499983672052622,
+          "ocr_ms": 472.75690000969917,
+          "dedupe_ms": 0.04749995423480868,
+          "select_ms": 0.24800002574920654,
+          "stabilize_ms": 0.001100008375942707,
+          "track_ms": 0.025999965146183968,
+          "total_ms": 473.94970001187176,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.692500023636967,
+          "crop_ms": 0.005399982910603285,
+          "ocr_ms": 492.5382999936119,
+          "dedupe_ms": 0.004100031219422817,
+          "select_ms": 0.014499993994832039,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.010399962775409222,
+          "total_ms": 494.2678000079468,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.0060000349767506,
+          "crop_ms": 0.006100046448409557,
+          "ocr_ms": 494.2592000006698,
+          "dedupe_ms": 0.022599997464567423,
+          "select_ms": 0.10200001997873187,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.013399985618889332,
+          "total_ms": 495.41319999843836,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 0.8178999996744096,
+          "crop_ms": 0.005400041118264198,
+          "ocr_ms": 529.04579997994,
+          "dedupe_ms": 0.020799983758479357,
+          "select_ms": 0.09370001498609781,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.018799968529492617,
+          "total_ms": 530.0048000062816,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.0477000032551587,
+          "crop_ms": 0.006699992809444666,
+          "ocr_ms": 482.10159997688606,
+          "dedupe_ms": 0.024300010409206152,
+          "select_ms": 0.11729996185749769,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.02010003663599491,
+          "total_ms": 483.3210000069812,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 0.7997999782674015,
+          "crop_ms": 0.005099980626255274,
+          "ocr_ms": 548.3074000221677,
+          "dedupe_ms": 0.01409999094903469,
+          "select_ms": 0.06629998097196221,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.011400028597563505,
+          "total_ms": 549.2063999990933,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 0.8691999828442931,
+          "crop_ms": 0.004699977580457926,
+          "ocr_ms": 467.3763000173494,
+          "dedupe_ms": 0.02619996666908264,
+          "select_ms": 0.11379999341443181,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.019000028260052204,
+          "total_ms": 468.4121999889612,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-crop",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": false,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {},
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 330.92,
+        "avg_ocr_ms": 329.69,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8245999924838543,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 594.5620000129566,
+          "dedupe_ms": 0.05259999306872487,
+          "select_ms": 0.12260000221431255,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.008500006515532732,
+          "total_ms": 595.5746000399813,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.3791999663226306,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 443.37890000315383,
+          "dedupe_ms": 0.02929999027401209,
+          "select_ms": 0.09270000737160444,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.012299977242946625,
+          "total_ms": 444.89549996796995,
+          "raw_boxes": 4,
+          "deduped_boxes": 4,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 0.8984999731183052,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 253.64720000652596,
+          "dedupe_ms": 0.03130000550299883,
+          "select_ms": 0.09970000246539712,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.017599959392100573,
+          "total_ms": 254.69769997289404,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.0179000091739,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 308.11939999694005,
+          "dedupe_ms": 0.05709996912628412,
+          "select_ms": 0.12390001211315393,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.012599979527294636,
+          "total_ms": 309.3349999981001,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 0.8021999965421855,
+          "crop_ms": 0.000800006091594696,
+          "ocr_ms": 245.1094999560155,
+          "dedupe_ms": 0.05500001134350896,
+          "select_ms": 0.15320000238716602,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.013299984857439995,
+          "total_ms": 246.13629997475073,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.014400040730834,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 216.92660002736375,
+          "dedupe_ms": 0.03659998765215278,
+          "select_ms": 0.06520003080368042,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.009499955922365189,
+          "total_ms": 218.0561000132002,
+          "raw_boxes": 4,
+          "deduped_boxes": 4,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.0677999816834927,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 405.18219996010885,
+          "dedupe_ms": 0.024200009647756815,
+          "select_ms": 0.08109997725114226,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.01360004534944892,
+          "total_ms": 406.37209999840707,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.8266999977640808,
+          "crop_ms": 0.0032999669201672077,
+          "ocr_ms": 277.33660000376403,
+          "dedupe_ms": 0.022199994418770075,
+          "select_ms": 0.07609999738633633,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.012100033927708864,
+          "total_ms": 279.2802000185475,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.1602999875321984,
+          "crop_ms": 0.001500011421740055,
+          "ocr_ms": 201.94070000434294,
+          "dedupe_ms": 0.02269999822601676,
+          "select_ms": 0.07139996159821749,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.012100033927708864,
+          "total_ms": 203.21200002217665,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.048400008585304,
+          "crop_ms": 0.000800006091594696,
+          "ocr_ms": 256.58169999951497,
+          "dedupe_ms": 0.021799991372972727,
+          "select_ms": 0.07159996312111616,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011400028597563505,
+          "total_ms": 257.7383000170812,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 0.8459999808110297,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 423.8558000070043,
+          "dedupe_ms": 0.022499996703118086,
+          "select_ms": 0.07329997606575489,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011499971151351929,
+          "total_ms": 424.8117999522947,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-cls",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_angle_cls": false
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 590.29,
+        "avg_ocr_ms": 589.13,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8329999982379377,
+          "crop_ms": 0.008600007276982069,
+          "ocr_ms": 811.4188000326976,
+          "dedupe_ms": 0.010299962013959885,
+          "select_ms": 0.14190003275871277,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011199968867003918,
+          "total_ms": 812.4268999672495,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.6193000483326614,
+          "crop_ms": 0.004799978341907263,
+          "ocr_ms": 665.8053999999538,
+          "dedupe_ms": 0.02559996210038662,
+          "select_ms": 0.10340003063902259,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.016000005416572094,
+          "total_ms": 667.5769000430591,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The.plot to destroy my clan took precision. Masako:Planning"
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 0.9755999781191349,
+          "crop_ms": 0.006999995093792677,
+          "ocr_ms": 511.1591000459157,
+          "dedupe_ms": 0.017199956346303225,
+          "select_ms": 0.07860001642256975,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.01580000389367342,
+          "total_ms": 512.2560000163503,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.5572999836876988,
+          "crop_ms": 0.008100003469735384,
+          "ocr_ms": 677.8048999840394,
+          "dedupe_ms": 0.014999997802078724,
+          "select_ms": 0.06629998097196221,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011200027074664831,
+          "total_ms": 679.4661000021733,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 0.8921999833546579,
+          "crop_ms": 0.006199989002197981,
+          "ocr_ms": 592.0517999911681,
+          "dedupe_ms": 0.01750001683831215,
+          "select_ms": 0.06589997792616487,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011800031643360853,
+          "total_ms": 593.047900008969,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 0.895200006198138,
+          "crop_ms": 0.005999987479299307,
+          "ocr_ms": 463.81089999340475,
+          "dedupe_ms": 0.002800021320581436,
+          "select_ms": 0.013200042303651571,
+          "stabilize_ms": 0.000700005330145359,
+          "track_ms": 0.006699992809444666,
+          "total_ms": 464.73750000586733,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 0.9785000002011657,
+          "crop_ms": 0.00689999433234334,
+          "ocr_ms": 509.6447000396438,
+          "dedupe_ms": 0.016199948731809855,
+          "select_ms": 0.07690000347793102,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.013000040780752897,
+          "total_ms": 510.73850004468113,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 0.9234999888576567,
+          "crop_ms": 0.004800036549568176,
+          "ocr_ms": 528.3485999680124,
+          "dedupe_ms": 0.021499989088624716,
+          "select_ms": 0.09210000280290842,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.021299987565726042,
+          "total_ms": 529.4142999919131,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.22969999210909,
+          "crop_ms": 0.007199996616691351,
+          "ocr_ms": 576.9619999919087,
+          "dedupe_ms": 0.013699987903237343,
+          "select_ms": 0.06120000034570694,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01160003012046218,
+          "total_ms": 578.2876000157557,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 0.8385999826714396,
+          "crop_ms": 0.005099980626255274,
+          "ocr_ms": 610.0966000230983,
+          "dedupe_ms": 0.014999997802078724,
+          "select_ms": 0.06539997411891818,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011200027074664831,
+          "total_ms": 611.0341000021435,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 0.7983999676071107,
+          "crop_ms": 0.004700035788118839,
+          "ocr_ms": 533.292599953711,
+          "dedupe_ms": 0.016000005416572094,
+          "select_ms": 0.07020001066848636,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011800031643360853,
+          "total_ms": 534.1955999610946,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-cls-no-crop",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": false,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_angle_cls": false
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 443.09,
+        "avg_ocr_ms": 441.96,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8219999726861715,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 695.2777000260539,
+          "dedupe_ms": 0.05560001591220498,
+          "select_ms": 0.14810002176091075,
+          "stabilize_ms": 0.00100000761449337,
+          "track_ms": 0.009599956683814526,
+          "total_ms": 696.3174999691546,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins"
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 0.9074000408872962,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 651.2460999656469,
+          "dedupe_ms": 0.03549997927621007,
+          "select_ms": 0.10689999908208847,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.015199999324977398,
+          "total_ms": 652.314699953422,
+          "raw_boxes": 4,
+          "deduped_boxes": 4,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The.plot to destroy my clan took precision. Masako:Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.0420000180602074,
+          "crop_ms": 0.001100008375942707,
+          "ocr_ms": 357.8171000117436,
+          "dedupe_ms": 0.03090000245720148,
+          "select_ms": 0.10250002378597856,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.01939997309818864,
+          "total_ms": 359.01580000063404,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.0846000513993204,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 426.02230003103614,
+          "dedupe_ms": 0.05139998393133283,
+          "select_ms": 0.1409000251442194,
+          "stabilize_ms": 0.00100000761449337,
+          "track_ms": 0.020700041204690933,
+          "total_ms": 427.3240000475198,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.6327000339515507,
+          "crop_ms": 0.001700012944638729,
+          "ocr_ms": 374.0351999877021,
+          "dedupe_ms": 0.03650004509836435,
+          "select_ms": 0.08410000009462237,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011699972674250603,
+          "total_ms": 375.80460001481697,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 0.8282000198960304,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 184.72129997098818,
+          "dedupe_ms": 0.027699978090822697,
+          "select_ms": 0.05339999916031957,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.004600035026669502,
+          "total_ms": 185.63870002981275,
+          "raw_boxes": 4,
+          "deduped_boxes": 4,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 0.8359000203199685,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 512.1071999892592,
+          "dedupe_ms": 0.023200002033263445,
+          "select_ms": 0.07780001033097506,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011599971912801266,
+          "total_ms": 513.0585000151768,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins"
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 0.8953000069595873,
+          "crop_ms": 0.000800006091594696,
+          "ocr_ms": 409.0616999892518,
+          "dedupe_ms": 0.0219999928958714,
+          "select_ms": 0.07160002132877707,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011999974958598614,
+          "total_ms": 410.065800009761,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout"
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 0.8687000372447073,
+          "crop_ms": 0.000800006091594696,
+          "ocr_ms": 290.8041999908164,
+          "dedupe_ms": 0.021199986804276705,
+          "select_ms": 0.06769999163225293,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011699972674250603,
+          "total_ms": 291.77619999973103,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 0.8806000114418566,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 398.5772000160068,
+          "dedupe_ms": 0.025999965146183968,
+          "select_ms": 0.08680002065375447,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.013399985618889332,
+          "total_ms": 399.58690002094954,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.1330999550409615,
+          "crop_ms": 0.000800006091594696,
+          "ocr_ms": 561.8408999871463,
+          "dedupe_ms": 0.026800029445439577,
+          "select_ms": 0.09049999061971903,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01379998866468668,
+          "total_ms": 563.108199974522,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-det-640",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "det_model_path": null,
+          "det_limit_side_len": 640
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 554.69,
+        "avg_ocr_ms": 553.47,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8650999516248703,
+          "crop_ms": 0.009000010322779417,
+          "ocr_ms": 976.5899999765679,
+          "dedupe_ms": 0.029099988751113415,
+          "select_ms": 0.13260002015158534,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.01179997343569994,
+          "total_ms": 977.6414999505505,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.4328999677672982,
+          "crop_ms": 0.009800016414374113,
+          "ocr_ms": 563.748000015039,
+          "dedupe_ms": 0.02389994915574789,
+          "select_ms": 0.09400001727044582,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.022199994418770075,
+          "total_ms": 565.3336999821477,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: Theplot to destroy my clantook precisiom. Masako:Planning"
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 0.9840000420808792,
+          "crop_ms": 0.005199981387704611,
+          "ocr_ms": 400.8773000095971,
+          "dedupe_ms": 0.018599967006593943,
+          "select_ms": 0.0866000191308558,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.0173999578692019,
+          "total_ms": 401.9914999953471,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.0136000346392393,
+          "crop_ms": 0.006299989763647318,
+          "ocr_ms": 442.4923000042327,
+          "dedupe_ms": 0.015099998563528061,
+          "select_ms": 0.06940000457689166,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01969997538253665,
+          "total_ms": 443.61890002619475,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.4295000000856817,
+          "crop_ms": 0.01009996049106121,
+          "ocr_ms": 395.89909999631345,
+          "dedupe_ms": 0.014199991710484028,
+          "select_ms": 0.06000004941597581,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011400028597563505,
+          "total_ms": 397.42709998972714,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.0791000095196068,
+          "crop_ms": 0.006599992047995329,
+          "ocr_ms": 313.74449998838827,
+          "dedupe_ms": 0.00300002284348011,
+          "select_ms": 0.012699980288743973,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.006299989763647318,
+          "total_ms": 314.8546000011265,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.7725999932736158,
+          "crop_ms": 0.007299997378140688,
+          "ocr_ms": 857.7644000179134,
+          "dedupe_ms": 0.01769996015354991,
+          "select_ms": 0.08640001760795712,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.014399993233382702,
+          "total_ms": 859.6656000008807,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 0.9343000128865242,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 513.1651000119746,
+          "dedupe_ms": 0.015500001609325409,
+          "select_ms": 0.06829999620094895,
+          "stabilize_ms": 0.000700005330145359,
+          "track_ms": 0.012299977242946625,
+          "total_ms": 514.2039000056684,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 0.8687000372447073,
+          "crop_ms": 0.005099980626255274,
+          "ocr_ms": 349.58619996905327,
+          "dedupe_ms": 0.014199991710484028,
+          "select_ms": 0.06210000719875097,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011700030881911516,
+          "total_ms": 350.55000003194436,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 0.915899989195168,
+          "crop_ms": 0.004699977580457926,
+          "ocr_ms": 435.1765000028536,
+          "dedupe_ms": 0.01680001150816679,
+          "select_ms": 0.06709998706355691,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.011299969628453255,
+          "total_ms": 436.19449995458126,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 0.8446000283583999,
+          "crop_ms": 0.005800044164061546,
+          "ocr_ms": 839.1670999699272,
+          "dedupe_ms": 0.016700010746717453,
+          "select_ms": 0.08000002708286047,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.012000033166259527,
+          "total_ms": 840.1287000160664,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-det-512",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "det_model_path": null,
+          "det_limit_side_len": 512
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 498.42,
+        "avg_ocr_ms": 497.15,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8602000307291746,
+          "crop_ms": 0.007700000423938036,
+          "ocr_ms": 828.199699986726,
+          "dedupe_ms": 0.019499973859637976,
+          "select_ms": 0.10420003673061728,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.006199989002197981,
+          "total_ms": 829.2010000441223,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 0.9554999996908009,
+          "crop_ms": 0.006099988240748644,
+          "ocr_ms": 454.4569000136107,
+          "dedupe_ms": 0.03850000211969018,
+          "select_ms": 0.09819999104365706,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.012299977242946625,
+          "total_ms": 455.5701999925077,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako:Theplot to destroy myclantook precisionm. Masako:Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 0.8504000143148005,
+          "crop_ms": 0.004800036549568176,
+          "ocr_ms": 454.07859998522326,
+          "dedupe_ms": 0.01680001150816679,
+          "select_ms": 0.07719994755461812,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.014399993233382702,
+          "total_ms": 455.0442000036128,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.069999998435378,
+          "crop_ms": 0.005500041879713535,
+          "ocr_ms": 394.36439995188266,
+          "dedupe_ms": 0.015300000086426735,
+          "select_ms": 0.06440002471208572,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011599971912801266,
+          "total_ms": 395.5335000064224,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout"
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 0.8347000111825764,
+          "crop_ms": 0.004700035788118839,
+          "ocr_ms": 343.65579998120666,
+          "dedupe_ms": 0.02759997732937336,
+          "select_ms": 0.12470001820474863,
+          "stabilize_ms": 0.00100000761449337,
+          "track_ms": 0.024099950678646564,
+          "total_ms": 344.67590000713244,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt"
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.956599997356534,
+          "crop_ms": 0.013199984095990658,
+          "ocr_ms": 216.22830000706017,
+          "dedupe_ms": 0.0025999615900218487,
+          "select_ms": 0.012800039257854223,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.007099995855242014,
+          "total_ms": 218.2240000111051,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt"
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 0.9860999998636544,
+          "crop_ms": 0.005300040356814861,
+          "ocr_ms": 417.1989999595098,
+          "dedupe_ms": 0.019000028260052204,
+          "select_ms": 0.08889997843652964,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.014399993233382702,
+          "total_ms": 418.3154000202194,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.2375999940559268,
+          "crop_ms": 0.00790000194683671,
+          "ocr_ms": 615.6869999831542,
+          "dedupe_ms": 0.030399998649954796,
+          "select_ms": 0.13649999164044857,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.021599989850074053,
+          "total_ms": 617.123999982141,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout"
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.8466999754309654,
+          "crop_ms": 0.009000010322779417,
+          "ocr_ms": 439.72779996693134,
+          "dedupe_ms": 0.014699995517730713,
+          "select_ms": 0.06079999729990959,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.011300027836114168,
+          "total_ms": 441.6724999900907,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 0.8353000157512724,
+          "crop_ms": 0.0048999791033566,
+          "ocr_ms": 592.3861000337638,
+          "dedupe_ms": 0.016900012269616127,
+          "select_ms": 0.07880001794546843,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.013499986380338669,
+          "total_ms": 593.3375000022352,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion"
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.1000999948009849,
+          "crop_ms": 0.005999987479299307,
+          "ocr_ms": 712.6658000051975,
+          "dedupe_ms": 0.02819998189806938,
+          "select_ms": 0.11490000179037452,
+          "stabilize_ms": 0.000900006853044033,
+          "track_ms": 0.02069998299703002,
+          "total_ms": 713.9387999777682,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-cls-det-640",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_angle_cls": false,
+          "det_model_path": null,
+          "det_limit_side_len": 640
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 541.08,
+        "avg_ocr_ms": 539.9,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8340000058524311,
+          "crop_ms": 0.007599999662488699,
+          "ocr_ms": 965.1662999531254,
+          "dedupe_ms": 0.014899997040629387,
+          "select_ms": 0.07160002132877707,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.006099988240748644,
+          "total_ms": 966.1032999865711,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 0.7712999940849841,
+          "crop_ms": 0.005099980626255274,
+          "ocr_ms": 530.8288000524044,
+          "dedupe_ms": 0.02069998299703002,
+          "select_ms": 0.07899996126070619,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.012400036212056875,
+          "total_ms": 531.719200022053,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: Theplot to destroy my clantook precisiom. Masako:Planning"
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 0.8682999759912491,
+          "crop_ms": 0.005100038833916187,
+          "ocr_ms": 409.1512000304647,
+          "dedupe_ms": 0.014999997802078724,
+          "select_ms": 0.07259997073560953,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.014499993994832039,
+          "total_ms": 410.12919996865094,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 0.8896999643184245,
+          "crop_ms": 0.004800036549568176,
+          "ocr_ms": 383.84510000469163,
+          "dedupe_ms": 0.01750001683831215,
+          "select_ms": 0.07940002251416445,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.014599994756281376,
+          "total_ms": 384.8530999966897,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 0.9720000089146197,
+          "crop_ms": 0.005300040356814861,
+          "ocr_ms": 448.2350999605842,
+          "dedupe_ms": 0.021900050342082977,
+          "select_ms": 0.08460000390186906,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.01650000922381878,
+          "total_ms": 449.33819997822866,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.6364000039175153,
+          "crop_ms": 0.008899951353669167,
+          "ocr_ms": 315.78990002162755,
+          "dedupe_ms": 0.003100023604929447,
+          "select_ms": 0.013699987903237343,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.006799993570894003,
+          "total_ms": 317.46220000786707,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.445000001695007,
+          "crop_ms": 0.009400013368576765,
+          "ocr_ms": 871.0473999963142,
+          "dedupe_ms": 0.024399952962994576,
+          "select_ms": 0.11750002158805728,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.020299979951232672,
+          "total_ms": 872.6677999948151,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.0585999698378146,
+          "crop_ms": 0.004700035788118839,
+          "ocr_ms": 446.80370000423864,
+          "dedupe_ms": 0.020199979189783335,
+          "select_ms": 0.09380001574754715,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.012599979527294636,
+          "total_ms": 447.99570000031963,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.3408000231720507,
+          "crop_ms": 0.008499948307871819,
+          "ocr_ms": 339.7840000106953,
+          "dedupe_ms": 0.016900012269616127,
+          "select_ms": 0.07309997454285622,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.014399993233382702,
+          "total_ms": 341.24129998963326,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 0.9798000101000071,
+          "crop_ms": 0.005299982149153948,
+          "ocr_ms": 437.18380003701895,
+          "dedupe_ms": 0.019799976143985987,
+          "select_ms": 0.08460000390186906,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.015600002370774746,
+          "total_ms": 438.29110002843663,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 0.8802000083960593,
+          "crop_ms": 0.005300040356814861,
+          "ocr_ms": 791.0956999985501,
+          "dedupe_ms": 0.017199956346303225,
+          "select_ms": 0.08359999628737569,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.014299992471933365,
+          "total_ms": 792.0993999578059,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-det",
+      "provider": "rapidocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_text_det": false
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 10.67,
+        "avg_ocr_ms": 9.61,
+        "avg_selected_boxes": 0.0
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.8950000046752393,
+          "crop_ms": 0.008100003469735384,
+          "ocr_ms": 12.0632000034675,
+          "dedupe_ms": 0.003500026650726795,
+          "select_ms": 0.002100015990436077,
+          "stabilize_ms": 0.0004999455995857716,
+          "track_ms": 0.00300002284348011,
+          "total_ms": 12.977799982763827,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 0.9572000126354396,
+          "crop_ms": 0.006799993570894003,
+          "ocr_ms": 8.942499989643693,
+          "dedupe_ms": 0.002500019036233425,
+          "select_ms": 0.002400018274784088,
+          "stabilize_ms": 0.0005999463610351086,
+          "track_ms": 0.002900022082030773,
+          "total_ms": 9.9165000137873,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.8629999831318855,
+          "crop_ms": 0.009199953638017178,
+          "ocr_ms": 9.246600035112351,
+          "dedupe_ms": 0.0031999661587178707,
+          "select_ms": 0.002100015990436077,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.003100023604929447,
+          "total_ms": 11.130099999718368,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 0.9815999655984342,
+          "crop_ms": 0.005600042641162872,
+          "ocr_ms": 9.530599985737354,
+          "dedupe_ms": 0.0034999684430658817,
+          "select_ms": 0.00200001522898674,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.002900022082030773,
+          "total_ms": 10.52820001496002,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.0027000098489225,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 10.35779999801889,
+          "dedupe_ms": 0.003400025889277458,
+          "select_ms": 0.0018999562598764896,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.003300025127828121,
+          "total_ms": 11.376900016330183,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 0.9506999631412327,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 9.487000002991408,
+          "dedupe_ms": 0.003600027412176132,
+          "select_ms": 0.0018999562598764896,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.002900022082030773,
+          "total_ms": 10.454599978402257,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 0.9611000423319638,
+          "crop_ms": 0.005999987479299307,
+          "ocr_ms": 9.267799963708967,
+          "dedupe_ms": 0.00300002284348011,
+          "select_ms": 0.00200001522898674,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.0031999661587178707,
+          "total_ms": 10.245800018310547,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 0.9714000043459237,
+          "crop_ms": 0.006099988240748644,
+          "ocr_ms": 8.81420000223443,
+          "dedupe_ms": 0.0027999631129205227,
+          "select_ms": 0.001800013706088066,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.002300017513334751,
+          "total_ms": 9.80090000666678,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 0.9656999609433115,
+          "crop_ms": 0.005700043402612209,
+          "ocr_ms": 9.254499978851527,
+          "dedupe_ms": 0.003300025127828121,
+          "select_ms": 0.0016999547369778156,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.002700020559132099,
+          "total_ms": 10.235499998088926,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.0226999875158072,
+          "crop_ms": 0.005599984433501959,
+          "ocr_ms": 10.309999983292073,
+          "dedupe_ms": 0.003200024366378784,
+          "select_ms": 0.001600012183189392,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.0027999631129205227,
+          "total_ms": 11.348199972417206,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 0.9500000160187483,
+          "crop_ms": 0.006200047209858894,
+          "ocr_ms": 8.412699971813709,
+          "dedupe_ms": 0.002900022082030773,
+          "select_ms": 0.0017999554984271526,
+          "stabilize_ms": 0.000700005330145359,
+          "track_ms": 0.002700020559132099,
+          "total_ms": 9.379199997056276,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 0,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": []
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-default",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {},
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 151.62,
+        "avg_ocr_ms": 150.46,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 1.2413999647833407,
+          "crop_ms": 0.012500036973506212,
+          "ocr_ms": 315.1627999613993,
+          "dedupe_ms": 0.004700035788118839,
+          "select_ms": 0.18340005772188306,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.008500006515532732,
+          "total_ms": 316.6170999757014,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.1545000015757978,
+          "crop_ms": 0.005100038833916187,
+          "ocr_ms": 186.95379997370765,
+          "dedupe_ms": 0.017300015315413475,
+          "select_ms": 0.09689998114481568,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.015900004655122757,
+          "total_ms": 188.2461000350304,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 0.9796000085771084,
+          "crop_ms": 0.005199981387704611,
+          "ocr_ms": 134.20520001091063,
+          "dedupe_ms": 0.004300032742321491,
+          "select_ms": 0.07399998139590025,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.020599982235580683,
+          "total_ms": 135.29110001400113,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.0980000370182097,
+          "crop_ms": 0.007499998901039362,
+          "ocr_ms": 150.19679995020851,
+          "dedupe_ms": 0.004600035026669502,
+          "select_ms": 0.07539999205619097,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.019599974621087313,
+          "total_ms": 151.4049000106752,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 0.9720000089146197,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 132.87879998097196,
+          "dedupe_ms": 0.004400033503770828,
+          "select_ms": 0.06859999848529696,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.019099970813840628,
+          "total_ms": 133.95079999463633,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 0.9758999804034829,
+          "crop_ms": 0.005199981387704611,
+          "ocr_ms": 44.853600033093244,
+          "dedupe_ms": 0.001700012944638729,
+          "select_ms": 0.001800013706088066,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.006799993570894003,
+          "total_ms": 45.847599976696074,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.0070999851450324,
+          "crop_ms": 0.006699992809444666,
+          "ocr_ms": 164.53439998440444,
+          "dedupe_ms": 0.004800036549568176,
+          "select_ms": 0.08089997572824359,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01969997538253665,
+          "total_ms": 165.6564999721013,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.012899971101433,
+          "crop_ms": 0.005400041118264198,
+          "ocr_ms": 112.96869994839653,
+          "dedupe_ms": 0.004800036549568176,
+          "select_ms": 0.07639999967068434,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.019799976143985987,
+          "total_ms": 114.0902999904938,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.0080999927595258,
+          "crop_ms": 0.005599984433501959,
+          "ocr_ms": 129.0898000006564,
+          "dedupe_ms": 0.004099973011761904,
+          "select_ms": 0.0678999931551516,
+          "stabilize_ms": 0.000700005330145359,
+          "track_ms": 0.017700018361210823,
+          "total_ms": 130.19589998293668,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.0055999737232924,
+          "crop_ms": 0.005999987479299307,
+          "ocr_ms": 145.8491000230424,
+          "dedupe_ms": 0.004499976057559252,
+          "select_ms": 0.07440004264935851,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.01829996472224593,
+          "total_ms": 146.9603999867104,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 0.9916999842971563,
+          "crop_ms": 0.005099980626255274,
+          "ocr_ms": 138.4144999901764,
+          "dedupe_ms": 0.005199981387704611,
+          "select_ms": 0.0817000400274992,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.018599967006593943,
+          "total_ms": 139.51929996255785,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-crop",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": false,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {},
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 361.94,
+        "avg_ocr_ms": 360.58,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 0.9666000260040164,
+          "crop_ms": 0.000800006091594696,
+          "ocr_ms": 556.9473000359721,
+          "dedupe_ms": 0.05199998850002885,
+          "select_ms": 0.14030002057552338,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.00890000956133008,
+          "total_ms": 558.11939999694,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.254500006325543,
+          "crop_ms": 0.0009999494068324566,
+          "ocr_ms": 460.8595000463538,
+          "dedupe_ms": 0.02889998722821474,
+          "select_ms": 0.10890001431107521,
+          "stabilize_ms": 0.00039994483813643456,
+          "track_ms": 0.016200006939470768,
+          "total_ms": 462.27119996910915,
+          "raw_boxes": 4,
+          "deduped_boxes": 4,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.033600012306124,
+          "crop_ms": 0.0007999478839337826,
+          "ocr_ms": 304.3044000514783,
+          "dedupe_ms": 0.020900042727589607,
+          "select_ms": 0.08279999019578099,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.01650000922381878,
+          "total_ms": 305.4613000131212,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.095100014936179,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 370.8420000039041,
+          "dedupe_ms": 0.05959998816251755,
+          "select_ms": 0.1175999641418457,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.014000048395246267,
+          "total_ms": 372.1316000446677,
+          "raw_boxes": 6,
+          "deduped_boxes": 6,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.1915999930351973,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 325.9902999852784,
+          "dedupe_ms": 0.049499969463795424,
+          "select_ms": 0.12020004214718938,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.015599944163113832,
+          "total_ms": 327.3703999584541,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.3236000086180866,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 421.5472000068985,
+          "dedupe_ms": 0.08279999019578099,
+          "select_ms": 0.06369996117427945,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.004900037311017513,
+          "total_ms": 423.0253000278026,
+          "raw_boxes": 8,
+          "deduped_boxes": 8,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.2455999967642128,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 325.57009998708963,
+          "dedupe_ms": 0.02300000051036477,
+          "select_ms": 0.0923000043258071,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.014599994756281376,
+          "total_ms": 326.94870000705123,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.2527999933809042,
+          "crop_ms": 0.00100000761449337,
+          "ocr_ms": 284.17020000051707,
+          "dedupe_ms": 0.022499996703118086,
+          "select_ms": 0.08620001608505845,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.014699995517730713,
+          "total_ms": 285.5497000273317,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.2651999713853002,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 248.36460000369698,
+          "dedupe_ms": 0.022199994418770075,
+          "select_ms": 0.0838999985717237,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.015600002370774746,
+          "total_ms": 249.75489999633282,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his uilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.2889999779872596,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 273.15209998050705,
+          "dedupe_ms": 0.024800014216452837,
+          "select_ms": 0.09950000094249845,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.015400000847876072,
+          "total_ms": 274.5846000034362,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.2632000143639743,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 394.6760999970138,
+          "dedupe_ms": 0.024799956008791924,
+          "select_ms": 0.09370001498609781,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.015099998563528061,
+          "total_ms": 396.0759000037797,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-cls",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_angle_cls": false
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 160.36,
+        "avg_ocr_ms": 158.9,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 1.2459999998100102,
+          "crop_ms": 0.008500006515532732,
+          "ocr_ms": 288.3271999889985,
+          "dedupe_ms": 0.004999979864805937,
+          "select_ms": 0.08460000390186906,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.008200004231184721,
+          "total_ms": 289.6832000114955,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.4117999817244709,
+          "crop_ms": 0.007499998901039362,
+          "ocr_ms": 209.77150002727285,
+          "dedupe_ms": 0.01599994720891118,
+          "select_ms": 0.10300002759322524,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.016600009985268116,
+          "total_ms": 211.32900001248345,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.263399957679212,
+          "crop_ms": 0.005200039595365524,
+          "ocr_ms": 146.60279999952763,
+          "dedupe_ms": 0.004299974534660578,
+          "select_ms": 0.07170002209022641,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.020899984519928694,
+          "total_ms": 147.9708999977447,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.735099998768419,
+          "crop_ms": 0.008000002708286047,
+          "ocr_ms": 161.81320004398003,
+          "dedupe_ms": 0.004499976057559252,
+          "select_ms": 0.0771000050008297,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.019799976143985987,
+          "total_ms": 163.66039996501058,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.3158000074326992,
+          "crop_ms": 0.005199981387704611,
+          "ocr_ms": 144.29700002074242,
+          "dedupe_ms": 0.004499976057559252,
+          "select_ms": 0.07489998824894428,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.020599982235580683,
+          "total_ms": 145.7205999759026,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.3370000524446368,
+          "crop_ms": 0.005800044164061546,
+          "ocr_ms": 50.382799992803484,
+          "dedupe_ms": 0.0020999577827751637,
+          "select_ms": 0.002200016751885414,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.008200004231184721,
+          "total_ms": 51.7410000320524,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.3726999750360847,
+          "crop_ms": 0.007499998901039362,
+          "ocr_ms": 178.99290000787005,
+          "dedupe_ms": 0.005399982910603285,
+          "select_ms": 0.08349999552592635,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01999997766688466,
+          "total_ms": 180.48469995846972,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.2682000524364412,
+          "crop_ms": 0.005500041879713535,
+          "ocr_ms": 123.32009995589033,
+          "dedupe_ms": 0.004900037311017513,
+          "select_ms": 0.07660000119358301,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.021299987565726042,
+          "total_ms": 124.69900003634393,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.5215000021271408,
+          "crop_ms": 0.008300004992634058,
+          "ocr_ms": 134.3899000203237,
+          "dedupe_ms": 0.004399975296109915,
+          "select_ms": 0.06890000076964498,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.019799976143985987,
+          "total_ms": 136.0158000024967,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.2304999982006848,
+          "crop_ms": 0.005200039595365524,
+          "ocr_ms": 158.4726999863051,
+          "dedupe_ms": 0.005099980626255274,
+          "select_ms": 0.08480000542476773,
+          "stabilize_ms": 0.000700005330145359,
+          "track_ms": 0.018799968529492617,
+          "total_ms": 159.8197999992408,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.2579999747686088,
+          "crop_ms": 0.005099980626255274,
+          "ocr_ms": 151.48250001948327,
+          "dedupe_ms": 0.0048999791033566,
+          "select_ms": 0.07840001489967108,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.019400031305849552,
+          "total_ms": 152.8507000184618,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-cls-no-crop",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": false,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_angle_cls": false
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 380.57,
+        "avg_ocr_ms": 379.11,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 1.2561000185087323,
+          "crop_ms": 0.00100000761449337,
+          "ocr_ms": 619.4492999929935,
+          "dedupe_ms": 0.04710000939667225,
+          "select_ms": 0.12099999003112316,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.007700000423938036,
+          "total_ms": 620.8851000410505,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.256000017747283,
+          "crop_ms": 0.00100000761449337,
+          "ocr_ms": 526.7146000405774,
+          "dedupe_ms": 0.032999960239976645,
+          "select_ms": 0.11820002691820264,
+          "stabilize_ms": 0.000900006853044033,
+          "track_ms": 0.017599959392100573,
+          "total_ms": 528.1431999756023,
+          "raw_boxes": 4,
+          "deduped_boxes": 4,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.464199973270297,
+          "crop_ms": 0.00100000761449337,
+          "ocr_ms": 327.8490999946371,
+          "dedupe_ms": 0.023500004317611456,
+          "select_ms": 0.09549997048452497,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.018200022168457508,
+          "total_ms": 329.4539999915287,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.3414000277407467,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 405.93609999632463,
+          "dedupe_ms": 0.059999991208314896,
+          "select_ms": 0.11640001321211457,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.014899997040629387,
+          "total_ms": 407.4722999939695,
+          "raw_boxes": 6,
+          "deduped_boxes": 6,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.4149000053294003,
+          "crop_ms": 0.000800006091594696,
+          "ocr_ms": 326.4327999786474,
+          "dedupe_ms": 0.046600005589425564,
+          "select_ms": 0.10810000821948051,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.014399993233382702,
+          "total_ms": 328.0197000131011,
+          "raw_boxes": 5,
+          "deduped_boxes": 5,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.3103000237606466,
+          "crop_ms": 0.0008999486453831196,
+          "ocr_ms": 428.2588000060059,
+          "dedupe_ms": 0.09480002336204052,
+          "select_ms": 0.06799999391660094,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.005399982910603285,
+          "total_ms": 429.7404999961145,
+          "raw_boxes": 8,
+          "deduped_boxes": 8,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.2780000106431544,
+          "crop_ms": 0.0008999486453831196,
+          "ocr_ms": 329.2092000483535,
+          "dedupe_ms": 0.023900007363408804,
+          "select_ms": 0.0980000477284193,
+          "stabilize_ms": 0.0004999455995857716,
+          "track_ms": 0.015099998563528061,
+          "total_ms": 330.627299961634,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.250099972821772,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 285.9584999969229,
+          "dedupe_ms": 0.022599997464567423,
+          "select_ms": 0.089599983766675,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.01580000389367342,
+          "total_ms": 287.3399999807589,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.3137999922037125,
+          "crop_ms": 0.001200009137392044,
+          "ocr_ms": 250.56209997273982,
+          "dedupe_ms": 0.021000043489038944,
+          "select_ms": 0.07869995897635818,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01409999094903469,
+          "total_ms": 251.99379998957738,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "That doesn't prove his uilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.265800034161657,
+          "crop_ms": 0.000700005330145359,
+          "ocr_ms": 274.57290003076196,
+          "dedupe_ms": 0.02300000051036477,
+          "select_ms": 0.08829997386783361,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.013899989426136017,
+          "total_ms": 275.96689999336377,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.2449999921955168,
+          "crop_ms": 0.000900006853044033,
+          "ocr_ms": 395.2290999586694,
+          "dedupe_ms": 0.030700000934302807,
+          "select_ms": 0.09470002260059118,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.015300000086426735,
+          "total_ms": 396.61870000418276,
+          "raw_boxes": 3,
+          "deduped_boxes": 3,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 0,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-det-640",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "det_model_path": null,
+          "det_limit_side_len": 640
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 158.32,
+        "avg_ocr_ms": 156.9,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 1.2922000023536384,
+          "crop_ms": 0.010599964298307896,
+          "ocr_ms": 306.6683000070043,
+          "dedupe_ms": 0.004999979864805937,
+          "select_ms": 0.08900003740563989,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.008399947546422482,
+          "total_ms": 308.0768999643624,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.2430999777279794,
+          "crop_ms": 0.004999979864805937,
+          "ocr_ms": 200.80089999828488,
+          "dedupe_ms": 0.014999997802078724,
+          "select_ms": 0.09510002564638853,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.015300000086426735,
+          "total_ms": 202.17659999616444,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.256600022315979,
+          "crop_ms": 0.005299982149153948,
+          "ocr_ms": 145.3229000326246,
+          "dedupe_ms": 0.004300032742321491,
+          "select_ms": 0.07110001752153039,
+          "stabilize_ms": 0.0004999455995857716,
+          "track_ms": 0.020200037397444248,
+          "total_ms": 146.68290002737194,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.4365999959409237,
+          "crop_ms": 0.04239997360855341,
+          "ocr_ms": 158.41690002707765,
+          "dedupe_ms": 0.004299974534660578,
+          "select_ms": 0.07469998672604561,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.01910002902150154,
+          "total_ms": 159.9968000082299,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.442000037059188,
+          "crop_ms": 0.006199989002197981,
+          "ocr_ms": 140.86349995341152,
+          "dedupe_ms": 0.004100031219422817,
+          "select_ms": 0.07050001295283437,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.019199971575289965,
+          "total_ms": 142.40840001730248,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.2534999987110496,
+          "crop_ms": 0.005300040356814861,
+          "ocr_ms": 48.947000002954155,
+          "dedupe_ms": 0.001800013706088066,
+          "select_ms": 0.002100015990436077,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.007099995855242014,
+          "total_ms": 50.21880002459511,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.4025000273250043,
+          "crop_ms": 0.005999987479299307,
+          "ocr_ms": 172.51930001657456,
+          "dedupe_ms": 0.004799978341907263,
+          "select_ms": 0.08299999171867967,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.019400031305849552,
+          "total_ms": 174.03760005254298,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.305100042372942,
+          "crop_ms": 0.005299982149153948,
+          "ocr_ms": 116.53160001151264,
+          "dedupe_ms": 0.004999979864805937,
+          "select_ms": 0.07760000880807638,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.01999997766688466,
+          "total_ms": 117.94680001912639,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.2860000133514404,
+          "crop_ms": 0.005400041118264198,
+          "ocr_ms": 134.71469999058172,
+          "dedupe_ms": 0.004299974534660578,
+          "select_ms": 0.07070001447573304,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01839996548369527,
+          "total_ms": 136.10249996418133,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.24889996368438,
+          "crop_ms": 0.005399982910603285,
+          "ocr_ms": 153.04010000545532,
+          "dedupe_ms": 0.004500034265220165,
+          "select_ms": 0.07509998977184296,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.018899969290941954,
+          "total_ms": 154.3952999636531,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.2802999699488282,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 148.09249999234453,
+          "dedupe_ms": 0.005100038833916187,
+          "select_ms": 0.08209998486563563,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.019799976143985987,
+          "total_ms": 149.48789996560663,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-det-512",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "det_model_path": null,
+          "det_limit_side_len": 512
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 158.38,
+        "avg_ocr_ms": 156.96,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 1.380199973937124,
+          "crop_ms": 0.010500021744519472,
+          "ocr_ms": 281.84719994897023,
+          "dedupe_ms": 0.005300040356814861,
+          "select_ms": 0.08329999400302768,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.008400005754083395,
+          "total_ms": 283.33910001674667,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.261600002180785,
+          "crop_ms": 0.0048999791033566,
+          "ocr_ms": 214.03299999656156,
+          "dedupe_ms": 0.015500001609325409,
+          "select_ms": 0.0980000477284193,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.016300007700920105,
+          "total_ms": 215.43189999647439,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.250099972821772,
+          "crop_ms": 0.005200039595365524,
+          "ocr_ms": 151.94589999737218,
+          "dedupe_ms": 0.004499976057559252,
+          "select_ms": 0.07509998977184296,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.020799983758479357,
+          "total_ms": 153.30409997841343,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.2361000408418477,
+          "crop_ms": 0.005499983672052622,
+          "ocr_ms": 121.50489998748526,
+          "dedupe_ms": 0.0048999791033566,
+          "select_ms": 0.08190004155039787,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.022799998987466097,
+          "total_ms": 122.85900005372241,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.3118000351823866,
+          "crop_ms": 0.005600042641162872,
+          "ocr_ms": 136.84309995733202,
+          "dedupe_ms": 0.00400003045797348,
+          "select_ms": 0.06659998325631022,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01880002673715353,
+          "total_ms": 138.25230003567412,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.2226999970152974,
+          "crop_ms": 0.005499983672052622,
+          "ocr_ms": 50.0469000544399,
+          "dedupe_ms": 0.001800013706088066,
+          "select_ms": 0.00200001522898674,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.00689999433234334,
+          "total_ms": 51.288200018461794,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.3021000195294619,
+          "crop_ms": 0.006099988240748644,
+          "ocr_ms": 172.31960000935942,
+          "dedupe_ms": 0.005199981387704611,
+          "select_ms": 0.08830003207549453,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.02180004958063364,
+          "total_ms": 173.7455000402406,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.3141999952495098,
+          "crop_ms": 0.006599992047995329,
+          "ocr_ms": 132.94800004223362,
+          "dedupe_ms": 0.004499976057559252,
+          "select_ms": 0.07459998596459627,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.02010003663599491,
+          "total_ms": 134.3705000472255,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.512399991042912,
+          "crop_ms": 0.005299982149153948,
+          "ocr_ms": 147.96600001864135,
+          "dedupe_ms": 0.004299974534660578,
+          "select_ms": 0.08159998105838895,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.020300038158893585,
+          "total_ms": 149.59210000233725,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.3007000088691711,
+          "crop_ms": 0.005199981387704611,
+          "ocr_ms": 165.9386000246741,
+          "dedupe_ms": 0.004299974534660578,
+          "select_ms": 0.07379997987300158,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01910002902150154,
+          "total_ms": 167.34400001587346,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.35859998408705,
+          "crop_ms": 0.006299989763647318,
+          "ocr_ms": 151.21520002139732,
+          "dedupe_ms": 0.004799978341907263,
+          "select_ms": 0.08140003774315119,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.0192999723367393,
+          "total_ms": 152.6884000049904,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-cls-det-640",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_angle_cls": false,
+          "det_model_path": null,
+          "det_limit_side_len": 640
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 145.86,
+        "avg_ocr_ms": 144.47,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 1.2580000329762697,
+          "crop_ms": 0.01009996049106121,
+          "ocr_ms": 223.82529999595135,
+          "dedupe_ms": 0.00500003807246685,
+          "select_ms": 0.0811999780125916,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.008100003469735384,
+          "total_ms": 225.19159998046234,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.3899999903514981,
+          "crop_ms": 0.008100003469735384,
+          "ocr_ms": 202.9447999666445,
+          "dedupe_ms": 0.014999997802078724,
+          "select_ms": 0.09440002031624317,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.016600009985268116,
+          "total_ms": 204.47240001522005,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.249800028745085,
+          "crop_ms": 0.005100038833916187,
+          "ocr_ms": 141.46559999790043,
+          "dedupe_ms": 0.004199973773211241,
+          "select_ms": 0.07800001185387373,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.022299995180219412,
+          "total_ms": 142.8279000101611,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.265200029592961,
+          "crop_ms": 0.005299982149153948,
+          "ocr_ms": 122.19379999442026,
+          "dedupe_ms": 0.004600035026669502,
+          "select_ms": 0.08519995026290417,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.01910002902150154,
+          "total_ms": 123.57560003874823,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.2954999692738056,
+          "crop_ms": 0.005299982149153948,
+          "ocr_ms": 140.44040004955605,
+          "dedupe_ms": 0.005799985956400633,
+          "select_ms": 0.09659997886046767,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.020799983758479357,
+          "total_ms": 141.86749997315928,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.273999980185181,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 48.75379998702556,
+          "dedupe_ms": 0.001700012944638729,
+          "select_ms": 0.002200016751885414,
+          "stabilize_ms": 0.000700005330145359,
+          "track_ms": 0.00689999433234334,
+          "total_ms": 50.04689999623224,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.2584999785758555,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 149.23999999882653,
+          "dedupe_ms": 0.005500041879713535,
+          "select_ms": 0.08939998224377632,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.022499996703118086,
+          "total_ms": 150.62450000550598,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.4266000362113118,
+          "crop_ms": 0.006300047971308231,
+          "ocr_ms": 121.99259997578338,
+          "dedupe_ms": 0.004799978341907263,
+          "select_ms": 0.07680000271648169,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.0198000343516469,
+          "total_ms": 123.52950003696606,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.282899989746511,
+          "crop_ms": 0.005799985956400633,
+          "ocr_ms": 134.90699999965727,
+          "dedupe_ms": 0.0039000296965241432,
+          "select_ms": 0.06670004222542048,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01899997005239129,
+          "total_ms": 136.28749997587875,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.2522999895736575,
+          "crop_ms": 0.005499983672052622,
+          "ocr_ms": 155.67380003631115,
+          "dedupe_ms": 0.004699977580457926,
+          "select_ms": 0.07270002970471978,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.01869996776804328,
+          "total_ms": 157.03000000212342,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.2445999891497195,
+          "crop_ms": 0.005699985194951296,
+          "ocr_ms": 147.6805999991484,
+          "dedupe_ms": 0.005100038833916187,
+          "select_ms": 0.07999996887519956,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01910002902150154,
+          "total_ms": 149.0374999702908,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "runtime-no-det",
+      "provider": "paddleocr",
+      "config": {
+        "ocr_crop_subtitle_only": true,
+        "ocr_max_side": 960,
+        "subtitle_mode": true,
+        "translation_stable_scans": 1,
+        "debounce_frames": 1,
+        "engine_kwargs": {
+          "use_text_det": false
+        },
+        "use_directml": false
+      },
+      "summary": {
+        "images": 11,
+        "avg_total_ms": 148.94,
+        "avg_ocr_ms": 147.56,
+        "avg_selected_boxes": 0.91
+      },
+      "snapshots": [
+        {
+          "file": "1:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub1.png",
+          "capture_ms": 1.2789000174961984,
+          "crop_ms": 0.015199999324977398,
+          "ocr_ms": 270.7578000263311,
+          "dedupe_ms": 0.005099980626255274,
+          "select_ms": 0.08209998486563563,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.007499998901039362,
+          "total_ms": 272.15069998055696,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "2:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub2.png",
+          "capture_ms": 1.3132999883964658,
+          "crop_ms": 0.005300040356814861,
+          "ocr_ms": 196.89699995797127,
+          "dedupe_ms": 0.014599994756281376,
+          "select_ms": 0.09400001727044582,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.015300000086426735,
+          "total_ms": 198.3415000140667,
+          "raw_boxes": 2,
+          "deduped_boxes": 2,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan-took precision. Masako: Planning."
+          ]
+        },
+        {
+          "file": "3:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub3.png",
+          "capture_ms": 1.2470000074245036,
+          "crop_ms": 0.005499983672052622,
+          "ocr_ms": 142.18590001109987,
+          "dedupe_ms": 0.004299974534660578,
+          "select_ms": 0.07559999357908964,
+          "stabilize_ms": 0.000800006091594696,
+          "track_ms": 0.02099998528137803,
+          "total_ms": 143.5421999776736,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "And a war to cover the treachery."
+          ]
+        },
+        {
+          "file": "4:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub4.png",
+          "capture_ms": 1.251600042451173,
+          "crop_ms": 0.005499983672052622,
+          "ocr_ms": 119.20790001749992,
+          "dedupe_ms": 0.0048999791033566,
+          "select_ms": 0.07670000195503235,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.020099978428333998,
+          "total_ms": 120.56910002138466,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "5:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub5.png",
+          "capture_ms": 1.2944999616593122,
+          "crop_ms": 0.005200039595365524,
+          "ocr_ms": 138.1563000031747,
+          "dedupe_ms": 0.0038999714888632298,
+          "select_ms": 0.0686999992467463,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.019199971575289965,
+          "total_ms": 139.5500999642536,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "6:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub6.png",
+          "capture_ms": 1.2297999928705394,
+          "crop_ms": 0.005399982910603285,
+          "ocr_ms": 48.01239998778328,
+          "dedupe_ms": 0.001800013706088066,
+          "select_ms": 0.001900014467537403,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.006999995093792677,
+          "total_ms": 49.26050000358373,
+          "raw_boxes": 0,
+          "deduped_boxes": 0,
+          "selected_boxes": 0,
+          "stable_boxes": 0,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "7:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub7.png",
+          "capture_ms": 1.2605999945662916,
+          "crop_ms": 0.005499983672052622,
+          "ocr_ms": 146.9492000178434,
+          "dedupe_ms": 0.004999979864805937,
+          "select_ms": 0.08049997268244624,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.018900027498602867,
+          "total_ms": 148.32239999668673,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: He visited my home just before the assassins."
+          ]
+        },
+        {
+          "file": "8:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub8.png",
+          "capture_ms": 1.2787000159732997,
+          "crop_ms": 0.004999979864805937,
+          "ocr_ms": 118.47310001030564,
+          "dedupe_ms": 0.004300032742321491,
+          "select_ms": 0.07499998901039362,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.019899976905435324,
+          "total_ms": 119.85820002155378,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The little bastard was their scout."
+          ]
+        },
+        {
+          "file": "9:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub9.png",
+          "capture_ms": 1.2484000180847943,
+          "crop_ms": 0.005199981387704611,
+          "ocr_ms": 136.3306000130251,
+          "dedupe_ms": 0.004299974534660578,
+          "select_ms": 0.06769999163225293,
+          "stabilize_ms": 0.000400003045797348,
+          "track_ms": 0.0192999723367393,
+          "total_ms": 137.67789996927604,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "That doesn't prove his guilt."
+          ]
+        },
+        {
+          "file": "10:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub10.png",
+          "capture_ms": 1.3855000142939389,
+          "crop_ms": 0.007800001185387373,
+          "ocr_ms": 152.83909998834133,
+          "dedupe_ms": 0.004499976057559252,
+          "select_ms": 0.07510004797950387,
+          "stabilize_ms": 0.000500003807246685,
+          "track_ms": 0.01850002445280552,
+          "total_ms": 154.33310001390055,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: No. But it earns my suspicion."
+          ]
+        },
+        {
+          "file": "11:E:\\GameDownload\\AutoTrans\\tests\\ocr_test\\sub11.png",
+          "capture_ms": 1.2806999729946256,
+          "crop_ms": 0.00600004568696022,
+          "ocr_ms": 153.35449995473027,
+          "dedupe_ms": 0.007099995855242014,
+          "select_ms": 0.09370001498609781,
+          "stabilize_ms": 0.000600004568696022,
+          "track_ms": 0.022599997464567423,
+          "total_ms": 154.76720000151545,
+          "raw_boxes": 1,
+          "deduped_boxes": 1,
+          "selected_boxes": 1,
+          "stable_boxes": 1,
+          "tracked_boxes": 1,
+          "capture_backend": "image-file",
+          "crop_offset": 756,
+          "texts": [
+            "Masako: The plot to destroy my clan took precision."
+          ]
+        }
+      ]
+    }
+  ]
+}

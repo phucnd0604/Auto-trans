@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import socket
 import time
+from collections import Counter
 from collections.abc import Callable
 
 from rapidfuzz.fuzz import ratio
@@ -35,6 +36,7 @@ class PipelineOrchestrator:
         ocr_provider: OCRProvider,
         local_translator: TranslatorProvider,
         cloud_translator: TranslatorProvider | None,
+        deep_ocr_provider: OCRProvider | None = None,
         cache: TranslationCache | None = None,
         tracker: OCRTracker | None = None,
         subtitle_detector: SubtitleDetector | None = None,
@@ -42,6 +44,7 @@ class PipelineOrchestrator:
         self.config = config
         self.capture_service = capture_service
         self.ocr_provider = ocr_provider
+        self.deep_ocr_provider = deep_ocr_provider or ocr_provider
         self.local_translator = local_translator
         self.cloud_translator = cloud_translator
         self.cache = cache or TranslationCache()
@@ -131,6 +134,7 @@ class PipelineOrchestrator:
 
     def _select_boxes(self, frame: Frame, boxes: list[OCRBox]) -> list[OCRBox]:
         if self.config.subtitle_mode:
+            self._log_subtitle_selection_diagnostics(frame, boxes)
             selected = self.subtitle_detector.select(frame, boxes)
         else:
             selected = boxes
@@ -152,6 +156,23 @@ class PipelineOrchestrator:
         if skipped_hud:
             self._log(f"skipped {skipped_hud} HUD/menu OCR box(es)")
         return filtered
+
+    def _log_subtitle_selection_diagnostics(self, frame: Frame, boxes: list[OCRBox]) -> None:
+        if not self.config.translation_log_enabled or not boxes:
+            return
+        rejection_counts: Counter[str] = Counter()
+        accepted = 0
+        for box in boxes:
+            reason = self.subtitle_detector.explain_rejection(frame, box)
+            if reason is None:
+                accepted += 1
+            else:
+                rejection_counts[reason] += 1
+        reasons = ", ".join(f"{key}={value}" for key, value in rejection_counts.most_common(4))
+        self._log(
+            f"subtitle filter raw={len(boxes)} accepted={accepted} rejected={len(boxes) - accepted}"
+            + (f" reasons: {reasons}" if reasons else "")
+        )
 
     @staticmethod
     def _should_skip_hud_noise(frame: Frame, box: OCRBox, normalized: str) -> bool:
@@ -406,12 +427,12 @@ class PipelineOrchestrator:
 
         self._last_window_height = max(frame.window_rect.height, 1)
         self._last_window_width = max(frame.window_rect.width, 1)
-        recognize_paragraphs = getattr(self.ocr_provider, "recognize_paragraphs", None)
+        recognize_paragraphs = getattr(self.deep_ocr_provider, "recognize_paragraphs", None)
         used_paragraph_ocr = callable(recognize_paragraphs)
         if used_paragraph_ocr:
             ocr_boxes = recognize_paragraphs(frame)
         else:
-            ocr_boxes = self.ocr_provider.recognize(frame)
+            ocr_boxes = self.deep_ocr_provider.recognize(frame)
         ocr_boxes = self._dedupe_boxes(ocr_boxes)
         selected_boxes = self._select_deep_boxes(ocr_boxes)
         grouped_boxes = selected_boxes
@@ -488,7 +509,9 @@ class PipelineOrchestrator:
             overlay_started = time.perf_counter()
             signature = self._text_signature(tracked_boxes)
             if signature and signature == self._last_text_signature:
-                self._log("text unchanged, reusing previous overlay")
+                self._log(
+                    f"text unchanged, reusing previous overlay items={len(self._last_overlay_items)} signature={signature[:96]}"
+                )
                 overlay_items = list(self._last_overlay_items)
                 self._last_translate_step_ms = 0.0
             else:
@@ -864,13 +887,15 @@ class PipelineOrchestrator:
                 pending.append(box)
                 cache_misses += 1
 
-        self._log(f"live cache hits={cache_hits} misses={cache_misses}")
+        self._log(f"live cache hits={cache_hits} misses={cache_misses} request_items={len(request.items)}")
 
         if pending:
             translate_started = time.perf_counter()
             translated = self._translate_pending(pending, request)
             self._last_translate_step_ms = (time.perf_counter() - translate_started) * 1000.0
-            self._log(f"live translate_ms={self._last_translate_step_ms:.0f} items={len(pending)}")
+            self._log(
+                f"live translate_ms={self._last_translate_step_ms:.0f} pending_items={len(pending)} translator={getattr(self.local_translator, 'name', 'local')}"
+            )
             for item in translated:
                 key = canonicalize_text(item.source_text)
                 if not key:

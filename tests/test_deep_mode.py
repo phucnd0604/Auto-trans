@@ -357,6 +357,20 @@ def test_settings_dialog_hides_advanced_controls_by_default(qtbot, tmp_path) -> 
     assert dialog.advanced_container.isVisible()
 
 
+def test_settings_dialog_labels_have_tooltips(tmp_path) -> None:
+    dialog = SettingsDialog(settings_path=tmp_path / "ui-settings.json")
+
+    ocr_label = dialog.advanced_container.layout().labelForField(dialog.ocr_provider_combo)
+    gemini_label = dialog.layout().itemAt(0).layout().itemAt(0).widget().layout().itemAt(2).layout().labelForField(
+        dialog.deep_translation_api_key_edit
+    )
+
+    assert ocr_label is not None
+    assert "realtime translation" in ocr_label.toolTip().lower()
+    assert gemini_label is not None
+    assert "deep mode" in gemini_label.toolTip().lower()
+
+
 def test_load_startup_settings_maps_legacy_openai_keys(tmp_path) -> None:
     runtime_dir = tmp_path / ".runtime"
     runtime_dir.mkdir(parents=True)

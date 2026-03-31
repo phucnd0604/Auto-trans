@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 from typing import Protocol
@@ -442,4 +443,161 @@ class RapidOCRProvider(BaseOCRProvider):
             f"total={total_ms:.0f}ms"
         )
         return paragraph_boxes
+
+
+class PaddleOCRProvider(BaseOCRProvider):
+    name = "paddleocr"
+
+    def __init__(self, config: AppConfig) -> None:
+        super().__init__(config)
+        os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
+        from paddleocr import PaddleOCR
+
+        self._language = self._resolve_language()
+        self._engine = PaddleOCR(
+            text_detection_model_name="PP-OCRv5_mobile_det",
+            text_recognition_model_name=self._resolve_recognition_model_name(),
+            use_doc_orientation_classify=False,
+            use_doc_unwarping=False,
+            use_textline_orientation=False,
+            text_det_limit_side_len=192,
+            text_recognition_batch_size=8,
+            lang=self._language,
+        )
+
+    def _resolve_language(self) -> str:
+        supported_languages = {
+            "en": "en",
+            "english": "en",
+            "latin": "en",
+            "jp": "japan",
+            "ja": "japan",
+            "japanese": "japan",
+            "ch": "ch",
+            "zh": "ch",
+            "zh-cn": "ch",
+            "zh-hans": "ch",
+        }
+        for language in self._config.ocr_languages:
+            normalized = normalize_text(language).lower()
+            if normalized in supported_languages:
+                resolved = supported_languages[normalized]
+                if resolved != normalized:
+                    self._log(f"paddleocr language fallback {language!r} -> {resolved!r}")
+                return resolved
+        self._log("paddleocr language fallback -> 'en'")
+        return "en"
+
+    def _resolve_recognition_model_name(self) -> str:
+        mapping = {
+            "en": "en_PP-OCRv5_mobile_rec",
+            "japan": "japan_PP-OCRv5_mobile_rec",
+            "ch": "ch_PP-OCRv5_mobile_rec",
+        }
+        return mapping.get(self._language, "en_PP-OCRv5_mobile_rec")
+
+    @staticmethod
+    def _extract_result_fields(item: object) -> tuple[object, object, object] | None:
+        if isinstance(item, dict):
+            return (
+                item.get("rec_polys") or item.get("dt_polys") or [],
+                item.get("rec_texts") or [],
+                item.get("rec_scores") or [],
+            )
+        if hasattr(item, "get"):
+            return (
+                item.get("rec_polys") or item.get("dt_polys") or [],
+                item.get("rec_texts") or [],
+                item.get("rec_scores") or [],
+            )
+        return None
+
+    def _extract_lines(self, raw_result: object) -> list[tuple[object, str, float]]:
+        if not isinstance(raw_result, list):
+            return []
+
+        # PaddleOCR result shape varies by version; normalize the common list/dict forms.
+        extracted_fields = self._extract_result_fields(raw_result[0]) if raw_result else None
+        if extracted_fields is not None:
+            rec_polys, rec_texts, rec_scores = extracted_fields
+            output: list[tuple[object, str, float]] = []
+            for points, text, confidence in zip(rec_polys, rec_texts, rec_scores, strict=False):
+                output.append((points, str(text), float(confidence)))
+            return output
+
+        if raw_result and isinstance(raw_result[0], list) and raw_result[0]:
+            first_item = raw_result[0][0]
+            if isinstance(first_item, list | tuple) and len(first_item) == 2:
+                output = []
+                for item in raw_result[0]:
+                    points, recognition = item
+                    if not isinstance(recognition, list | tuple) or len(recognition) < 2:
+                        continue
+                    output.append((points, str(recognition[0]), float(recognition[1])))
+                return output
+
+        output = []
+        for item in raw_result:
+            if not isinstance(item, list | tuple) or len(item) < 2:
+                continue
+            points, recognition = item
+            if not isinstance(recognition, list | tuple) or len(recognition) < 2:
+                continue
+            output.append((points, str(recognition[0]), float(recognition[1])))
+        return output
+
+    def _run_engine(self, frame: Frame) -> tuple[list[OCRBox], float]:
+        started = time.perf_counter()
+        image, scale_back = RapidOCRProvider._resize_for_ocr(self, frame.image)
+        result = self._engine.predict(image)
+        predict_ms = (time.perf_counter() - started) * 1000.0
+        boxes: list[OCRBox] = []
+        for index, (points, text, confidence) in enumerate(self._extract_lines(result)):
+            if isinstance(points, np.ndarray):
+                points = points.tolist()
+            if not isinstance(points, list | tuple) or not points:
+                continue
+            try:
+                xs = [int(round(float(point[0]) * scale_back)) for point in points]
+                ys = [int(round(float(point[1]) * scale_back)) for point in points]
+            except (TypeError, ValueError, IndexError):
+                continue
+            bbox = Rect(
+                x=min(xs),
+                y=min(ys),
+                width=max(xs) - min(xs),
+                height=max(ys) - min(ys),
+            )
+            normalized = normalize_text(text)
+            confidence_value = float(confidence)
+            if not self._is_meaningful(normalized, bbox, confidence_value):
+                continue
+            boxes.append(
+                OCRBox(
+                    id="",
+                    source_text=normalized,
+                    confidence=confidence_value,
+                    bbox=bbox,
+                    language_hint=self._language,
+                    line_id=f"paddle-{index}",
+                )
+            )
+        return boxes, predict_ms
+
+    def recognize(self, frame: Frame) -> list[OCRBox]:
+        boxes, predict_ms = self._run_engine(frame)
+        if not boxes:
+            self._log(f"paddle predict={predict_ms:.0f}ms raw=0 merged=0")
+            return boxes
+        merge_started = time.perf_counter()
+        merged = self._merge_line_boxes(boxes)
+        merge_ms = (time.perf_counter() - merge_started) * 1000.0
+        self._log(
+            f"paddle predict={predict_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)}"
+        )
+        return merged
+
+    def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
+        # Deep mode never uses PaddleOCR in this app, but keep protocol compatibility.
+        return self.recognize(frame)
 

@@ -23,6 +23,9 @@ ocr = [
   "rapidocr_onnxruntime>=1.2",
   "rapid-layout>=1.2",
   "opencv-python>=4.10",
+  "paddlepaddle>=3.2,<3.3",
+  "paddleocr>=3.2,<3.3",
+  "paddlex[ocr-core]>=3.2,<3.3",
 ]
 local_translate = ["ctranslate2>=4.5", "sentencepiece>=0.2", "huggingface_hub>=0.36"]
 dev = ["pytest>=8.3", "pytest-qt>=4.4"]

@@ -14,8 +14,8 @@ class _LineCappedTeeStream(io.TextIOBase):
         self._max_lines = max(max_lines, 100)
         self._trim_to_lines = max(1, min(trim_to_lines, self._max_lines))
         self._log_path.parent.mkdir(parents=True, exist_ok=True)
-        self._log_file = self._log_path.open("a", encoding="utf-8", errors="replace")
-        self._line_count = self._count_existing_lines()
+        self._log_file = self._log_path.open("w", encoding="utf-8", errors="replace")
+        self._line_count = 0
 
     def write(self, text: str) -> int:
         if not text:
@@ -50,15 +50,6 @@ class _LineCappedTeeStream(io.TextIOBase):
 
     def writable(self) -> bool:
         return True
-
-    def _count_existing_lines(self) -> int:
-        if not self._log_path.exists():
-            return 0
-        try:
-            with self._log_path.open("r", encoding="utf-8", errors="replace") as handle:
-                return sum(1 for _ in handle)
-        except OSError:
-            return 0
 
     def _ensure_log_file(self) -> None:
         if getattr(self, "_log_file", None) is None or self._log_file.closed:
@@ -112,5 +103,6 @@ def setup_runtime_logging(config: AppConfig) -> Path:
         sys.stdout = _LineCappedTeeStream(sys.stdout, log_path, config.log_max_lines, config.log_trim_to_lines)
     if not isinstance(sys.stderr, _LineCappedTeeStream):
         sys.stderr = _LineCappedTeeStream(sys.stderr, log_path, config.log_max_lines, config.log_trim_to_lines)
+    print("[AutoTrans] Log cleared for new session", flush=True)
     print(f"[AutoTrans] Log file: {log_path}", flush=True)
     return log_path

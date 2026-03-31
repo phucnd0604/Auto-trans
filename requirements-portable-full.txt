@@ -8,6 +8,9 @@ bettercam==1.0.0
 rapidocr-onnxruntime==1.2.3
 rapid-layout==1.2.1
 opencv-python==4.13.0.92
+paddlepaddle==3.2.0
+paddleocr==3.2.0
+paddlex==3.2.1
 ctranslate2==4.7.1
 sentencepiece==0.2.1
 huggingface_hub==1.8.0
