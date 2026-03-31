@@ -106,11 +106,11 @@ class OverlayWindow(QWidget):
         return (item.region or "").lower() == "subtitle"
 
     def _fit_font_and_panel(self, text: str, rect: QRect, *, is_subtitle: bool | None = None) -> tuple[QFont, QRect, QRect, int]:
-        inner_padding_x = 10
-        inner_padding_y = 4
         normalized = normalize_text(text)
         if is_subtitle is None:
             is_subtitle = self._looks_like_subtitle_region(rect)
+        inner_padding_x = 10 if is_subtitle else 7
+        inner_padding_y = 4 if is_subtitle else 2
         is_paragraph = "\n" in text or rect.height() > 40 or len(normalized) > 48
         single_line_flags = Qt.AlignCenter | Qt.TextSingleLine
         wrapped_flags = Qt.AlignCenter | Qt.TextWordWrap
@@ -126,17 +126,18 @@ class OverlayWindow(QWidget):
             max_font = 22
             min_font = 22
         elif is_paragraph:
-            max_panel_width = max(max_panel_width, min(max(rect.width() + 72, int(self.width() * 0.36)), max(self.width() - 24, 1)))
-            max_panel_height = max(max_panel_height, min(max(rect.height() + 16, 56), max(self.height() - 24, 1)))
-            preferred_width = max(min(max_panel_width - 8, int(max_panel_width * 0.92)), 100)
-            max_font = min(18, max(12, int(rect.height() * 0.54)))
-            min_font = 11
+            # Deep UI blocks should stay visually anchored to the detected OCR block.
+            max_panel_width = max(rect.width(), 1)
+            max_panel_height = max(rect.height(), 1)
+            preferred_width = max(max_panel_width - (inner_padding_x * 2), 40)
+            max_font = min(16, max(10, int(rect.height() * 0.42)))
+            min_font = 6
         else:
-            max_panel_width = max(max_panel_width, min(max(rect.width() + 56, 120), max(self.width() - 24, 1)))
-            max_panel_height = max(max_panel_height, min(max(rect.height() + 14, 42), max(self.height() - 24, 1)))
-            preferred_width = max(min(max_panel_width - 8, int(max_panel_width * 0.95)), 60)
+            max_panel_width = max(rect.width(), 1)
+            max_panel_height = max(rect.height(), 1)
+            preferred_width = max(max_panel_width - (inner_padding_x * 2), 30)
             max_font = min(16, max(10, int(rect.height() * 0.54)))
-            min_font = 9
+            min_font = 6
 
         best_font = self._styled_font(min_font, subtitle=is_subtitle)
         best_bounds = QRect(0, 0, max(rect.width(), 1), max(rect.height(), 1))
@@ -172,17 +173,17 @@ class OverlayWindow(QWidget):
                 ):
                     break
 
-        panel_x = rect.x() + ((rect.width() - best_panel_width) // 2)
-        panel_y = rect.y() + ((rect.height() - best_panel_height) // 2)
         if not is_subtitle:
-            allowed_shift_x = max(32, rect.width() // 3)
-            allowed_shift_y = max(18, rect.height() // 2)
-            panel_x = max(rect.x() - allowed_shift_x, min(panel_x, rect.right() - best_panel_width + allowed_shift_x))
-            panel_y = max(rect.y() - allowed_shift_y, min(panel_y, rect.bottom() - best_panel_height + allowed_shift_y))
-        panel_x = max(0, min(panel_x, max(self.width() - best_panel_width, 0)))
-        panel_y = max(0, min(panel_y, max(self.height() - best_panel_height, 0)))
-
-        panel_rect = QRect(panel_x, panel_y, best_panel_width, best_panel_height)
+            # Deep/UI overlays should occupy the detected OCR box exactly.
+            panel_rect = QRect(rect)
+            panel_rect.moveLeft(max(0, min(panel_rect.x(), max(self.width() - panel_rect.width(), 0))))
+            panel_rect.moveTop(max(0, min(panel_rect.y(), max(self.height() - panel_rect.height(), 0))))
+        else:
+            panel_x = rect.x() + ((rect.width() - best_panel_width) // 2)
+            panel_y = rect.y() + ((rect.height() - best_panel_height) // 2)
+            panel_x = max(0, min(panel_x, max(self.width() - best_panel_width, 0)))
+            panel_y = max(0, min(panel_y, max(self.height() - best_panel_height, 0)))
+            panel_rect = QRect(panel_x, panel_y, best_panel_width, best_panel_height)
         text_rect = panel_rect.adjusted(inner_padding_x, inner_padding_y, -inner_padding_x, -inner_padding_y)
         if text_rect.width() <= 2 or text_rect.height() <= 2:
             text_rect = QRect(panel_rect)
@@ -235,9 +236,12 @@ class OverlayWindow(QWidget):
         text_flags: int,
         *,
         is_subtitle: bool,
+        container_rect: QRect | None = None,
     ) -> QRect:
         metrics = QFontMetrics(font)
         expanded = QRect(text_rect)
+        if not is_subtitle:
+            return expanded if container_rect is None else expanded.intersected(container_rect)
         if text_flags & Qt.TextWordWrap:
             preferred_width = expanded.width()
             if not is_subtitle:
@@ -259,7 +263,37 @@ class OverlayWindow(QWidget):
             expanded.setHeight(max(self.height() - 8, 1))
         expanded.moveLeft(max(0, min(expanded.x(), max(self.width() - expanded.width(), 0))))
         expanded.moveTop(max(0, min(expanded.y(), max(self.height() - expanded.height(), 0))))
+        if container_rect is not None:
+            expanded = expanded.intersected(container_rect)
         return expanded
+
+    def _shrink_font_to_fit_rect(
+        self,
+        text: str,
+        font: QFont,
+        text_rect: QRect,
+        text_flags: int,
+        *,
+        is_subtitle: bool,
+    ) -> QFont:
+        if text_rect.width() <= 0 or text_rect.height() <= 0:
+            return font
+
+        current_size = max(font.pointSize(), 1)
+        fitted_font = QFont(font)
+        min_size = 6 if not is_subtitle else 22
+
+        while current_size >= min_size:
+            metrics = QFontMetrics(fitted_font)
+            bounds = metrics.boundingRect(QRect(text_rect), text_flags, text)
+            if bounds.width() <= text_rect.width() and bounds.height() <= text_rect.height():
+                return fitted_font
+            current_size -= 1
+            if current_size < min_size:
+                break
+            fitted_font = self._styled_font(current_size, subtitle=is_subtitle)
+
+        return fitted_font
 
     def _timing_data(self, item: OverlayItem) -> tuple[float, float, float] | None:
         key = self._item_key(item)
@@ -326,10 +360,26 @@ class OverlayWindow(QWidget):
         alpha: float,
         text_color: QColor,
     ) -> None:
+        is_subtitle = self._is_subtitle_item(item)
         font, _, _, text_flags = self._fit_font_and_panel(
             item.translated_text,
             panel_rect,
-            is_subtitle=self._is_subtitle_item(item),
+            is_subtitle=is_subtitle,
+        )
+        draw_rect = self._expanded_text_rect(
+            item.translated_text,
+            font,
+            QRect(text_rect),
+            text_flags,
+            is_subtitle=is_subtitle,
+            container_rect=panel_rect,
+        )
+        font = self._shrink_font_to_fit_rect(
+            item.translated_text,
+            font,
+            draw_rect,
+            text_flags,
+            is_subtitle=is_subtitle,
         )
         painter.setFont(font)
         draw_rect = self._expanded_text_rect(
@@ -337,11 +387,13 @@ class OverlayWindow(QWidget):
             font,
             QRect(text_rect),
             text_flags,
-            is_subtitle=self._is_subtitle_item(item),
+            is_subtitle=is_subtitle,
+            container_rect=panel_rect,
         )
-        background_rect = draw_rect.adjusted(-12, -6, 12, 6)
+        background_rect = panel_rect if not is_subtitle else draw_rect.adjusted(-12, -6, 12, 6).intersected(panel_rect)
         painter.save()
         painter.setOpacity(max(0.0, min(alpha, 1.0)))
+        painter.setClipRect(panel_rect)
         if not self._overlay_brush.isNull():
             painter.drawPixmap(background_rect, self._overlay_brush)
         else:
@@ -351,14 +403,20 @@ class OverlayWindow(QWidget):
         painter.restore()
 
         if item.visibility_state == VisibilityState.PENDING:
+            painter.save()
+            painter.setClipRect(panel_rect)
             border_pen = QPen(QColor(90, 220, 255, int(255 * alpha)))
             border_pen.setWidth(1)
             painter.setPen(border_pen)
             painter.setBrush(Qt.NoBrush)
             painter.drawRoundedRect(QRectF(background_rect), 6, 6)
+            painter.restore()
 
+        painter.save()
+        painter.setClipRect(panel_rect)
         painter.setPen(QColor(text_color.red(), text_color.green(), text_color.blue(), int(255 * alpha)))
         painter.drawText(draw_rect, text_flags, item.translated_text)
+        painter.restore()
 
     def paintEvent(self, event) -> None:  # noqa: N802
         painter = QPainter(self)
@@ -409,7 +467,7 @@ class OverlayWindow(QWidget):
                 resolved_panel,
                 resolved_text,
                 alpha,
-                QColor(245, 210, 90),
+                QColor(18, 44, 94),
             )
             placed_rects.append(QRect(resolved_panel))
 

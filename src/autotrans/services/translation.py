@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import re
 import subprocess
 import time
@@ -574,6 +575,14 @@ class GeminiRestTranslator(GeminiTranslator):
     _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
 
     @staticmethod
+    def _find_curl_binary() -> str:
+        for candidate in ("curl.exe", "curl"):
+            resolved = shutil.which(candidate)
+            if resolved:
+                return resolved
+        raise RuntimeError("curl is not available")
+
+    @staticmethod
     def _normalize_response_payload(payload: object) -> dict[str, object]:
         if isinstance(payload, dict):
             return payload
@@ -589,9 +598,10 @@ class GeminiRestTranslator(GeminiTranslator):
             raise RuntimeError("Gemini API key is required")
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         try:
+            curl_binary = self._find_curl_binary()
             result = subprocess.run(
                 [
-                    "curl.exe",
+                    curl_binary,
                     "--silent",
                     "--show-error",
                     "--location",
@@ -613,7 +623,7 @@ class GeminiRestTranslator(GeminiTranslator):
                 timeout=max(self._timeout_s + 5.0, 10.0),
             )
         except FileNotFoundError as exc:
-            raise RuntimeError("curl.exe is not available") from exc
+            raise RuntimeError("curl is not available") from exc
         except subprocess.TimeoutExpired as exc:
             raise RuntimeError(f"Gemini REST curl timeout after {self._timeout_s:.1f}s") from exc
         if result.returncode != 0:
