@@ -21,7 +21,6 @@ from autotrans.models import (
 from autotrans.services.cache import TranslationCache
 from autotrans.services.capture import CaptureService
 from autotrans.services.ocr import OCRProvider
-from autotrans.services.policy import ProviderPolicy
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.tracker import OCRTracker
 from autotrans.services.translation import TranslatorProvider
@@ -37,7 +36,6 @@ class PipelineOrchestrator:
         local_translator: TranslatorProvider,
         cloud_translator: TranslatorProvider | None,
         cache: TranslationCache | None = None,
-        policy: ProviderPolicy | None = None,
         tracker: OCRTracker | None = None,
         subtitle_detector: SubtitleDetector | None = None,
     ) -> None:
@@ -47,7 +45,6 @@ class PipelineOrchestrator:
         self.local_translator = local_translator
         self.cloud_translator = cloud_translator
         self.cache = cache or TranslationCache()
-        self.policy = policy or ProviderPolicy(cloud_timeout_ms=config.cloud_timeout_ms)
         self.tracker = tracker or OCRTracker(
             debounce_frames=config.debounce_frames,
             max_missed_frames=config.subtitle_hold_frames,
@@ -402,6 +399,7 @@ class PipelineOrchestrator:
         return "|".join(parts)
 
     def _collect_deep_grouped_boxes(self, hwnd: int) -> list[OCRBox]:
+        started = time.perf_counter()
         frame = self.capture_service.capture_window(hwnd)
         if frame is None:
             return []
@@ -420,6 +418,7 @@ class PipelineOrchestrator:
         self._log(
             f"deep ocr blocks raw={len(ocr_boxes)} selected={len(selected_boxes)} grouped={len(grouped_boxes)} paragraph_ocr={used_paragraph_ocr}"
         )
+        self._log(f"deep prepare total_ms={(time.perf_counter() - started) * 1000.0:.0f}")
         return [box for box in grouped_boxes if normalize_text(box.source_text)]
 
     def _deep_overlay_style(self) -> OverlayStyle:
@@ -620,25 +619,16 @@ class PipelineOrchestrator:
         )
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         self._log(
-            f"deep translate completed in {elapsed_ms:.0f}ms "
-            f"translator={translator_name} "
-            f"provider={translator_kind} "
-            f"cache_hits={cache_hits} misses={len(pending)} "
-            f"grouped={len(grouped_boxes)} shown={len(overlay_items)}"
+            f"deep summary translator={translator_name} provider={translator_kind} "
+            f"cache_hits={cache_hits} misses={len(pending)} grouped={len(grouped_boxes)} shown={len(overlay_items)} total_ms={elapsed_ms:.0f}"
         )
         return overlay_items
 
 
     def _translate_pending(self, pending: list[OCRBox], request: TranslationRequest):
-        decision = self.policy.select(
-            text_items=pending,
-            mode=request.mode,
-            network_state=False,
-            cost_budget=False,
-        )
         preferred = self.local_translator
         self._log(
-            f"translator={getattr(preferred, 'name', decision.provider)} provider={decision.provider} reason={decision.reason} items={len(pending)}"
+            f"live translator={getattr(preferred, 'name', 'local')} provider=local reason=live-local-only items={len(pending)}"
         )
         return preferred.translate_batch(
             items=pending,
@@ -874,13 +864,13 @@ class PipelineOrchestrator:
                 pending.append(box)
                 cache_misses += 1
 
-        self._log(f"cache hits={cache_hits} misses={cache_misses}")
+        self._log(f"live cache hits={cache_hits} misses={cache_misses}")
 
         if pending:
             translate_started = time.perf_counter()
             translated = self._translate_pending(pending, request)
             self._last_translate_step_ms = (time.perf_counter() - translate_started) * 1000.0
-            self._log(f"translate step took {self._last_translate_step_ms:.0f}ms for {len(pending)} item(s)")
+            self._log(f"live translate_ms={self._last_translate_step_ms:.0f} items={len(pending)}")
             for item in translated:
                 key = canonicalize_text(item.source_text)
                 if not key:
@@ -934,6 +924,9 @@ class PipelineOrchestrator:
             self._log(
                 f"overlay add {normalize_text(item.source_text)!r} -> {normalize_text(item.translated_text)!r} @ ({item.bbox.x},{item.bbox.y},{item.bbox.width},{item.bbox.height}) linger={item.linger_seconds:.2f}s"
             )
+        self._log(
+            f"live summary translator={getattr(self.local_translator, 'name', 'local')} cache_hits={cache_hits} misses={cache_misses} shown={len(overlay_items)}"
+        )
         return overlay_items
 
 

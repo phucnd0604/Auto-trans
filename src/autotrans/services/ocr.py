@@ -284,7 +284,7 @@ class RapidOCRProvider(BaseOCRProvider):
             from rapid_layout import RapidLayout
         except ImportError:
             self._layout_disabled = True
-            self._log("rapid-layout is not installed; deep mode will use heuristic paragraph merge")
+            self._log("rapid-layout is not installed; deep mode will use line/paragraph OCR only")
             return None
         try:
             self._layout_engine = RapidLayout(

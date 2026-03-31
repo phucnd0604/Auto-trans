@@ -121,7 +121,7 @@ class AppConfig:
     log_trim_to_lines: int = int(getenv("AUTOTRANS_LOG_TRIM_TO_LINES", "5000"))
     deep_translation_api_key: str | None = getenv("AUTOTRANS_DEEP_TRANSLATION_API_KEY") or None
     deep_translation_model: str = getenv("AUTOTRANS_DEEP_TRANSLATION_MODEL", "gemini-2.0-flash")
-    deep_translation_transport: str = getenv("AUTOTRANS_DEEP_TRANSLATION_TRANSPORT", "sdk")
+    deep_translation_transport: str = getenv("AUTOTRANS_DEEP_TRANSLATION_TRANSPORT", "rest")
     game_profile_title: str = getenv("AUTOTRANS_GAME_PROFILE_TITLE", "")
     game_profile_world: str = getenv("AUTOTRANS_GAME_PROFILE_WORLD", "")
     game_profile_factions: str = getenv("AUTOTRANS_GAME_PROFILE_FACTIONS", "")
@@ -129,7 +129,6 @@ class AppConfig:
     game_profile_terms_items_skills: str = getenv("AUTOTRANS_GAME_PROFILE_TERMS_ITEMS_SKILLS", "")
     cloud_timeout_ms: int = int(getenv("AUTOTRANS_CLOUD_TIMEOUT_MS", "2500"))
     deep_translation_timeout_ms: int = int(getenv("AUTOTRANS_DEEP_TRANSLATION_TIMEOUT_MS", "90000"))
-    local_max_chars_balanced: int = int(getenv("AUTOTRANS_LOCAL_MAX_CHARS_BALANCED", "64"))
     debounce_frames: int = int(getenv("AUTOTRANS_DEBOUNCE_FRAMES", "1"))
     cache_size: int = int(getenv("AUTOTRANS_CACHE_SIZE", "1024"))
     cache_root_dir: Path = _DEFAULT_CACHE_ROOT_DIR

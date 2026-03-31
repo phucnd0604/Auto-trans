@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-import shutil
 import re
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -163,10 +163,7 @@ class CTranslate2Translator:
                 )
             )
         elapsed_ms = (time.perf_counter() - started) * 1000
-        print(
-            f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms",
-            flush=True,
-        )
+        print(f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms", flush=True)
         for item, result in list(zip(items, results, strict=False))[:6]:
             print(
                 f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
@@ -185,7 +182,6 @@ class CTranslate2Translator:
 
 class WordByWordTranslator:
     name = "local-word-by-word"
-
     _WORD_MAP = {
         "follow": "theo",
         "yuna": "Yuna",
@@ -296,10 +292,7 @@ class WordByWordTranslator:
                 )
             )
         elapsed_ms = (time.perf_counter() - started) * 1000
-        print(
-            f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms",
-            flush=True,
-        )
+        print(f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms", flush=True)
         for item, result in list(zip(items, results, strict=False))[:6]:
             print(
                 f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
@@ -318,6 +311,7 @@ class WordByWordTranslator:
 
 class GeminiTranslator:
     name = "gemini"
+    _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
     _LEADING_NUMBER_RE = re.compile(r"^\s*[\"'`]*\s*\d+[\.\):\-]\s*")
     _LEADING_BULLET_RE = re.compile(r"^\s*[\"'`]*\s*[-*]+\s*")
     _BLOCK_RE = re.compile(r"<BLOCK_(\d+)>\s*(.*?)\s*</BLOCK_\1>", re.DOTALL)
@@ -337,7 +331,6 @@ class GeminiTranslator:
         self._timeout_s = timeout_s
         self._verbose = verbose
         self._max_logged_items = max_logged_items
-        self._client = None
 
     def _log_verbose_block(self, label: str, text: str) -> None:
         if not self._verbose:
@@ -349,22 +342,24 @@ class GeminiTranslator:
         elapsed_ms = (time.perf_counter() - started) * 1000
         print(f"[AutoTrans][{self._model}] {label} log_ms={elapsed_ms:.0f}", flush=True)
 
-    def _get_client(self):
-        if self._client is not None:
-            return self._client
-        try:
-            from google import genai
-            from google.genai import types
-        except ImportError as exc:
-            raise RuntimeError("google-genai is not installed") from exc
-        client_kwargs: dict[str, str] = {}
-        if self._api_key:
-            client_kwargs["api_key"] = self._api_key
-        client_kwargs["http_options"] = types.HttpOptions(
-            timeout=max(int(self._timeout_s * 1000), 1000),
-        )
-        self._client = genai.Client(**client_kwargs)
-        return self._client
+    @staticmethod
+    def _find_curl_binary() -> str:
+        for candidate in ("curl.exe", "curl"):
+            resolved = shutil.which(candidate)
+            if resolved:
+                return resolved
+        raise RuntimeError("curl is not available")
+
+    @staticmethod
+    def _normalize_response_payload(payload: object) -> dict[str, object]:
+        if isinstance(payload, dict):
+            return payload
+        if isinstance(payload, list):
+            for item in payload:
+                if isinstance(item, dict):
+                    return item
+            raise RuntimeError("Gemini REST returned a list without any object payload")
+        raise RuntimeError(f"Gemini REST returned unsupported payload type: {type(payload).__name__}")
 
     @classmethod
     def _sanitize_line(cls, text: str) -> str:
@@ -385,16 +380,11 @@ class GeminiTranslator:
                 continue
         if parsed:
             return [cls._sanitize_line(parsed.get(index, "")) for index in range(1, expected_count + 1)]
-        return [
-            cls._sanitize_line(line)
-            for line in (output_text or "").splitlines()
-            if cls._sanitize_line(line)
-        ]
+        return [cls._sanitize_line(line) for line in (output_text or "").splitlines() if cls._sanitize_line(line)]
 
     def _build_game_profile_lines(self) -> list[str]:
         if self._config is None:
             return []
-
         profile_pairs = [
             ("Game Title", self._config.game_profile_title),
             ("World / Setting", self._config.game_profile_world),
@@ -402,8 +392,7 @@ class GeminiTranslator:
             ("Characters & Honorifics", self._config.game_profile_characters_honorifics),
             ("Terms / Items / Skills", self._config.game_profile_terms_items_skills),
         ]
-        lines = [f"{label}: {value.strip()}" for label, value in profile_pairs if value and value.strip()]
-        return lines
+        return [f"{label}: {value.strip()}" for label, value in profile_pairs if value and value.strip()]
 
     def _build_deep_system_instruction(self) -> str:
         system_lines = [GEMINI_DEEP_SYSTEM_PROMPT]
@@ -428,170 +417,25 @@ class GeminiTranslator:
         return "\n".join(system_lines)
 
     def _build_deep_translation_contents(self, items: list[OCRBox]) -> str:
-        prompt_lines: list[str] = []
-        prompt_lines.extend(
-            [
-                "Quy tắc output:",
-                "- Trả về đúng 1 block output cho mỗi block input, đúng thứ tự.",
-                "- Giữ nguyên tag <BLOCK_n> và </BLOCK_n> trong output.",
-                "- Chỉ viết nội dung dịch nằm bên trong từng tag.",
-                "- Không thêm ghi chú, không giải thích, không đổi thứ tự.",
-                "- Dịch sát nghĩa và ngắn gọn. Không được diễn giải, phóng tác, hay viết dài hơn cần thiết.",
-                "- Nếu input là menu label, tên vật phẩm, tên kỹ năng, tên nhiệm vụ, hoặc cụm ngắn thì output phải là một nhãn ngắn tương ứng, không thành câu dài.",
-                "- Nếu input bị cắt do OCR thì chỉ dịch phần nhìn thấy, không được suy đoán phần bị thiếu.",
-                "- Không thêm thông tin không xuất hiện trong block input.",
-                "- Cố gắng giữ độ dài output gần với input. Input rất ngắn thì output cũng phải rất ngắn.",
-                "",
-                "Input blocks:",
-            ]
-        )
+        prompt_lines = [
+            "Quy tắc output:",
+            "- Trả về đúng 1 block output cho mỗi block input, đúng thứ tự.",
+            "- Giữ nguyên tag <BLOCK_n> và </BLOCK_n> trong output.",
+            "- Chỉ viết nội dung dịch nằm bên trong từng tag.",
+            "- Không thêm ghi chú, không giải thích, không đổi thứ tự.",
+            "- Dịch sát nghĩa và ngắn gọn. Không được diễn giải, phóng tác, hay viết dài hơn cần thiết.",
+            "- Nếu input là menu label, tên vật phẩm, tên kỹ năng, tên nhiệm vụ, hoặc cụm ngắn thì output phải là một nhãn ngắn tương ứng, không thành câu dài.",
+            "- Nếu input bị cắt do OCR thì chỉ dịch phần nhìn thấy, không được suy đoán phần bị thiếu.",
+            "- Không thêm thông tin không xuất hiện trong block input.",
+            "- Cố gắng giữ độ dài output gần với input. Input rất ngắn thì output cũng phải rất ngắn.",
+            "",
+            "Input blocks:",
+        ]
         for index, item in enumerate(items, start=1):
             prompt_lines.append(f"<BLOCK_{index}>")
             prompt_lines.append(item.source_text.strip())
             prompt_lines.append(f"</BLOCK_{index}>")
         return "\n".join(prompt_lines)
-
-    def _generate_batch_text(self, contents: str) -> str:
-        response = self._get_client().models.generate_content(
-            model=self._model,
-            contents=contents,
-        )
-        return normalize_text(getattr(response, "text", "")).strip()
-
-    def _generate_deep_text(self, system_instruction: str, contents: str) -> str:
-        try:
-            from google.genai import types
-        except ImportError as exc:
-            raise RuntimeError("google-genai is not installed") from exc
-        response = self._get_client().models.generate_content(
-            model=self._model,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
-        )
-        return normalize_text(getattr(response, "text", "")).strip()
-
-    def translate_batch(
-        self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-        mode: QualityMode,
-    ) -> list[TranslationResult]:
-        started = time.perf_counter()
-        prompt_lines = [
-            "You are translating OCR text from a video game UI into natural Vietnamese.",
-            "Rules:",
-            "- Return exactly one translated line per input line, in the same order.",
-            "- Keep proper nouns like names, places, factions, and item names when appropriate.",
-            "- Translate menu labels, quest objectives, and subtitles naturally and concisely.",
-            "- Do not explain, do not add notes, and do not number lines.",
-            "- If OCR text is messy, preserve the readable intent and avoid hallucinating extra content.",
-            "",
-            "Input lines:",
-        ]
-        prompt_lines.extend(f"{index + 1}. {item.source_text}" for index, item in enumerate(items))
-        contents = "\n".join(prompt_lines)
-        self._log_verbose_block("gemini batch contents", contents)
-        output_text = self._generate_batch_text(contents)
-        self._log_verbose_block("gemini batch response", output_text or "<empty>")
-        translated_lines = [
-            self._sanitize_line(line)
-            for line in output_text.splitlines()
-            if self._sanitize_line(line)
-        ]
-        results: list[TranslationResult] = []
-        for index, item in enumerate(items):
-            translated = translated_lines[index] if index < len(translated_lines) else item.source_text
-            results.append(
-                TranslationResult(
-                    source_text=item.source_text,
-                    translated_text=translated,
-                    provider=self.name,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                )
-            )
-        if self._verbose:
-            elapsed_ms = (time.perf_counter() - started) * 1000
-            print(
-                f"[AutoTrans][{self._model}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms",
-                flush=True,
-            )
-            for item, result in list(zip(items, results, strict=False))[: self._max_logged_items]:
-                print(
-                    f"[AutoTrans][{self._model}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
-                    flush=True,
-                )
-        return results
-
-    def translate_screen_blocks(
-        self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-    ) -> list[TranslationResult]:
-        started = time.perf_counter()
-        build_started = time.perf_counter()
-        system_instruction = self._build_deep_system_instruction()
-        contents = self._build_deep_translation_contents(items)
-        build_elapsed_ms = (time.perf_counter() - build_started) * 1000
-        self._log_verbose_block("gemini deep system_instruction", system_instruction)
-        self._log_verbose_block("gemini deep contents", contents)
-        request_started = time.perf_counter()
-        output_text = self._generate_deep_text(system_instruction, contents)
-        request_elapsed_ms = (time.perf_counter() - request_started) * 1000
-        self._log_verbose_block("gemini deep response", output_text or "<empty>")
-        parse_started = time.perf_counter()
-        translated_blocks = self._parse_block_response(output_text, len(items))
-        parse_elapsed_ms = (time.perf_counter() - parse_started) * 1000
-        results: list[TranslationResult] = []
-        for index, item in enumerate(items):
-            translated = translated_blocks[index] if index < len(translated_blocks) else ""
-            results.append(
-                TranslationResult(
-                    source_text=item.source_text,
-                    translated_text=translated or normalize_text(item.source_text),
-                    provider=self.name,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                )
-            )
-        if self._verbose:
-            elapsed_ms = (time.perf_counter() - started) * 1000
-            print(
-                f"[AutoTrans][{self._model}] deep-translated {len(items)} block(s) in {elapsed_ms:.0f}ms",
-                flush=True,
-            )
-            print(
-                f"[AutoTrans][{self._model}] deep timing build_ms={build_elapsed_ms:.0f} request_ms={request_elapsed_ms:.0f} parse_ms={parse_elapsed_ms:.0f}",
-                flush=True,
-            )
-        return results
-
-
-class GeminiRestTranslator(GeminiTranslator):
-    name = "gemini-rest"
-    _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-
-    @staticmethod
-    def _find_curl_binary() -> str:
-        for candidate in ("curl.exe", "curl"):
-            resolved = shutil.which(candidate)
-            if resolved:
-                return resolved
-        raise RuntimeError("curl is not available")
-
-    @staticmethod
-    def _normalize_response_payload(payload: object) -> dict[str, object]:
-        if isinstance(payload, dict):
-            return payload
-        if isinstance(payload, list):
-            for item in payload:
-                if isinstance(item, dict):
-                    return item
-            raise RuntimeError("Gemini REST returned a list without any object payload")
-        raise RuntimeError(f"Gemini REST returned unsupported payload type: {type(payload).__name__}")
 
     def _post_json(self, payload: dict[str, object]) -> dict[str, object]:
         if not self._api_key:
@@ -676,22 +520,17 @@ class GeminiRestTranslator(GeminiTranslator):
     def _extract_message_text(payload: object) -> str:
         if isinstance(payload, list):
             for item in payload:
-                text = GeminiRestTranslator._extract_message_text(item)
+                text = GeminiTranslator._extract_message_text(item)
                 if text:
                     return text
             return ""
-        text = GeminiRestTranslator._extract_standard_choice_text(payload)
+        text = GeminiTranslator._extract_standard_choice_text(payload)
         if text:
             return text
         if not isinstance(payload, dict):
             return ""
-        candidates = [
-            payload.get("output_text"),
-            payload.get("text"),
-            payload.get("content"),
-        ]
-        for candidate in candidates:
-            text = GeminiRestTranslator._extract_content_text(candidate)
+        for candidate in (payload.get("output_text"), payload.get("text"), payload.get("content")):
+            text = GeminiTranslator._extract_content_text(candidate)
             if text:
                 return text
         return ""
@@ -699,12 +538,7 @@ class GeminiRestTranslator(GeminiTranslator):
     def _generate_batch_text(self, contents: str) -> str:
         payload: dict[str, object] = {
             "model": self._model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": contents,
-                }
-            ],
+            "messages": [{"role": "user", "content": contents}],
         }
         self._log_verbose_block("gemini rest batch request", json.dumps(payload, ensure_ascii=False, indent=2))
         response_payload = self._post_json(payload)
@@ -718,14 +552,8 @@ class GeminiRestTranslator(GeminiTranslator):
         payload: dict[str, object] = {
             "model": self._model,
             "messages": [
-                {
-                    "role": "system",
-                    "content": system_instruction,
-                },
-                {
-                    "role": "user",
-                    "content": contents,
-                },
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": contents},
             ],
         }
         self._log_verbose_block("gemini rest deep request", json.dumps(payload, ensure_ascii=False, indent=2))
@@ -735,6 +563,96 @@ class GeminiRestTranslator(GeminiTranslator):
             json.dumps(response_payload, ensure_ascii=False, indent=2),
         )
         return self._extract_message_text(response_payload)
+
+    def translate_batch(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+        mode: QualityMode,
+    ) -> list[TranslationResult]:
+        started = time.perf_counter()
+        prompt_lines = [
+            "You are translating OCR text from a video game UI into natural Vietnamese.",
+            "Rules:",
+            "- Return exactly one translated line per input line, in the same order.",
+            "- Keep proper nouns like names, places, factions, and item names when appropriate.",
+            "- Translate menu labels, quest objectives, and subtitles naturally and concisely.",
+            "- Do not explain, do not add notes, and do not number lines.",
+            "- If OCR text is messy, preserve the readable intent and avoid hallucinating extra content.",
+            "",
+            "Input lines:",
+        ]
+        prompt_lines.extend(f"{index + 1}. {item.source_text}" for index, item in enumerate(items))
+        contents = "\n".join(prompt_lines)
+        self._log_verbose_block("gemini batch contents", contents)
+        output_text = self._generate_batch_text(contents)
+        self._log_verbose_block("gemini batch response", output_text or "<empty>")
+        translated_lines = [self._sanitize_line(line) for line in output_text.splitlines() if self._sanitize_line(line)]
+        results: list[TranslationResult] = []
+        for index, item in enumerate(items):
+            translated = translated_lines[index] if index < len(translated_lines) else item.source_text
+            results.append(
+                TranslationResult(
+                    source_text=item.source_text,
+                    translated_text=translated,
+                    provider=self.name,
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                )
+            )
+        if self._verbose:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            print(f"[AutoTrans][{self._model}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms", flush=True)
+            for item, result in list(zip(items, results, strict=False))[: self._max_logged_items]:
+                print(
+                    f"[AutoTrans][{self._model}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
+                    flush=True,
+                )
+        return results
+
+    def translate_screen_blocks(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+    ) -> list[TranslationResult]:
+        started = time.perf_counter()
+        build_started = time.perf_counter()
+        system_instruction = self._build_deep_system_instruction()
+        contents = self._build_deep_translation_contents(items)
+        build_elapsed_ms = (time.perf_counter() - build_started) * 1000
+        self._log_verbose_block("gemini deep system_instruction", system_instruction)
+        self._log_verbose_block("gemini deep contents", contents)
+        request_started = time.perf_counter()
+        output_text = self._generate_deep_text(system_instruction, contents)
+        request_elapsed_ms = (time.perf_counter() - request_started) * 1000
+        self._log_verbose_block("gemini deep response", output_text or "<empty>")
+        parse_started = time.perf_counter()
+        translated_blocks = self._parse_block_response(output_text, len(items))
+        parse_elapsed_ms = (time.perf_counter() - parse_started) * 1000
+        results: list[TranslationResult] = []
+        for index, item in enumerate(items):
+            translated = translated_blocks[index] if index < len(translated_blocks) else ""
+            results.append(
+                TranslationResult(
+                    source_text=item.source_text,
+                    translated_text=translated or normalize_text(item.source_text),
+                    provider=self.name,
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                )
+            )
+        if self._verbose:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            print(f"[AutoTrans][{self._model}] deep-translated {len(items)} block(s) in {elapsed_ms:.0f}ms", flush=True)
+            print(
+                f"[AutoTrans][{self._model}] deep timing build_ms={build_elapsed_ms:.0f} request_ms={request_elapsed_ms:.0f} parse_ms={parse_elapsed_ms:.0f}",
+                flush=True,
+            )
+        return results
+
+
+class GeminiRestTranslator(GeminiTranslator):
+    name = "gemini-rest"
 
 
 def build_default_local_translator(config: AppConfig) -> TranslatorProvider:

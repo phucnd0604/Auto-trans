@@ -13,7 +13,7 @@ from autotrans.services.ocr import (
     RapidOCRProvider,
 )
 from autotrans.services.orchestrator import PipelineOrchestrator
-from autotrans.services.translation import GeminiRestTranslator, GeminiTranslator, build_default_local_translator
+from autotrans.services.translation import GeminiRestTranslator, build_default_local_translator
 from autotrans.ui.global_hotkeys import GlobalHotkeyManager
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
@@ -84,18 +84,17 @@ def _build_cloud_translator(config: AppConfig):
         return None
 
     try:
-        transport = config.deep_translation_transport.strip().lower() or "sdk"
-        translator_cls = GeminiRestTranslator if transport == "rest" else GeminiTranslator
-        translator = translator_cls(
+        config.deep_translation_transport = "rest"
+        translator = GeminiRestTranslator(
             model=config.deep_translation_model,
             api_key=config.deep_translation_api_key,
             config=config,
-            timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
+            timeout_s=config.deep_translation_timeout_ms / 1000.0,
             verbose=config.translation_log_enabled,
             max_logged_items=config.translation_log_max_items,
         )
         print(
-            f"[AutoTrans] Deep translator: {translator.name} model={config.deep_translation_model} transport={transport}",
+            f"[AutoTrans] Deep translator: {translator.name} model={config.deep_translation_model}",
             flush=True,
         )
         return translator
@@ -114,10 +113,7 @@ def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> A
         str(settings.get("deep_translation_model", config.deep_translation_model)).strip()
         or config.deep_translation_model
     )
-    config.deep_translation_transport = (
-        str(settings.get("deep_translation_transport", config.deep_translation_transport)).strip().lower()
-        or config.deep_translation_transport
-    )
+    config.deep_translation_transport = "rest"
     config.game_profile_title = str(settings.get("game_profile_title", config.game_profile_title)).strip()
     config.game_profile_world = str(settings.get("game_profile_world", config.game_profile_world)).strip()
     config.game_profile_factions = str(settings.get("game_profile_factions", config.game_profile_factions)).strip()

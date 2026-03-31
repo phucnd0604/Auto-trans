@@ -39,7 +39,17 @@ class SubtitleDetector:
 
         region_top = int(frame.window_rect.height * self._config.subtitle_region_top_ratio)
         center_x = frame.window_rect.width / 2
-        return box.bbox.y >= region_top and text_len >= self._config.subtitle_min_chars and box.bbox.x < center_x < box.bbox.right
+        box_center_x = box.bbox.x + (box.bbox.width / 2)
+        center_offset = abs(box_center_x - center_x)
+        width_ratio = box.bbox.width / max(frame.window_rect.width, 1)
+        crosses_center = box.bbox.x < center_x < box.bbox.right
+        near_center = center_offset <= self._config.subtitle_center_tolerance_px
+        return (
+            box.bbox.y >= region_top
+            and text_len >= self._config.subtitle_min_chars
+            and width_ratio >= self._config.subtitle_min_width_ratio
+            and (crosses_center or near_center)
+        )
 
     def _merge_candidates(self, boxes: list[OCRBox]) -> list[OCRBox]:
         if not boxes:

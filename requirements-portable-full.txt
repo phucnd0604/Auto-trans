@@ -3,7 +3,6 @@ numpy==2.4.3
 Pillow==12.1.1
 mss==10.1.0
 RapidFuzz==3.14.3
-pydantic==2.12.5
 pywin32==311
 bettercam==1.0.0
 rapidocr-onnxruntime==1.2.3
@@ -12,4 +11,3 @@ opencv-python==4.13.0.92
 ctranslate2==4.7.1
 sentencepiece==0.2.1
 huggingface_hub==1.8.0
-google-genai==1.18.0

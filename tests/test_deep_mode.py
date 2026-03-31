@@ -11,6 +11,7 @@ from autotrans.config import AppConfig
 from autotrans.models import Frame, OCRBox, OverlayItem, OverlayStyle, QualityMode, Rect, TranslationResult
 from autotrans.services.ocr import BaseOCRProvider, RapidOCRProvider
 from autotrans.services.orchestrator import PipelineOrchestrator
+from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiRestTranslator, GeminiTranslator
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
@@ -85,7 +86,7 @@ class StubLocalTranslator:
 
 
 class StubCloudTranslator:
-    name = "gemini"
+    name = "gemini-rest"
 
     def translate_batch(
         self,
@@ -117,7 +118,7 @@ def _make_config() -> AppConfig:
     config = AppConfig()
     config.deep_translation_api_key = "test-key"
     config.deep_translation_model = "gemini-test"
-    config.deep_translation_transport = "sdk"
+    config.deep_translation_transport = "rest"
     config.translation_log_enabled = False
     config.subtitle_mode = True
     return config
@@ -319,8 +320,6 @@ def test_detect_layout_regions_accepts_numpy_arrays() -> None:
         def __init__(self, config: AppConfig, result) -> None:
             BaseOCRProvider.__init__(self, config)
             self._layout_result = result
-            self._paddlex_layout_disabled = True
-            self._paddlex_layout_model = None
             self._layout_disabled = False
             self._layout_engine = None
 
@@ -379,7 +378,7 @@ def test_load_startup_settings_maps_legacy_openai_keys(tmp_path) -> None:
 
     assert settings["deep_translation_api_key"] == "legacy-key"
     assert settings["deep_translation_model"] == "legacy-model"
-    assert settings["deep_translation_transport"] == "sdk"
+    assert settings["deep_translation_transport"] == "rest"
     assert settings["game_profile_title"] == ""
     assert settings["game_profile_world"] == ""
     assert settings["game_profile_factions"] == ""
@@ -404,14 +403,39 @@ def test_settings_dialog_values_include_game_profile_fields(tmp_path) -> None:
     assert values["game_profile_factions"] == "Thanh Van Mon, Ma Dao"
     assert values["game_profile_characters_honorifics"] == "Han Lap - dao huu, Nam Cung Uyen - tien tu"
     assert values["game_profile_terms_items_skills"] == "Linh thach, phap bao, Truc Co"
-    assert values["deep_translation_transport"] == "sdk"
+    assert values["deep_translation_transport"] == "rest"
+
+
+def test_subtitle_detector_rejects_uppercase_menu_labels() -> None:
+    config = _make_config()
+    detector = SubtitleDetector(config)
+    frame = _make_frame()
+    boxes = [
+        OCRBox(
+            id="menu",
+            source_text="OBJECTIVES",
+            confidence=0.98,
+            bbox=Rect(x=110, y=230, width=180, height=28),
+        ),
+        OCRBox(
+            id="subtitle",
+            source_text="Follow Yuna to the old bridge",
+            confidence=0.94,
+            bbox=Rect(x=60, y=245, width=280, height=30),
+        ),
+    ]
+
+    selected = detector.select(frame, boxes)
+
+    assert len(selected) == 1
+    assert selected[0].source_text == "Follow Yuna to the old bridge"
 
 
 def test_gemini_translator_builds_deep_contents_with_game_profile() -> None:
     config = _make_config()
     config.game_profile_title = "Phi Tien Truyen"
     config.game_profile_world = "The gioi tu tien, canh gioi phan minh"
-    config.game_profile_factions = "Thanh Van Mon, Huyet Sat Tông"
+    config.game_profile_factions = "Thanh Van Mon, Huyet Sat Tong"
     config.game_profile_characters_honorifics = "Han Lap - dao huu, su huynh"
     config.game_profile_terms_items_skills = "Linh thach, phap bao, ket dan"
     translator = GeminiTranslator(
@@ -426,7 +450,7 @@ def test_gemini_translator_builds_deep_contents_with_game_profile() -> None:
     assert "Game Profile và ngữ cảnh:" in system_instruction
     assert "Game Title: Phi Tien Truyen" in system_instruction
     assert "World / Setting: The gioi tu tien, canh gioi phan minh" in system_instruction
-    assert "Factions / Organizations: Thanh Van Mon, Huyet Sat Tông" in system_instruction
+    assert "Factions / Organizations: Thanh Van Mon, Huyet Sat Tong" in system_instruction
     assert "Characters & Honorifics: Han Lap - dao huu, su huynh" in system_instruction
     assert "Terms / Items / Skills: Linh thach, phap bao, ket dan" in system_instruction
     assert "Ưu tiên trung thành với OCR hơn văn phong." in system_instruction
@@ -522,7 +546,7 @@ def test_overlay_expands_text_rect_beyond_panel_when_needed(qtbot) -> None:
     qtbot.addWidget(overlay)
     overlay.resize(800, 600)
 
-    font, panel_rect, text_rect, text_flags = overlay._fit_font_and_panel(
+    font, _panel_rect, text_rect, text_flags = overlay._fit_font_and_panel(
         "Ngu phong huong toi bo bien gan Kishi thao nguyen",
         QRect(100, 100, 120, 28),
         is_subtitle=False,

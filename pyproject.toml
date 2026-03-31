@@ -14,7 +14,6 @@ dependencies = [
   "Pillow>=10.4",
   "mss>=10.0",
   "rapidfuzz>=3.9",
-  "pydantic>=2.9",
   "pywin32>=308",
   "bettercam>=1.0.0",
 ]
@@ -26,7 +25,6 @@ ocr = [
   "opencv-python>=4.10",
 ]
 local_translate = ["ctranslate2>=4.5", "sentencepiece>=0.2", "huggingface_hub>=0.36"]
-gemini = ["google-genai>=1.18"]
 dev = ["pytest>=8.3", "pytest-qt>=4.4"]
 
 [project.scripts]

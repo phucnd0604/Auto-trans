@@ -33,7 +33,7 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "font_size": 18,
     "deep_translation_api_key": "",
     "deep_translation_model": "gemini-2.0-flash",
-    "deep_translation_transport": "sdk",
+    "deep_translation_transport": "rest",
     "game_profile_title": "",
     "game_profile_world": "",
     "game_profile_factions": "",
@@ -50,8 +50,7 @@ def _normalize_loaded_settings(settings: dict[str, Any]) -> dict[str, Any]:
     if "deep_translation_model" not in normalized:
         model = str(normalized.get("openai_model", "")).strip()
         normalized["deep_translation_model"] = model or DEFAULT_STARTUP_SETTINGS["deep_translation_model"]
-    transport = str(normalized.get("deep_translation_transport", DEFAULT_STARTUP_SETTINGS["deep_translation_transport"])).strip().lower()
-    normalized["deep_translation_transport"] = transport if transport in {"sdk", "rest"} else DEFAULT_STARTUP_SETTINGS["deep_translation_transport"]
+    normalized["deep_translation_transport"] = "rest"
     normalized.pop("local_translator", None)
     normalized.pop("cloud_provider", None)
     normalized.pop("deep_translation_base_url", None)
@@ -179,10 +178,6 @@ class SettingsDialog(QDialog):
         self.deep_translation_model_edit = QLineEdit(str(settings["deep_translation_model"]))
         self.deep_translation_model_edit.setPlaceholderText("gemini-2.0-flash")
 
-        self.deep_translation_transport_combo = QComboBox()
-        self.deep_translation_transport_combo.addItems(["sdk", "rest"])
-        self.deep_translation_transport_combo.setCurrentText(str(settings["deep_translation_transport"]))
-
         deep_form = QFormLayout()
         deep_form.addRow("Gemini API Key", self.deep_translation_api_key_edit)
         deep_form.addRow("Game Title", self.game_profile_title_edit)
@@ -202,8 +197,6 @@ class SettingsDialog(QDialog):
         advanced_form.addRow("Font Size", self.font_size_spin)
         advanced_form.addRow("Logging", self.translation_log_check)
         advanced_form.addRow("Gemini Model", self.deep_translation_model_edit)
-        advanced_form.addRow("Gemini Transport", self.deep_translation_transport_combo)
-
         self.advanced_container = QWidget()
         self.advanced_container.setLayout(advanced_form)
         self.advanced_container.setVisible(self.advanced_check.isChecked())
@@ -237,7 +230,7 @@ class SettingsDialog(QDialog):
             "font_size": self.font_size_spin.value(),
             "deep_translation_api_key": self.deep_translation_api_key_edit.text().strip(),
             "deep_translation_model": self.deep_translation_model_edit.text().strip(),
-            "deep_translation_transport": self.deep_translation_transport_combo.currentText(),
+            "deep_translation_transport": "rest",
             "game_profile_title": self.game_profile_title_edit.text().strip(),
             "game_profile_world": self.game_profile_world_edit.toPlainText().strip(),
             "game_profile_factions": self.game_profile_factions_edit.toPlainText().strip(),
