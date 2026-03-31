@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import time
 from typing import Protocol
 
@@ -273,74 +272,8 @@ class RapidOCRProvider(BaseOCRProvider):
         from rapidocr_onnxruntime import RapidOCR
 
         self._engine = RapidOCR()
-        self._paddlex_layout_model = None
-        self._paddlex_layout_disabled = False
         self._layout_engine = None
         self._layout_disabled = False
-
-    def _get_paddlex_layout_model(self):
-        if self._paddlex_layout_disabled:
-            return None
-        if self._paddlex_layout_model is not None:
-            return self._paddlex_layout_model
-        try:
-            os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
-            import paddlex as pdx
-            from paddlex.inference import PaddlePredictorOption
-        except ImportError:
-            self._paddlex_layout_disabled = True
-            self._log("paddlex layout detector is not installed; fallback to RapidLayout")
-            return None
-        try:
-            predictor_option = PaddlePredictorOption(
-                run_mode="paddle",
-                device_type="cpu",
-                cpu_threads=4,
-                enable_new_ir=False,
-            )
-            self._paddlex_layout_model = pdx.create_model(
-                "PP-DocLayout-S",
-                pp_option=predictor_option,
-                device="cpu",
-            )
-        except Exception as exc:
-            self._paddlex_layout_disabled = True
-            self._log(f"paddlex layout init failed: {exc}")
-            return None
-        return self._paddlex_layout_model
-
-    def _detect_paddlex_layout_regions(self, frame: Frame) -> tuple[list[tuple[Rect, str, float]], float]:
-        model = self._get_paddlex_layout_model()
-        if model is None:
-            return [], 0.0
-        started = time.perf_counter()
-        try:
-            result = next(model.predict(frame.image))
-        except Exception as exc:
-            self._log(f"paddlex layout detect failed: {exc}")
-            return [], (time.perf_counter() - started) * 1000.0
-        elapsed_ms = (time.perf_counter() - started) * 1000.0
-        raw_boxes = result.get("boxes", []) if hasattr(result, "get") else []
-        regions: list[tuple[Rect, str, float]] = []
-        for raw_box in raw_boxes:
-            if not isinstance(raw_box, dict):
-                continue
-            coordinate = raw_box.get("coordinate")
-            if not isinstance(coordinate, list | tuple) or len(coordinate) < 4:
-                continue
-            x1, y1, x2, y2 = [int(round(float(value))) for value in coordinate[:4]]
-            rect = Rect(
-                x=min(x1, x2),
-                y=min(y1, y2),
-                width=max(0, abs(x2 - x1)),
-                height=max(0, abs(y2 - y1)),
-            )
-            if rect.width < 8 or rect.height < 8:
-                continue
-            label = normalize_text(str(raw_box.get("label", "")))
-            score = float(raw_box.get("score", 0.0))
-            regions.append((rect, label, score))
-        return regions, elapsed_ms
 
     def _get_layout_engine(self):
         if self._layout_disabled:
@@ -366,21 +299,15 @@ class RapidOCRProvider(BaseOCRProvider):
         return self._layout_engine
 
     def _detect_layout_regions(self, frame: Frame) -> tuple[list[tuple[Rect, str, float]], float]:
-        paddlex_regions, paddlex_elapsed_ms = self._detect_paddlex_layout_regions(frame)
-        if paddlex_regions:
-            self._log(
-                f"deep-layout backend=paddlex model=PP-DocLayout-S regions={len(paddlex_regions)} elapsed={paddlex_elapsed_ms:.0f}ms"
-            )
-            return paddlex_regions, paddlex_elapsed_ms
         layout_engine = self._get_layout_engine()
         if layout_engine is None:
-            return [], paddlex_elapsed_ms
+            return [], 0.0
         started = time.perf_counter()
         try:
             result = layout_engine(frame.image)
         except Exception as exc:
             self._log(f"rapid-layout detect failed: {exc}")
-            return [], paddlex_elapsed_ms + (time.perf_counter() - started) * 1000.0
+            return [], (time.perf_counter() - started) * 1000.0
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         boxes = result.boxes if result.boxes is not None else []
         class_names = result.class_names if result.class_names is not None else []
@@ -405,7 +332,7 @@ class RapidOCRProvider(BaseOCRProvider):
             self._log(
                 f"deep-layout backend=rapid-layout model=yolov8n_layout_general6 regions={len(regions)} elapsed={elapsed_ms:.0f}ms"
             )
-        return regions, paddlex_elapsed_ms + elapsed_ms
+        return regions, elapsed_ms
 
     def _resize_for_ocr(self, image: np.ndarray) -> tuple[np.ndarray, float]:
         height, width = image.shape[:2]

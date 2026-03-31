@@ -29,8 +29,4 @@ class ProviderPolicy:
     ) -> ProviderDecision:
         if not text_items:
             return ProviderDecision(provider="local", reason="empty-batch")
-
-        if not network_state or not cost_budget:
-            return ProviderDecision(provider="local", reason="no-cloud-allowed")
-
-        return ProviderDecision(provider="cloud", reason="ai-first")
+        return ProviderDecision(provider="local", reason="live-translation-local-only")

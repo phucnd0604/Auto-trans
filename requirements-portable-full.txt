@@ -6,8 +6,6 @@ RapidFuzz==3.14.3
 pydantic==2.12.5
 pywin32==311
 bettercam==1.0.0
-paddlepaddle==3.3.1
-paddlex==3.4.3
 rapidocr-onnxruntime==1.2.3
 rapid-layout==1.2.1
 opencv-python==4.13.0.92

@@ -5,12 +5,14 @@ import json
 import numpy as np
 import pytest
 from PySide6.QtCore import QRect
+from PySide6.QtGui import QFont
 
 from autotrans.config import AppConfig
 from autotrans.models import Frame, OCRBox, OverlayItem, OverlayStyle, QualityMode, Rect, TranslationResult
 from autotrans.services.ocr import BaseOCRProvider, RapidOCRProvider
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiRestTranslator, GeminiTranslator
+from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
 from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
 
@@ -21,6 +23,9 @@ class StubCaptureService:
 
     def capture_window(self, hwnd: int) -> Frame | None:
         return self._frame
+
+    def list_windows(self) -> list[object]:
+        return []
 
 
 class StubOCRProvider:
@@ -181,6 +186,23 @@ def test_translate_deep_boxes_prefers_cloud_when_available() -> None:
     assert all(item.translated_text.startswith("CLOUD:") for item in items)
 
 
+def test_live_translation_always_uses_local_even_when_cloud_exists() -> None:
+    config = _make_config()
+    orchestrator = PipelineOrchestrator(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        ocr_provider=StubOCRProvider(_make_boxes()),
+        local_translator=StubLocalTranslator(),
+        cloud_translator=StubCloudTranslator(),
+    )
+
+    overlay_items = orchestrator._translate_and_build_overlay(_make_boxes())
+
+    assert overlay_items
+    assert all(item.translated_text.startswith("LOCAL:") for item in overlay_items)
+    assert all(item.region != "deep-ui" for item in overlay_items)
+
+
 def test_deep_overlay_limit_is_more_permissive_than_live_limit() -> None:
     config = _make_config()
     config.overlay_max_groups = 8
@@ -314,41 +336,6 @@ def test_detect_layout_regions_accepts_numpy_arrays() -> None:
     assert regions[0][0] == Rect(x=20, y=30, width=120, height=60)
     assert regions[0][1] == "Text"
     assert regions[0][2] == pytest.approx(0.91)
-
-
-def test_detect_paddlex_layout_regions_parses_box_dicts() -> None:
-    class PaddleXModel:
-        def predict(self, _image):
-            yield {
-                "boxes": [
-                    {
-                        "label": "text",
-                        "score": 0.88,
-                        "coordinate": [30, 40, 180, 120],
-                    }
-                ]
-            }
-
-    class FakeRapidOCRProvider(RapidOCRProvider):
-        def __init__(self, config: AppConfig) -> None:
-            BaseOCRProvider.__init__(self, config)
-            self._paddlex_layout_model = PaddleXModel()
-            self._paddlex_layout_disabled = False
-            self._layout_disabled = True
-            self._layout_engine = None
-
-        def _get_paddlex_layout_model(self):
-            return self._paddlex_layout_model
-
-    provider = FakeRapidOCRProvider(_make_config())
-
-    regions, elapsed_ms = provider._detect_paddlex_layout_regions(_make_frame())
-
-    assert elapsed_ms >= 0.0
-    assert len(regions) == 1
-    assert regions[0][0] == Rect(x=30, y=40, width=150, height=80)
-    assert regions[0][1] == "text"
-    assert regions[0][2] == pytest.approx(0.88)
 
 
 def test_settings_dialog_hides_advanced_controls_by_default(qtbot, tmp_path) -> None:
@@ -564,3 +551,80 @@ def test_overlay_prefers_smaller_font_for_compact_box(qtbot) -> None:
     )
 
     assert font.pointSize() <= 18
+
+
+def test_overlay_uses_bold_font_for_deep_ui_only(qtbot) -> None:
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+
+    deep_font, _, _, _ = overlay._fit_font_and_panel(
+        "Truyen ky Masako phu nhan",
+        QRect(100, 100, 220, 28),
+        is_subtitle=False,
+        deep_ui=True,
+    )
+    normal_font, _, _, _ = overlay._fit_font_and_panel(
+        "Quest Objective",
+        QRect(100, 140, 220, 28),
+        is_subtitle=False,
+        deep_ui=False,
+    )
+
+    assert deep_font.weight() >= QFont.DemiBold
+    assert normal_font.weight() < QFont.DemiBold
+
+
+def test_main_window_uses_insert_for_deep_hotkey(qtbot) -> None:
+    config = _make_config()
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+    window = MainWindow(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        orchestrator=PipelineOrchestrator(
+            config=config,
+            capture_service=StubCaptureService(_make_frame()),
+            ocr_provider=StubOCRProvider(_make_boxes()),
+            local_translator=StubLocalTranslator(),
+            cloud_translator=StubCloudTranslator(),
+        ),
+        overlay=overlay,
+        global_hotkeys=None,
+    )
+    qtbot.addWidget(window)
+
+    assert "Insert deep translate" in window.hotkey_label.text()
+    assert "Ctrl+Shift+Insert" not in window.hotkey_label.text()
+    assert window.deep_translate_shortcut.key().toString() == "Ins"
+
+
+def test_main_window_poll_triggers_deep_mode_on_insert_only(qtbot, monkeypatch) -> None:
+    config = _make_config()
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+    window = MainWindow(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        orchestrator=PipelineOrchestrator(
+            config=config,
+            capture_service=StubCaptureService(_make_frame()),
+            ocr_provider=StubOCRProvider(_make_boxes()),
+            local_translator=StubLocalTranslator(),
+            cloud_translator=StubCloudTranslator(),
+        ),
+        overlay=overlay,
+        global_hotkeys=None,
+    )
+    qtbot.addWidget(window)
+
+    fired: list[str] = []
+
+    def fake_key_state(key_code: int) -> bool:
+        return key_code == window._VK_INSERT
+
+    monkeypatch.setattr(window, "_is_virtual_key_pressed", fake_key_state)
+    monkeypatch.setattr(window, "_handle_global_hotkey", lambda action_name: fired.append(action_name))
+
+    window._poll_global_hotkeys()
+
+    assert fired == ["deep"]

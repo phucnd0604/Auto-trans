@@ -633,33 +633,19 @@ class PipelineOrchestrator:
         decision = self.policy.select(
             text_items=pending,
             mode=request.mode,
-            network_state=self._network_available() and self.cloud_translator is not None,
+            network_state=False,
+            cost_budget=False,
         )
-        preferred = (
-            self.cloud_translator
-            if decision.provider == "cloud" and self.cloud_translator is not None
-            else self.local_translator
-        )
+        preferred = self.local_translator
         self._log(
             f"translator={getattr(preferred, 'name', decision.provider)} provider={decision.provider} reason={decision.reason} items={len(pending)}"
         )
-        try:
-            return preferred.translate_batch(
-                items=pending,
-                source_lang=request.source_lang,
-                target_lang=request.target_lang,
-                mode=request.mode,
-            )
-        except Exception as exc:
-            if preferred is self.local_translator:
-                raise
-            self._log(f"cloud fallback triggered: {exc}")
-            return self.local_translator.translate_batch(
-                items=pending,
-                source_lang=request.source_lang,
-                target_lang=request.target_lang,
-                mode=request.mode,
-            )
+        return preferred.translate_batch(
+            items=pending,
+            source_lang=request.source_lang,
+            target_lang=request.target_lang,
+            mode=request.mode,
+        )
 
     def _translation_is_usable(self, source_text: str, translated_text: str) -> bool:
         source = normalize_text(source_text)

@@ -89,9 +89,11 @@ class OverlayWindow(QWidget):
     def _font_for_size(self, size: int) -> QFont:
         return QFont("Segoe UI", size)
 
-    def _styled_font(self, size: int, *, subtitle: bool = False) -> QFont:
+    def _styled_font(self, size: int, *, subtitle: bool = False, deep_ui: bool = False) -> QFont:
         font = self._font_for_size(size)
         if subtitle:
+            font.setWeight(QFont.DemiBold)
+        elif deep_ui:
             font.setWeight(QFont.DemiBold)
         return font
 
@@ -105,7 +107,18 @@ class OverlayWindow(QWidget):
     def _is_subtitle_item(item: OverlayItem) -> bool:
         return (item.region or "").lower() == "subtitle"
 
-    def _fit_font_and_panel(self, text: str, rect: QRect, *, is_subtitle: bool | None = None) -> tuple[QFont, QRect, QRect, int]:
+    @staticmethod
+    def _is_deep_ui_item(item: OverlayItem) -> bool:
+        return (item.region or "").lower() == "deep-ui"
+
+    def _fit_font_and_panel(
+        self,
+        text: str,
+        rect: QRect,
+        *,
+        is_subtitle: bool | None = None,
+        deep_ui: bool = False,
+    ) -> tuple[QFont, QRect, QRect, int]:
         normalized = normalize_text(text)
         if is_subtitle is None:
             is_subtitle = self._looks_like_subtitle_region(rect)
@@ -139,13 +152,13 @@ class OverlayWindow(QWidget):
             max_font = min(16, max(10, int(rect.height() * 0.54)))
             min_font = 6
 
-        best_font = self._styled_font(min_font, subtitle=is_subtitle)
+        best_font = self._styled_font(min_font, subtitle=is_subtitle, deep_ui=deep_ui)
         best_bounds = QRect(0, 0, max(rect.width(), 1), max(rect.height(), 1))
         best_panel_width = min(max(best_bounds.width() + (inner_padding_x * 2), 1), max_panel_width)
         best_panel_height = max(best_bounds.height() + (inner_padding_y * 2), 1)
 
         for font_size in range(max_font, min_font - 1, -1):
-            font = self._styled_font(font_size, subtitle=is_subtitle)
+            font = self._styled_font(font_size, subtitle=is_subtitle, deep_ui=deep_ui)
             metrics = QFontMetrics(font)
             if is_paragraph or is_subtitle:
                 measure_width = max(min(preferred_width, max_panel_width) - (inner_padding_x * 2), 1)
@@ -275,6 +288,7 @@ class OverlayWindow(QWidget):
         text_flags: int,
         *,
         is_subtitle: bool,
+        deep_ui: bool = False,
     ) -> QFont:
         if text_rect.width() <= 0 or text_rect.height() <= 0:
             return font
@@ -291,7 +305,7 @@ class OverlayWindow(QWidget):
             current_size -= 1
             if current_size < min_size:
                 break
-            fitted_font = self._styled_font(current_size, subtitle=is_subtitle)
+            fitted_font = self._styled_font(current_size, subtitle=is_subtitle, deep_ui=deep_ui)
 
         return fitted_font
 
@@ -317,7 +331,12 @@ class OverlayWindow(QWidget):
                 max(item.bbox.width, 1),
                 max(item.bbox.height, 1),
             )
-            _, panel_rect, text_rect, _ = self._fit_font_and_panel(item.translated_text, local_rect, is_subtitle=True)
+            _, panel_rect, text_rect, _ = self._fit_font_and_panel(
+                item.translated_text,
+                local_rect,
+                is_subtitle=True,
+                deep_ui=False,
+            )
             timing = self._timing_data(item)
             first_seen = timing[0] if timing is not None else time.monotonic()
             prepared.append((item, panel_rect, text_rect, alpha, first_seen))
@@ -361,10 +380,12 @@ class OverlayWindow(QWidget):
         text_color: QColor,
     ) -> None:
         is_subtitle = self._is_subtitle_item(item)
+        is_deep_ui = self._is_deep_ui_item(item)
         font, _, _, text_flags = self._fit_font_and_panel(
             item.translated_text,
             panel_rect,
             is_subtitle=is_subtitle,
+            deep_ui=is_deep_ui,
         )
         draw_rect = self._expanded_text_rect(
             item.translated_text,
@@ -380,6 +401,7 @@ class OverlayWindow(QWidget):
             draw_rect,
             text_flags,
             is_subtitle=is_subtitle,
+            deep_ui=is_deep_ui,
         )
         painter.setFont(font)
         draw_rect = self._expanded_text_rect(
@@ -454,6 +476,7 @@ class OverlayWindow(QWidget):
                 item.translated_text,
                 local_rect,
                 is_subtitle=False,
+                deep_ui=self._is_deep_ui_item(item),
             )
             resolved_panel = self._resolve_overlap(panel_rect, placed_rects)
             offset_x = resolved_panel.x() - panel_rect.x()
@@ -467,7 +490,7 @@ class OverlayWindow(QWidget):
                 resolved_panel,
                 resolved_text,
                 alpha,
-                QColor(18, 44, 94),
+                QColor(255, 251, 0),
             )
             placed_rects.append(QRect(resolved_panel))
 

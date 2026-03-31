@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
         self.status_label = QLabel("Select a game window, then click Start.")
         self.stats_label = QLabel("Idle")
         self.hotkey_label = QLabel(
-            "Hotkeys: Ctrl+Shift+P pause/resume, Ctrl+Shift+O overlay, Ctrl+Shift+Insert deep translate"
+            "Hotkeys: Ctrl+Shift+P pause/resume, Ctrl+Shift+O overlay, Insert deep translate"
         )
 
         controls_layout = QFormLayout()
@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
         self.pause_shortcut.activated.connect(self.toggle_pipeline)
         self.overlay_shortcut = QShortcut(QKeySequence("Ctrl+Shift+O"), self)
         self.overlay_shortcut.activated.connect(self.toggle_overlay)
-        self.deep_translate_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Insert"), self)
+        self.deep_translate_shortcut = QShortcut(QKeySequence("Insert"), self)
         self.deep_translate_shortcut.activated.connect(self.toggle_deep_translation)
         self._register_global_hotkeys()
 
@@ -163,7 +163,7 @@ class MainWindow(QMainWindow):
         results = {
             "pause": self.global_hotkeys.register_hotkey(1, "Ctrl+Shift+P", "pause"),
             "overlay": self.global_hotkeys.register_hotkey(2, "Ctrl+Shift+O", "overlay"),
-            "deep": self.global_hotkeys.register_hotkey(3, "Ctrl+Shift+Insert", "deep"),
+            "deep": self.global_hotkeys.register_hotkey(3, "Insert", "deep"),
         }
         failed = [name for name, ok in results.items() if not ok]
         if failed:
@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
         combos = {
             "pause": ctrl_down and shift_down and self._is_virtual_key_pressed(self._VK_P),
             "overlay": ctrl_down and shift_down and self._is_virtual_key_pressed(self._VK_O),
-            "deep": ctrl_down and shift_down and self._is_virtual_key_pressed(self._VK_INSERT),
+            "deep": self._is_virtual_key_pressed(self._VK_INSERT),
         }
         for action_name, is_down in combos.items():
             was_down = self._hotkey_poll_state.get(action_name, False)
