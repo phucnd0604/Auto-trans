@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from typing import Protocol
 
 import numpy as np
@@ -271,9 +272,26 @@ class RapidOCRProvider(BaseOCRProvider):
         super().__init__(config)
         from rapidocr_onnxruntime import RapidOCR
 
-        self._engine = RapidOCR()
+        self._engine = RapidOCR(**self._engine_kwargs())
         self._layout_engine = None
         self._layout_disabled = False
+
+    def _engine_kwargs(self) -> dict[str, object]:
+        kwargs: dict[str, object] = {}
+        rec_model_path = self._resolve_rec_model_path()
+        if rec_model_path is not None:
+            kwargs["rec_model_path"] = str(rec_model_path)
+            self._log(f"rapidocr rec model override={rec_model_path}")
+        return kwargs
+
+    def _resolve_rec_model_path(self) -> Path | None:
+        if self._config.ocr_rec_model_path is not None and self._config.ocr_rec_model_path.exists():
+            return self._config.ocr_rec_model_path
+
+        default_candidate = self._config.ocr_model_dir / "latin_PP-OCRv5_rec_mobile_infer.onnx"
+        if default_candidate.exists():
+            return default_candidate
+        return None
 
     def _get_layout_engine(self):
         if self._layout_disabled:

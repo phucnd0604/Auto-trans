@@ -62,6 +62,12 @@ _DEFAULT_LOG_DIR = Path(
         str(_DEFAULT_RUNTIME_ROOT_DIR / "logs"),
     )
 )
+_DEFAULT_OCR_MODEL_DIR = Path(
+    getenv(
+        "AUTOTRANS_OCR_MODEL_DIR",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "models" / "ocr"),
+    )
+)
 _DEFAULT_INTRA_THREADS = str(max((cpu_count() or 4) - 1, 1))
 
 
@@ -100,6 +106,10 @@ class AppConfig:
     ocr_max_side: int = int(getenv("AUTOTRANS_OCR_MAX_SIDE", "960"))
     ocr_max_boxes: int = int(getenv("AUTOTRANS_OCR_MAX_BOXES", "0"))
     ocr_crop_subtitle_only: bool = getenv("AUTOTRANS_OCR_CROP_SUBTITLE_ONLY", "1") != "0"
+    ocr_model_dir: Path = _DEFAULT_OCR_MODEL_DIR
+    ocr_rec_model_path: Path | None = (
+        Path(value) if (value := getenv("AUTOTRANS_OCR_REC_MODEL_PATH")) else None
+    )
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"
     capture_backend: str = getenv("AUTOTRANS_CAPTURE_BACKEND", "mss")
     local_model_enabled: bool = getenv("AUTOTRANS_LOCAL_MODEL_ENABLED", "0") != "0"
@@ -135,6 +145,9 @@ class AppConfig:
 
     def __post_init__(self) -> None:
         self.runtime_root_dir = _resolve_from_app_root(self.runtime_root_dir)
+        self.ocr_model_dir = _resolve_from_app_root(self.ocr_model_dir)
+        if self.ocr_rec_model_path is not None:
+            self.ocr_rec_model_path = _resolve_from_app_root(self.ocr_rec_model_path)
         self.local_model_dir = _resolve_from_app_root(self.local_model_dir)
         self.cache_root_dir = _resolve_from_app_root(self.cache_root_dir)
         self.xdg_data_home = _resolve_from_app_root(self.xdg_data_home)
