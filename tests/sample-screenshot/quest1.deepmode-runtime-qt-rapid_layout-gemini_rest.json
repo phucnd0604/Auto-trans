@@ -1,0 +1,295 @@
+{
+  "grouped_box_count": 32,
+  "pending_overlay_count": 24,
+  "final_overlay_count": 24,
+  "final_overlay_items": [
+    {
+      "text": "42% CPU NHIỆT ĐỘ 999,869",
+      "source_text": "42% CPU TEMP 999,869",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1608,
+        "y": 14,
+        "width": 156,
+        "height": 52
+      }
+    },
+    {
+      "text": "SƯU TẦM",
+      "source_text": "COLLECTIONS",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 694,
+        "y": 40,
+        "width": 176,
+        "height": 28
+      }
+    },
+    {
+      "text": "KỸ NĂNG",
+      "source_text": "TECHNIQUES",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 498,
+        "y": 42,
+        "width": 154,
+        "height": 28
+      }
+    },
+    {
+      "text": "GIAI THOẠI MASAKO PHU NHÂN",
+      "source_text": "THETALEOFLADYMASAKO",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 890,
+        "y": 180,
+        "width": 470,
+        "height": 38
+      }
+    },
+    {
+      "text": "HỒI 1: GIẢI CỨU LÃNH CHÚA SHIMURA",
+      "source_text": "ACT1:RESCUELORDSHIMURA",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 210,
+        "y": 204,
+        "width": 402,
+        "height": 30
+      }
+    },
+    {
+      "text": "Giai thoại Masako (1 trên 9): Thị tộc Adachi đã bị thảm sát. Kẻ tấn công không phải quân Mông Cổ hay đạo tặc, mà chính là người của chúng ta. Masako phu nhân là người sống sót duy nhất.",
+      "source_text": "A Masako Tale (1 of 9) Clan Adachi has been massacred. The attackers werent Mongols or bandits, but our own people. Lady Masako is the only survivor.",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 888,
+        "y": 268,
+        "width": 626,
+        "height": 84
+      }
+    },
+    {
+      "text": "TIẾN ĐỘ: Chiêu mộ Masako phu nhân, Giải cứu huynh đệ thợ rèn của Yuna, Chiêu mộ lãng nhân Nón Rơm",
+      "source_text": "PROGRESS Recruit Lady Masako Rescue Yuna's blacksmith brother Recruit the Straw Hat ronin",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 206,
+        "y": 278,
+        "width": 346,
+        "height": 182
+      }
+    },
+    {
+      "text": "Tại hạ sẽ tương trợ nàng truy tìm kẻ chủ mưu, đổi lại, nàng sẽ giúp tại hạ giải cứu Lãnh chúa Shimura thoát khỏi Mông Cổ Hãn.",
+      "source_text": "I will help her find those responsible, and in return, she will help me free Lord Shimura from the Mongol Khan.",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 886,
+        "y": 378,
+        "width": 610,
+        "height": 56
+      }
+    },
+    {
+      "text": "PHẦN THƯỞNG",
+      "source_text": "REWARDS",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 902,
+        "y": 534,
+        "width": 118,
+        "height": 30
+      }
+    },
+    {
+      "text": "GIAI THOẠI ĐANG THỰC HIỆN",
+      "source_text": "ACTIVE TALES",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 206,
+        "y": 566,
+        "width": 162,
+        "height": 30
+      }
+    },
+    {
+      "text": "GIAI THOẠI MASAKO PHU NHÂN",
+      "source_text": "THETALEOFLADYMASAKO",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 252,
+        "y": 642,
+        "width": 358,
+        "height": 34
+      }
+    },
+    {
+      "text": "Danh tiếng Đại sư",
+      "source_text": "Major Legend",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1024,
+        "y": 658,
+        "width": 148,
+        "height": 34
+      }
+    },
+    {
+      "text": "Thị tộc Samurai",
+      "source_text": "Samurai Clan",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1254,
+        "y": 658,
+        "width": 138,
+        "height": 34
+      }
+    },
+    {
+      "text": "Tăng cường",
+      "source_text": "Increase",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1054,
+        "y": 690,
+        "width": 90,
+        "height": 30
+      }
+    },
+    {
+      "text": "Giáp trụ",
+      "source_text": "Armor",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1288,
+        "y": 692,
+        "width": 72,
+        "height": 26
+      }
+    },
+    {
+      "text": "NHIỆM VỤ",
+      "source_text": "OBJECTIVES",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 902,
+        "y": 758,
+        "width": 150,
+        "height": 32
+      }
+    },
+    {
+      "text": "HUYẾT NHUỘM CỎ",
+      "source_text": "BLOOD-ONTHEGRASS",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 284,
+        "y": 764,
+        "width": 266,
+        "height": 28
+      }
+    },
+    {
+      "text": "Đối thoại cùng Masako phu nhân",
+      "source_text": "Speak with Lady Masako",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 968,
+        "y": 830,
+        "width": 212,
+        "height": 24
+      }
+    },
+    {
+      "text": "THỢ RÈN SA CƠ",
+      "source_text": "THEBROKENBLACKSMITH",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 286,
+        "y": 882,
+        "width": 294,
+        "height": 24
+      }
+    },
+    {
+      "text": "GIAI THOẠI ĐÃ HOÀN THÀNH",
+      "source_text": "COMPLETED TALES",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 210,
+        "y": 994,
+        "width": 222,
+        "height": 26
+      }
+    },
+    {
+      "text": "TRỞ VỀ",
+      "source_text": "BACK",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1820,
+        "y": 1024,
+        "width": 70,
+        "height": 32
+      }
+    },
+    {
+      "text": "SẮP XẾP MỚI NHẤT",
+      "source_text": "SORTBYMOSTRECENT",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1112,
+        "y": 1026,
+        "width": 270,
+        "height": 24
+      }
+    },
+    {
+      "text": "HIỂN THỊ TRÊN BẢN ĐỒ",
+      "source_text": "SHOW ON MAP",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1484,
+        "y": 1026,
+        "width": 192,
+        "height": 30
+      }
+    },
+    {
+      "text": "ESC]",
+      "source_text": "ESC]",
+      "region": "deep-ui",
+      "visibility_state": "visible",
+      "bbox": {
+        "x": 1750,
+        "y": 1028,
+        "width": 58,
+        "height": 28
+      }
+    }
+  ]
+}
