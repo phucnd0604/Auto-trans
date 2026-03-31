@@ -203,6 +203,16 @@ def test_paddle_provider_converts_nested_result_to_ocr_boxes() -> None:
     assert boxes[0].language_hint == "en"
 
 
+def test_paddle_provider_forces_english_only_language() -> None:
+    config = _make_config()
+    config.ocr_languages = ["ja", "zh-cn", "en"]
+    provider = PaddleOCRProvider.__new__(PaddleOCRProvider)
+    BaseOCRProvider.__init__(provider, config)
+
+    assert provider._resolve_language() == "en"
+    assert provider._resolve_recognition_model_name() == "en_PP-OCRv5_mobile_rec"
+
+
 def test_live_process_uses_realtime_provider_only() -> None:
     frame = _make_frame()
     realtime_provider = _CountingOCRProvider([_live_box()])

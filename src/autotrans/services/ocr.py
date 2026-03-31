@@ -447,6 +447,8 @@ class RapidOCRProvider(BaseOCRProvider):
 
 class PaddleOCRProvider(BaseOCRProvider):
     name = "paddleocr"
+    _FIXED_LANGUAGE = "en"
+    _FIXED_RECOGNITION_MODEL = "en_PP-OCRv5_mobile_rec"
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__(config)
@@ -462,39 +464,17 @@ class PaddleOCRProvider(BaseOCRProvider):
             use_textline_orientation=False,
             text_det_limit_side_len=192,
             text_recognition_batch_size=8,
-            lang=self._language,
         )
 
     def _resolve_language(self) -> str:
-        supported_languages = {
-            "en": "en",
-            "english": "en",
-            "latin": "en",
-            "jp": "japan",
-            "ja": "japan",
-            "japanese": "japan",
-            "ch": "ch",
-            "zh": "ch",
-            "zh-cn": "ch",
-            "zh-hans": "ch",
-        }
-        for language in self._config.ocr_languages:
-            normalized = normalize_text(language).lower()
-            if normalized in supported_languages:
-                resolved = supported_languages[normalized]
-                if resolved != normalized:
-                    self._log(f"paddleocr language fallback {language!r} -> {resolved!r}")
-                return resolved
-        self._log("paddleocr language fallback -> 'en'")
-        return "en"
+        if self._config.ocr_languages:
+            configured = ", ".join(normalize_text(language) for language in self._config.ocr_languages if language)
+            if configured:
+                self._log(f"paddleocr realtime forced to English-only; ignoring configured languages: {configured}")
+        return self._FIXED_LANGUAGE
 
     def _resolve_recognition_model_name(self) -> str:
-        mapping = {
-            "en": "en_PP-OCRv5_mobile_rec",
-            "japan": "japan_PP-OCRv5_mobile_rec",
-            "ch": "ch_PP-OCRv5_mobile_rec",
-        }
-        return mapping.get(self._language, "en_PP-OCRv5_mobile_rec")
+        return self._FIXED_RECOGNITION_MODEL
 
     @staticmethod
     def _extract_result_fields(item: object) -> tuple[object, object, object] | None:

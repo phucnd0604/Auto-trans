@@ -52,7 +52,7 @@ SETTING_TOOLTIPS: dict[str, str] = {
     "Factions / Organizations": "Danh sach phe phai, to chuc, tong mon, quoc gia hoac nhom quan trong de deep mode dich on dinh hon.",
     "Characters & Honorifics": "Nhan vat chinh, cach xung ho, danh xung va honorific can uu tien khi deep mode dich hoi thoai.",
     "Terms / Items / Skills": "Thuat ngu rieng, vat pham, ky nang, canh gioi, ten ky nang va cach viet mong muon trong deep mode.",
-    "OCR Provider": "OCR engine cho realtime translation. PaddleOCR dang nhanh hon tren bo test subtitle hien tai; deep mode van co dinh dung RapidOCR.",
+    "OCR Provider": "OCR engine cho realtime translation. PaddleOCR hien duoc khoa English-only de giam model tai ve va thoi gian khoi dong; deep mode van co dinh dung RapidOCR.",
     "Capture Backend": "Cach chup hinh cua cua so game. PrintWindow on dinh hon, BetterCam nhanh hon voi mot so game, MSS la fallback tong quat.",
     "Capture FPS": "Tan suat chup hinh cho pipeline realtime. Tang cao hon se cap nhat nhanh hon nhung ton CPU/GPU hon.",
     "Subtitle Mode": "Bat bo loc subtitle. Khi bat, pipeline uu tien text o vung subtitle thay vi HUD/menu text.",
