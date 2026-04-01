@@ -180,135 +180,6 @@ class CTranslate2Translator:
         return self.translate_batch(items, source_lang, target_lang, QualityMode.HIGH_QUALITY)
 
 
-class WordByWordTranslator:
-    name = "local-word-by-word"
-    _WORD_MAP = {
-        "follow": "theo",
-        "yuna": "Yuna",
-        "do": "",
-        "not": "khong",
-        "raise": "gay",
-        "the": "",
-        "alarm": "bao dong",
-        "restart": "khoi dong lai",
-        "from": "tu",
-        "last": "cuoi",
-        "checkpoint": "diem kiem soat",
-        "exit": "thoat",
-        "to": "den",
-        "title": "tieu de",
-        "screen": "man hinh",
-        "enter": "vao",
-        "legends": "Legends",
-        "mode": "che do",
-        "save": "luu",
-        "game": "game",
-        "accessibility": "tro nang",
-        "mouse": "chuot",
-        "keyboard": "ban phim",
-        "audio": "am thanh",
-        "graphics": "do hoa",
-        "open": "mo",
-        "close": "dong",
-        "climb": "leo",
-        "collect": "nhat",
-        "pick": "nhat",
-        "up": "len",
-        "mission": "nhiem vu",
-        "objective": "muc tieu",
-        "quest": "nhiem vu",
-        "journal": "nhat ky",
-        "map": "ban do",
-        "completed": "hoan thanh",
-        "privacy": "rieng tu",
-        "settings": "cai dat",
-        "end": "ket thuc",
-        "suffering": "dau kho",
-        "more": "them",
-        "guards": "linh canh",
-        "they": "ho",
-        "said": "noi",
-        "all": "tat ca",
-        "samurai": "samurai",
-        "were": "da",
-        "dead": "chet",
-        "thank": "cam on",
-        "you": "ban",
-        "my": "cua toi",
-        "lord": "lanh chua",
-        "brother": "anh em",
-        "mongols": "quan Mongol",
-        "took": "bat",
-        "him": "anh ay",
-    }
-    _TOKEN_RE = re.compile(r"[A-Za-z']+|\d+|[^A-Za-z'\d\s]+")
-
-    def _translate_token(self, token: str) -> str:
-        if not token:
-            return token
-        if not any(char.isalpha() for char in token):
-            return token
-        lowered = token.lower()
-        translated = self._WORD_MAP.get(lowered)
-        if translated is None:
-            if token.isupper() and len(token) > 1:
-                return token
-            return token
-        return translated
-
-    def _translate_text(self, text: str) -> str:
-        normalized = normalize_text(text)
-        if not normalized:
-            return ""
-        tokens = self._TOKEN_RE.findall(normalized)
-        translated_tokens: list[str] = []
-        for token in tokens:
-            mapped = self._translate_token(token)
-            if mapped:
-                translated_tokens.append(mapped)
-        result = " ".join(translated_tokens)
-        result = re.sub(r"\s+([,.:;!?])", r"\1", result)
-        result = re.sub(r"\(\s+", "(", result)
-        result = re.sub(r"\s+\)", ")", result)
-        return normalize_text(result)
-
-    def translate_batch(
-        self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-        mode: QualityMode,
-    ) -> list[TranslationResult]:
-        started = time.perf_counter()
-        results: list[TranslationResult] = []
-        for item in items:
-            translated = self._translate_text(item.source_text)
-            results.append(
-                TranslationResult(
-                    source_text=item.source_text,
-                    translated_text=translated or normalize_text(item.source_text),
-                    provider=self.name,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                )
-            )
-        elapsed_ms = (time.perf_counter() - started) * 1000
-        print(f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms", flush=True)
-        for item, result in list(zip(items, results, strict=False))[:6]:
-            print(
-                f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
-                flush=True,
-            )
-        return results
-
-    def translate_screen_blocks(
-        self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-    ) -> list[TranslationResult]:
-        return self.translate_batch(items, source_lang, target_lang, QualityMode.HIGH_QUALITY)
-
-
 class GeminiTranslator:
     name = "gemini"
     _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
@@ -573,15 +444,15 @@ class GeminiTranslator:
     ) -> list[TranslationResult]:
         started = time.perf_counter()
         prompt_lines = [
-            "You are translating OCR text from a video game UI into natural Vietnamese.",
-            "Rules:",
-            "- Return exactly one translated line per input line, in the same order.",
-            "- Keep proper nouns like names, places, factions, and item names when appropriate.",
-            "- Translate menu labels, quest objectives, and subtitles naturally and concisely.",
-            "- Do not explain, do not add notes, and do not number lines.",
-            "- If OCR text is messy, preserve the readable intent and avoid hallucinating extra content.",
+            "Ngươi đang dịch văn bản OCR từ giao diện game sang tiếng Việt tự nhiên.",
+            "Quy tắc:",
+            "- Trả về đúng một dòng dịch cho mỗi dòng input, đúng thứ tự.",
+            "- Giữ nguyên tên riêng như nhân vật, địa danh, phe phái, vật phẩm khi phù hợp.",
+            "- Dịch nhãn menu, mục tiêu nhiệm vụ, và phụ đề một cách tự nhiên, ngắn gọn.",
+            "- Không giải thích, không thêm ghi chú, không đánh số.",
+            "- Nếu OCR bị nhiễu, hãy giữ đúng ý đọc được và không tự bịa thêm nội dung.",
             "",
-            "Input lines:",
+            "Các dòng input:",
         ]
         prompt_lines.extend(f"{index + 1}. {item.source_text}" for index, item in enumerate(items))
         contents = "\n".join(prompt_lines)

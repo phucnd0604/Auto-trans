@@ -14,7 +14,7 @@ from autotrans.config import AppConfig
 from autotrans.models import Frame, OverlayItem, Rect, VisibilityState
 from autotrans.services.cache import TranslationCache
 from autotrans.services.ocr import PaddleOCRProvider
-from autotrans.services.translation import GeminiRestTranslator, GeminiTranslator, WordByWordTranslator
+from autotrans.services.translation import GeminiRestTranslator, GeminiTranslator, build_default_local_translator
 
 
 capture_stub = types.ModuleType("autotrans.services.capture")
@@ -34,7 +34,7 @@ from autotrans.services.orchestrator import PipelineOrchestrator
 ROOT = Path(__file__).resolve().parent
 DEFAULT_IMAGES = ("quest1.png", "quest2.png")
 LAYOUT_BACKEND = os.environ.get("AUTOTRANS_LAYOUT_BACKEND", "pp_doclayout_s").strip().lower() or "pp_doclayout_s"
-TRANSLATOR_BACKEND = os.environ.get("AUTOTRANS_TRANSLATOR_BACKEND", "word").strip().lower() or "word"
+TRANSLATOR_BACKEND = os.environ.get("AUTOTRANS_TRANSLATOR_BACKEND", "ctranslate2").strip().lower() or "ctranslate2"
 OVERLAY_BRUSH_PATH = ROOT.parent.parent / "src" / "autotrans" / "ui" / "assets" / "overlay-brush.png"
 
 FONT_CANDIDATES = (
@@ -240,8 +240,9 @@ def _make_cloud_translator(config: AppConfig):
     return None
 
 
-def _make_local_translator():
-    return WordByWordTranslator()
+def _make_local_translator(config: AppConfig):
+    config.local_translator_backend = "ctranslate2"
+    return build_default_local_translator(config)
 
 
 def _write_outputs(
@@ -346,7 +347,7 @@ def main() -> None:
             capture_service=ImageCapture(image),
             ocr_provider=_make_deep_provider(config),
             deep_ocr_provider=_make_deep_provider(config),
-            local_translator=_make_local_translator(),
+            local_translator=_make_local_translator(config),
             cloud_translator=_make_cloud_translator(config),
             cache=TranslationCache(),
         )

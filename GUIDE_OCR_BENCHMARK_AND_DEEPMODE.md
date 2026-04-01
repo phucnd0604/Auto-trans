@@ -78,7 +78,7 @@ Command:
 ```bash
 PYTHONPATH=src \
 PADDLE_PDX_CACHE_HOME=/Users/phucnd/Documents/Auto-trans/Auto-trans/.runtime/paddlex-cache \
-AUTOTRANS_TRANSLATOR_BACKEND=word \
+AUTOTRANS_TRANSLATOR_BACKEND=ctranslate2 \
 ./.venv/bin/python tests/sample-screenshot/render_deepmode_runtime_preview.py
 ```
 
