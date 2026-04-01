@@ -285,8 +285,12 @@ class BaseOCRProvider:
 class PaddleOCRProvider(BaseOCRProvider):
     name = "paddleocr"
     _FIXED_LANGUAGE = "en"
-    _FIXED_RECOGNITION_MODEL = "latin_PP-OCRv5_rec_mobile"
-    _RECOGNITION_MODEL_ALIASES = ("latin_PP-OCRv5_mobile_rec", "en_PP-OCRv5_mobile_rec")
+    _FIXED_RECOGNITION_MODEL = "en_PP-OCRv5_mobile_rec"
+    _RECOGNITION_MODEL_ALIASES = (
+        "latin_PP-OCRv5_mobile_rec",
+        "latin_PP-OCRv5_rec_mobile",
+        "en_PP-OCRv5_mobile_rec",
+    )
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__(config)
@@ -308,12 +312,18 @@ class PaddleOCRProvider(BaseOCRProvider):
     def _resolve_recognition_model_name(self) -> str:
         return self._FIXED_RECOGNITION_MODEL
 
-    def _resolve_recognition_model(self) -> tuple[str, Path | None]:
+    def _recognition_model_candidates(self) -> tuple[str, ...]:
         primary_name = self._resolve_recognition_model_name()
-        model_dir = self._resolve_paddlex_model_dir(primary_name)
-        if model_dir is None:
-            return primary_name, None
-        return model_dir.name, model_dir
+        ordered = [primary_name]
+        ordered.extend(self._RECOGNITION_MODEL_ALIASES)
+        return tuple(dict.fromkeys(candidate for candidate in ordered if candidate))
+
+    def _resolve_recognition_model(self) -> tuple[str, Path | None]:
+        for candidate_name in self._recognition_model_candidates():
+            model_dir = self._resolve_paddlex_model_dir(candidate_name)
+            if model_dir is not None:
+                return candidate_name, model_dir
+        return self._resolve_recognition_model_name(), None
 
     def _build_ocr_kwargs(self) -> dict[str, object]:
         det_model_dir = self._resolve_paddlex_model_dir("PP-OCRv5_mobile_det")
@@ -335,17 +345,21 @@ class PaddleOCRProvider(BaseOCRProvider):
 
     def _resolve_paddlex_model_dir(self, model_name: str) -> Path | None:
         raw_cache_home = os.environ.get("PADDLE_PDX_CACHE_HOME")
+        base_dirs: list[Path] = []
         if raw_cache_home:
-            base = Path(raw_cache_home).expanduser().resolve()
+            base_dirs.append(Path(raw_cache_home).expanduser().resolve())
         else:
-            base = (self._config.runtime_root_dir / "paddlex-cache").resolve()
+            base_dirs.append((self._config.runtime_root_dir / "paddlex-cache").resolve())
+            base_dirs.append(Path.home() / ".paddlex")
+
         candidates = [model_name]
         if model_name == self._FIXED_RECOGNITION_MODEL:
             candidates.extend(self._RECOGNITION_MODEL_ALIASES)
-        for candidate_name in candidates:
-            candidate = base / "official_models" / candidate_name
-            if candidate.exists():
-                return candidate
+        for base in dict.fromkeys(base_dirs):
+            for candidate_name in dict.fromkeys(candidate for candidate in candidates if candidate):
+                candidate = base / "official_models" / candidate_name
+                if candidate.exists():
+                    return candidate
         return None
 
     @staticmethod
@@ -510,7 +524,9 @@ class PaddleOCRProvider(BaseOCRProvider):
                 label = normalize_text(str(item.get("label", "")))
                 if label == "paragraph_title":
                     label = "title"
-                coordinate = item.get("coordinate") or []
+                coordinate = item.get("coordinate")
+                if coordinate is None:
+                    coordinate = []
                 if len(coordinate) < 4:
                     continue
                 rect = self._coerce_rect(coordinate[:4])

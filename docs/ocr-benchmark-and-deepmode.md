@@ -6,23 +6,22 @@ Tài liệu này mô tả các lệnh chuẩn để kiểm tra lại OCR runtime
 
 ## Môi trường chạy
 
-Chạy từ thư mục root của repo:
+Chạy từ thư mục root của repo và dùng đúng `venv` của project.
 
-```bash
-cd /Users/phucnd/Documents/Auto-trans/Auto-trans
-```
-
-Dùng đúng `venv` của project:
+macOS / Linux:
 
 ```bash
 ./.venv/bin/python --version
+export PYTHONPATH=src
+export PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache"
 ```
 
-Thiết lập khuyến nghị:
+Windows PowerShell:
 
-```bash
-export PYTHONPATH=src
-export PADDLE_PDX_CACHE_HOME=/Users/phucnd/Documents/Auto-trans/Auto-trans/.runtime/paddlex-cache
+```powershell
+.\.venv\Scripts\python.exe --version
+$env:PYTHONPATH = "src"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddlex-cache"
 ```
 
 Lưu ý:
@@ -33,10 +32,20 @@ Lưu ý:
 
 Lệnh:
 
+macOS / Linux:
+
 ```bash
 PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME=/Users/phucnd/Documents/Auto-trans/Auto-trans/.runtime/paddlex-cache \
+PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
 ./.venv/bin/python tests/ocr_test/benchmark_subtitle_runtime.py
+```
+
+Windows PowerShell:
+
+```powershell
+$env:PYTHONPATH = "src"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddlex-cache"
+.\.venv\Scripts\python.exe tests\ocr_test\benchmark_subtitle_runtime.py
 ```
 
 Ý nghĩa:
@@ -48,16 +57,28 @@ Preset hiện có:
 - `runtime-default`
 - `runtime-no-crop`
 - `runtime-det-640`
-- `runtime-latin-rec`
+- `runtime-en-rec`
+
+Mặc định benchmark hiện dùng recognition model `en_PP-OCRv5_mobile_rec`. Nếu máy chỉ còn cache cũ, script và runtime vẫn có thể resolve alias tương thích.
 
 ## 2. Test deepmode OCR preview
 
 Lệnh:
 
+macOS / Linux:
+
 ```bash
 PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME=/Users/phucnd/Documents/Auto-trans/Auto-trans/.runtime/paddlex-cache \
+PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
 ./.venv/bin/python tests/sample-screenshot/render_deepmode_ocr_preview.py
+```
+
+Windows PowerShell:
+
+```powershell
+$env:PYTHONPATH = "src"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddlex-cache"
+.\.venv\Scripts\python.exe tests\sample-screenshot\render_deepmode_ocr_preview.py
 ```
 
 Ý nghĩa:
@@ -77,7 +98,7 @@ Lệnh local translator:
 
 ```bash
 PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME=/Users/phucnd/Documents/Auto-trans/Auto-trans/.runtime/paddlex-cache \
+PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
 AUTOTRANS_TRANSLATOR_BACKEND=ctranslate2 \
 ./.venv/bin/python tests/sample-screenshot/render_deepmode_runtime_preview.py
 ```
@@ -86,7 +107,7 @@ Lệnh ưu tiên Gemini:
 
 ```bash
 PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME=/Users/phucnd/Documents/Auto-trans/Auto-trans/.runtime/paddlex-cache \
+PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
 AUTOTRANS_TRANSLATOR_BACKEND=gemini-rest \
 AUTOTRANS_DEEP_TRANSLATION_MODEL=gemini-3.1-flash-lite-preview \
 AUTOTRANS_DEEP_TRANSLATION_API_KEY=... \

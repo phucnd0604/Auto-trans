@@ -260,11 +260,11 @@ def main() -> None:
         ("runtime-no-crop", {"crop_subtitle_only": False, "ocr_max_side": 960}),
         ("runtime-det-640", {"crop_subtitle_only": True, "ocr_max_side": 960, "det_limit_side_len": 640}),
         (
-            "runtime-latin-rec",
+            "runtime-en-rec",
             {
                 "crop_subtitle_only": True,
                 "ocr_max_side": 960,
-                "recognition_model_name": "latin_PP-OCRv5_rec_mobile",
+                "recognition_model_name": "en_PP-OCRv5_mobile_rec",
             },
         ),
     ]

@@ -70,10 +70,10 @@ Phải kiểm tra:
 ## Kết quả benchmark hiện là baseline
 
 Baseline hiện tại của realtime OCR:
-- `runtime-default`: khoảng `226.85ms`
-- `runtime-no-crop`: khoảng `1000.25ms`
-- `runtime-det-640`: khoảng `1765.92ms`
-- `runtime-latin-rec`: khoảng `204.32ms`
+- `runtime-default`: khoảng `427.77ms`
+- `runtime-no-crop`: khoảng `639.01ms`
+- `runtime-det-640`: khoảng `850.71ms`
+- `runtime-en-rec`: khoảng `191.43ms`
 
 Các số này là mốc tham chiếu để phát hiện regression, không phải SLA cứng.
 

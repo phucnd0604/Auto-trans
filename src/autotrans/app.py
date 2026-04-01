@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 import time
+import traceback
 from pathlib import Path
 from typing import Callable
 
@@ -27,6 +29,8 @@ class _LazyOCRProvider:
         self._provider_name = provider_name
         self._factory = factory
         self._instance = None
+        self._init_error: Exception | None = None
+        self._init_lock = threading.Lock()
 
     @property
     def name(self) -> str:
@@ -35,12 +39,36 @@ class _LazyOCRProvider:
         return self._provider_name
 
     def _get_instance(self):
+        if self._instance is not None:
+            return self._instance
+        if self._init_error is not None:
+            raise RuntimeError(
+                f"OCR provider '{self._provider_name}' initialization previously failed"
+            ) from self._init_error
+
         if self._instance is None:
-            started = time.perf_counter()
-            print(f"[AutoTrans] Initializing OCR provider: {self._provider_name}", flush=True)
-            self._instance = self._factory()
-            elapsed_ms = (time.perf_counter() - started) * 1000.0
-            print(f"[AutoTrans] OCR provider ready: {self._provider_name} ({elapsed_ms:.1f}ms)", flush=True)
+            with self._init_lock:
+                if self._instance is not None:
+                    return self._instance
+                if self._init_error is not None:
+                    raise RuntimeError(
+                        f"OCR provider '{self._provider_name}' initialization previously failed"
+                    ) from self._init_error
+                started = time.perf_counter()
+                print(f"[AutoTrans] Initializing OCR provider: {self._provider_name}", flush=True)
+                try:
+                    self._instance = self._factory()
+                except Exception as exc:
+                    self._init_error = exc
+                    elapsed_ms = (time.perf_counter() - started) * 1000.0
+                    print(
+                        f"[AutoTrans] OCR provider init failed: {self._provider_name} ({elapsed_ms:.1f}ms): {exc}",
+                        flush=True,
+                    )
+                    traceback.print_exc()
+                    raise
+                elapsed_ms = (time.perf_counter() - started) * 1000.0
+                print(f"[AutoTrans] OCR provider ready: {self._provider_name} ({elapsed_ms:.1f}ms)", flush=True)
         return self._instance
 
     def recognize(self, frame):
@@ -157,6 +185,31 @@ def _build_cloud_translator(config: AppConfig):
         return None
 
 
+def _warmup_ocr_providers(providers: list[object]) -> None:
+    for provider in providers:
+        warmup = getattr(provider, "_get_instance", None)
+        provider_name = getattr(provider, "name", provider.__class__.__name__)
+        if not callable(warmup):
+            continue
+        try:
+            print(f"[AutoTrans] OCR warmup starting: {provider_name}", flush=True)
+            warmup()
+            print(f"[AutoTrans] OCR warmup finished: {provider_name}", flush=True)
+        except Exception as exc:
+            print(f"[AutoTrans] OCR warmup skipped after failure: {provider_name}: {exc}", flush=True)
+
+
+def _warmup_ocr_providers_async(*providers: object) -> threading.Thread:
+    worker = threading.Thread(
+        target=_warmup_ocr_providers,
+        args=([provider for provider in providers if provider is not None],),
+        daemon=True,
+        name="autotrans-ocr-warmup",
+    )
+    worker.start()
+    return worker
+
+
 def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> AppConfig:
     config.ocr_provider = "paddleocr"
     config.capture_backend = str(settings.get("capture_backend", config.capture_backend))
@@ -237,11 +290,13 @@ def main() -> int:
     log_startup_step("GlobalHotkeyManager init", step_started)
 
     step_started = time.perf_counter()
+    realtime_ocr_provider = _build_realtime_ocr_provider(config)
+    deep_ocr_provider = _build_deep_ocr_provider(config)
     orchestrator = PipelineOrchestrator(
         config=config,
         capture_service=capture_service,
-        ocr_provider=_build_realtime_ocr_provider(config),
-        deep_ocr_provider=_build_deep_ocr_provider(config),
+        ocr_provider=realtime_ocr_provider,
+        deep_ocr_provider=deep_ocr_provider,
         local_translator=_build_local_translator(config),
         cloud_translator=_build_cloud_translator(config),
     )
@@ -262,6 +317,7 @@ def main() -> int:
         flush=True,
     )
     window.show()
+    _warmup_ocr_providers_async(realtime_ocr_provider, deep_ocr_provider)
     try:
         return app.exec()
     finally:

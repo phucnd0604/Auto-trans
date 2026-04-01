@@ -17,8 +17,8 @@ Báo cáo này tổng kết trạng thái sau khi loại bỏ `RapidOCR` khỏi 
 ## Hành vi model
 
 - Realtime và deep mode cùng khởi tạo qua `PaddleOCRProvider` trong `src/autotrans/services/ocr.py`
-- Recognition model ưu tiên là `latin_PP-OCRv5_rec_mobile`
-- Nếu máy chỉ còn local cache cũ như `en_PP-OCRv5_mobile_rec`, provider vẫn có thể resolve để giữ tương thích
+- Recognition model ưu tiên là `en_PP-OCRv5_mobile_rec`
+- Nếu máy chỉ còn local cache cũ như `latin_PP-OCRv5_rec_mobile` hoặc `latin_PP-OCRv5_mobile_rec`, provider vẫn có thể resolve để giữ tương thích
 - Nếu cache chưa có model và môi trường có mạng, Paddle có thể tự tải model cần thiết
 
 ## Benchmark OCR realtime
@@ -29,10 +29,10 @@ Tập test:
 - 11 ảnh subtitle từ `tests/ocr_test/sub*.png`
 
 Kết quả từ lần chạy gần nhất trong `./.venv`:
-- `paddleocr/runtime-default`: `avg_ocr=226.85ms`, `avg_total=228.53ms`
-- `paddleocr/runtime-no-crop`: `avg_ocr=1000.25ms`, `avg_total=1000.50ms`
-- `paddleocr/runtime-det-640`: `avg_ocr=1765.92ms`, `avg_total=1766.18ms`
-- `paddleocr/runtime-latin-rec`: `avg_ocr=204.32ms`, `avg_total=204.52ms`
+- `paddleocr/runtime-default`: `avg_ocr=427.77ms`, `avg_total=429.78ms`
+- `paddleocr/runtime-no-crop`: `avg_ocr=639.01ms`, `avg_total=640.88ms`
+- `paddleocr/runtime-det-640`: `avg_ocr=850.71ms`, `avg_total=852.20ms`
+- `paddleocr/runtime-en-rec`: `avg_ocr=191.43ms`, `avg_total=192.69ms`
 
 ## Nhận định từ benchmark
 

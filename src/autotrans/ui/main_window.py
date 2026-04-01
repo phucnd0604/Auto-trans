@@ -67,6 +67,7 @@ class MainWindow(QMainWindow):
         self._deep_translation_job_id = 0
         self._deep_translation_started_at = 0.0
         self._deep_translation_stage = ""
+        self._realtime_paused_for_deep_prepare = False
         self._hotkey_poll_state = {"pause": False, "overlay": False, "deep": False}
         self._user32 = getattr(ctypes, "windll", None)
 
@@ -321,12 +322,29 @@ class MainWindow(QMainWindow):
     def _current_deep_translation_timeout_ms(self) -> int:
         return max(self.config.deep_translation_timeout_ms + 5000, 15000)
 
+    def _pause_realtime_for_deep_prepare(self) -> None:
+        if not self._running or self._realtime_paused_for_deep_prepare:
+            return
+        self.capture_timer.stop()
+        self._rerun_requested = False
+        self._realtime_paused_for_deep_prepare = True
+        print("[AutoTrans] Realtime pipeline paused for deep prepare", flush=True)
+
+    def _resume_realtime_after_deep_prepare(self) -> None:
+        if not self._realtime_paused_for_deep_prepare:
+            return
+        self._realtime_paused_for_deep_prepare = False
+        if self._running:
+            self.capture_timer.start()
+            print("[AutoTrans] Realtime pipeline resumed after deep prepare", flush=True)
+
     def _cancel_deep_translation(self) -> None:
         self._deep_translation_processing = False
         self._deep_translation_active = False
         self._deep_translation_visible = False
         self._deep_translation_job_id += 1
         self.deep_translation_watchdog.stop()
+        self._resume_realtime_after_deep_prepare()
 
     def _build_deep_translation_message_overlay(self, message: str) -> list[OverlayItem]:
         width = max(self.overlay.width(), 640)
@@ -399,6 +417,7 @@ class MainWindow(QMainWindow):
         self.deep_translation_watchdog.start()
         if self._overlay_enabled and not self.overlay.isVisible():
             self.overlay.show()
+        self._pause_realtime_for_deep_prepare()
         print(f"[AutoTrans] Starting deep translation for hwnd {self._selected_hwnd}", flush=True)
         worker = threading.Thread(
             target=self._prepare_deep_translation_background,
@@ -485,6 +504,7 @@ class MainWindow(QMainWindow):
     def _apply_deep_translation_preview(self, job_id: int, grouped_boxes, overlay_items) -> None:
         if job_id != self._deep_translation_job_id:
             return
+        self._resume_realtime_after_deep_prepare()
         self._deep_translation_stage = "translate"
         self.overlay.clear_overlay_items()
         self.overlay.set_persistent_overlay_items(overlay_items)
@@ -527,13 +547,18 @@ class MainWindow(QMainWindow):
             self._start_pipeline_worker(self._selected_hwnd)
 
     def _apply_pipeline_error(self, message: str) -> None:
+        self.capture_timer.stop()
+        self.follow_timer.stop()
+        self._running = False
         self._processing = False
+        self._rerun_requested = False
+        self._realtime_paused_for_deep_prepare = False
         if self._overlay_temporarily_hidden and self._overlay_enabled and not self._deep_translation_active:
             self.overlay.show()
         self._overlay_temporarily_hidden = False
+        self.start_button.setText("Start")
+        self.stats_label.setText("Paused due to pipeline error")
         self.status_label.setText(f"Pipeline error: {message}")
-        if self._running and self._rerun_requested and self._selected_hwnd is not None:
-            self._start_pipeline_worker(self._selected_hwnd)
 
     def _apply_deep_translation_result(self, job_id: int, overlay_items) -> None:
         if job_id != self._deep_translation_job_id:

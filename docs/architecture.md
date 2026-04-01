@@ -75,7 +75,7 @@ Vai trò:
 Stack hiện tại:
 - chỉ dùng `PaddleOCRProvider`
 - detector: `PP-OCRv5_mobile_det`
-- recognition ưu tiên: `latin_PP-OCRv5_rec_mobile`
+- recognition ưu tiên: `en_PP-OCRv5_mobile_rec`
 - layout deep mode: `PP-DocLayout-S`
 
 ## 5. Pipeline orchestration

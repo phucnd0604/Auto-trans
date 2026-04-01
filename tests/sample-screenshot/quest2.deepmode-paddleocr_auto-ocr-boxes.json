@@ -1,0 +1,470 @@
+[
+  {
+    "index": 1,
+    "text": "45.4 *C",
+    "confidence": 0.9894,
+    "bbox": {
+      "x": 1842,
+      "y": 12,
+      "width": 54,
+      "height": 22
+    },
+    "line_id": "paddle-7"
+  },
+  {
+    "index": 2,
+    "text": "99th% FPS",
+    "confidence": 0.992,
+    "bbox": {
+      "x": 1220,
+      "y": 14,
+      "width": 76,
+      "height": 20
+    },
+    "line_id": "paddle-2"
+  },
+  {
+    "index": 3,
+    "text": "CPU UTIL",
+    "confidence": 0.9918,
+    "bbox": {
+      "x": 1452,
+      "y": 14,
+      "width": 68,
+      "height": 20
+    },
+    "line_id": "paddle-4"
+  },
+  {
+    "index": 4,
+    "text": "32 %\n999,869",
+    "confidence": 0.999,
+    "bbox": {
+      "x": 1610,
+      "y": 14,
+      "width": 120,
+      "height": 48
+    },
+    "line_id": "paragraph-3"
+  },
+  {
+    "index": 5,
+    "text": "CPU TEMP",
+    "confidence": 0.9938,
+    "bbox": {
+      "x": 1690,
+      "y": 14,
+      "width": 70,
+      "height": 20
+    },
+    "line_id": "paddle-6"
+  },
+  {
+    "index": 6,
+    "text": "FPS",
+    "confidence": 0.9789,
+    "bbox": {
+      "x": 988,
+      "y": 16,
+      "width": 28,
+      "height": 16
+    },
+    "line_id": "paddle-0"
+  },
+  {
+    "index": 7,
+    "text": "61",
+    "confidence": 1.0,
+    "bbox": {
+      "x": 1168,
+      "y": 16,
+      "width": 24,
+      "height": 18
+    },
+    "line_id": "paddle-1"
+  },
+  {
+    "index": 8,
+    "text": "56",
+    "confidence": 1.0,
+    "bbox": {
+      "x": 1400,
+      "y": 16,
+      "width": 26,
+      "height": 18
+    },
+    "line_id": "paddle-3"
+  },
+  {
+    "index": 9,
+    "text": "993,373",
+    "confidence": 0.9645,
+    "bbox": {
+      "x": 1766,
+      "y": 32,
+      "width": 124,
+      "height": 34
+    },
+    "line_id": "paddle-18"
+  },
+  {
+    "index": 10,
+    "text": "0",
+    "confidence": 0.8654,
+    "bbox": {
+      "x": 1524,
+      "y": 34,
+      "width": 54,
+      "height": 30
+    },
+    "line_id": "paddle-16"
+  },
+  {
+    "index": 11,
+    "text": "Q",
+    "confidence": 0.9931,
+    "bbox": {
+      "x": 40,
+      "y": 36,
+      "width": 38,
+      "height": 34
+    },
+    "line_id": "paddle-8"
+  },
+  {
+    "index": 12,
+    "text": "MAP",
+    "confidence": 0.9997,
+    "bbox": {
+      "x": 112,
+      "y": 36,
+      "width": 62,
+      "height": 36
+    },
+    "line_id": "paddle-9"
+  },
+  {
+    "index": 13,
+    "text": "JOURNAL",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 208,
+      "y": 36,
+      "width": 128,
+      "height": 34
+    },
+    "line_id": "paddle-10"
+  },
+  {
+    "index": 14,
+    "text": "E",
+    "confidence": 0.8806,
+    "bbox": {
+      "x": 1058,
+      "y": 36,
+      "width": 40,
+      "height": 36
+    },
+    "line_id": "paddle-15"
+  },
+  {
+    "index": 15,
+    "text": "GEAR",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 376,
+      "y": 40,
+      "width": 74,
+      "height": 28
+    },
+    "line_id": "paddle-11"
+  },
+  {
+    "index": 16,
+    "text": "COLLECTIONS",
+    "confidence": 0.994,
+    "bbox": {
+      "x": 686,
+      "y": 40,
+      "width": 180,
+      "height": 26
+    },
+    "line_id": "paddle-13"
+  },
+  {
+    "index": 17,
+    "text": "OPTIONS",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 912,
+      "y": 40,
+      "width": 112,
+      "height": 28
+    },
+    "line_id": "paddle-14"
+  },
+  {
+    "index": 18,
+    "text": "TECHNIQUES",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 498,
+      "y": 42,
+      "width": 148,
+      "height": 22
+    },
+    "line_id": "paddle-12"
+  },
+  {
+    "index": 19,
+    "text": "THE BROKEN BLACKSMITH",
+    "confidence": 0.9863,
+    "bbox": {
+      "x": 888,
+      "y": 180,
+      "width": 440,
+      "height": 34
+    },
+    "line_id": "paddle-19"
+  },
+  {
+    "index": 20,
+    "text": "ACT 1: RESCUE LORD SHIMURA",
+    "confidence": 0.9882,
+    "bbox": {
+      "x": 208,
+      "y": 202,
+      "width": 402,
+      "height": 28
+    },
+    "line_id": "paddle-20"
+  },
+  {
+    "index": 21,
+    "text": "TRACKED",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 888,
+      "y": 220,
+      "width": 112,
+      "height": 28
+    },
+    "line_id": "paddle-21"
+  },
+  {
+    "index": 22,
+    "text": "B\nE",
+    "confidence": 0.3137,
+    "bbox": {
+      "x": 56,
+      "y": 228,
+      "width": 68,
+      "height": 200
+    },
+    "line_id": "paragraph-19"
+  },
+  {
+    "index": 23,
+    "text": "Yuna and I have tracked her brother to a prison camp in the walled\ntown of Azamo Bay. If we're going to save Taka, we need to find\nhelp... and Yuna says she has a friend for the job.",
+    "confidence": 0.9849,
+    "bbox": {
+      "x": 886,
+      "y": 262,
+      "width": 634,
+      "height": 84
+    },
+    "line_id": "paragraph-0"
+  },
+  {
+    "index": 24,
+    "text": "PROGRESS",
+    "confidence": 0.9996,
+    "bbox": {
+      "x": 206,
+      "y": 278,
+      "width": 112,
+      "height": 28
+    },
+    "line_id": "paddle-23"
+  },
+  {
+    "index": 25,
+    "text": "Recruit Lady Masako\nRescue Yuna's blacksmith brother\nRecruit the Straw Hat ronin",
+    "confidence": 0.992,
+    "bbox": {
+      "x": 222,
+      "y": 358,
+      "width": 326,
+      "height": 96
+    },
+    "line_id": "paragraph-21"
+  },
+  {
+    "index": 26,
+    "text": "I'll meet her at this friend's house. Just outside Azamo Bay.",
+    "confidence": 0.9716,
+    "bbox": {
+      "x": 886,
+      "y": 374,
+      "width": 560,
+      "height": 32
+    },
+    "line_id": "paddle-28"
+  },
+  {
+    "index": 27,
+    "text": "REWARDS",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 898,
+      "y": 534,
+      "width": 120,
+      "height": 28
+    },
+    "line_id": "paddle-33"
+  },
+  {
+    "index": 28,
+    "text": "2",
+    "confidence": 0.4213,
+    "bbox": {
+      "x": 240,
+      "y": 606,
+      "width": 40,
+      "height": 32
+    },
+    "line_id": "paddle-34"
+  },
+  {
+    "index": 29,
+    "text": "THE BROKEN BLACKSMITH",
+    "confidence": 0.9987,
+    "bbox": {
+      "x": 288,
+      "y": 644,
+      "width": 334,
+      "height": 28
+    },
+    "line_id": "paddle-35"
+  },
+  {
+    "index": 30,
+    "text": "Major Legend",
+    "confidence": 0.9905,
+    "bbox": {
+      "x": 1136,
+      "y": 658,
+      "width": 148,
+      "height": 32
+    },
+    "line_id": "paddle-36"
+  },
+  {
+    "index": 31,
+    "text": "Increase",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 1170,
+      "y": 690,
+      "width": 82,
+      "height": 22
+    },
+    "line_id": "paddle-37"
+  },
+  {
+    "index": 32,
+    "text": "COMPLETED TALES",
+    "confidence": 0.9924,
+    "bbox": {
+      "x": 208,
+      "y": 754,
+      "width": 222,
+      "height": 28
+    },
+    "line_id": "paddle-38"
+  },
+  {
+    "index": 33,
+    "text": "OBJECTIVES",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 896,
+      "y": 756,
+      "width": 152,
+      "height": 34
+    },
+    "line_id": "paddle-39"
+  },
+  {
+    "index": 34,
+    "text": "Meet Yuna at her friend's home in southern Azamo (2.4 km)",
+    "confidence": 0.9938,
+    "bbox": {
+      "x": 966,
+      "y": 828,
+      "width": 498,
+      "height": 26
+    },
+    "line_id": "paddle-43"
+  },
+  {
+    "index": 35,
+    "text": "THE WARRIOR'S CODE",
+    "confidence": 0.9661,
+    "bbox": {
+      "x": 280,
+      "y": 834,
+      "width": 260,
+      "height": 26
+    },
+    "line_id": "paddle-41"
+  },
+  {
+    "index": 36,
+    "text": "BE THE TALE OF SENSEI ISHIKAWA",
+    "confidence": 0.7184,
+    "bbox": {
+      "x": 226,
+      "y": 944,
+      "width": 402,
+      "height": 44
+    },
+    "line_id": "merged-41"
+  },
+  {
+    "index": 37,
+    "text": "SHOW ON MAP",
+    "confidence": 0.9933,
+    "bbox": {
+      "x": 1446,
+      "y": 1012,
+      "width": 232,
+      "height": 48
+    },
+    "line_id": "paddle-47"
+  },
+  {
+    "index": 38,
+    "text": "ESC BACK",
+    "confidence": 0.9993,
+    "bbox": {
+      "x": 1746,
+      "y": 1020,
+      "width": 144,
+      "height": 40
+    },
+    "line_id": "merged-43"
+  },
+  {
+    "index": 39,
+    "text": "[V SORT BY MOST RECENT",
+    "confidence": 0.9019,
+    "bbox": {
+      "x": 1066,
+      "y": 1022,
+      "width": 318,
+      "height": 34
+    },
+    "line_id": "paddle-46"
+  }
+]

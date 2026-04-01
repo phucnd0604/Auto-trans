@@ -113,11 +113,13 @@ Các nhánh dữ liệu chính:
 
 Paddle model được tìm trong:
 - `PADDLE_PDX_CACHE_HOME/official_models/...`
+- `~/.paddlex/official_models/...` nếu app không tìm thấy model trong runtime cache
 
 Ưu tiên recognition model:
-- `latin_PP-OCRv5_rec_mobile`
+- `en_PP-OCRv5_mobile_rec`
 
 Alias vẫn được resolve nếu máy còn cache cũ:
+- `latin_PP-OCRv5_rec_mobile`
 - `latin_PP-OCRv5_mobile_rec`
 - `en_PP-OCRv5_mobile_rec`
 

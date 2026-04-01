@@ -1,0 +1,506 @@
+[
+  {
+    "index": 1,
+    "text": "CPU UTIL",
+    "confidence": 0.9906,
+    "bbox": {
+      "x": 1454,
+      "y": 14,
+      "width": 64,
+      "height": 20
+    },
+    "line_id": "paddle-4"
+  },
+  {
+    "index": 2,
+    "text": "CPU TEMP",
+    "confidence": 0.9941,
+    "bbox": {
+      "x": 1690,
+      "y": 14,
+      "width": 70,
+      "height": 20
+    },
+    "line_id": "paddle-6"
+  },
+  {
+    "index": 3,
+    "text": "70.4 *C",
+    "confidence": 0.9975,
+    "bbox": {
+      "x": 1842,
+      "y": 14,
+      "width": 54,
+      "height": 20
+    },
+    "line_id": "paddle-8"
+  },
+  {
+    "index": 4,
+    "text": "FPS",
+    "confidence": 0.979,
+    "bbox": {
+      "x": 988,
+      "y": 16,
+      "width": 28,
+      "height": 16
+    },
+    "line_id": "paddle-0"
+  },
+  {
+    "index": 5,
+    "text": "59",
+    "confidence": 1.0,
+    "bbox": {
+      "x": 1168,
+      "y": 16,
+      "width": 22,
+      "height": 18
+    },
+    "line_id": "paddle-1"
+  },
+  {
+    "index": 6,
+    "text": "23",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 1400,
+      "y": 16,
+      "width": 24,
+      "height": 18
+    },
+    "line_id": "paddle-3"
+  },
+  {
+    "index": 7,
+    "text": "42 %\n999,869",
+    "confidence": 0.9709,
+    "bbox": {
+      "x": 1610,
+      "y": 16,
+      "width": 120,
+      "height": 46
+    },
+    "line_id": "paragraph-6"
+  },
+  {
+    "index": 8,
+    "text": "99th% FPS",
+    "confidence": 0.9094,
+    "bbox": {
+      "x": 1222,
+      "y": 18,
+      "width": 72,
+      "height": 14
+    },
+    "line_id": "paddle-2"
+  },
+  {
+    "index": 9,
+    "text": "993,373",
+    "confidence": 0.9742,
+    "bbox": {
+      "x": 1766,
+      "y": 28,
+      "width": 122,
+      "height": 38
+    },
+    "line_id": "paddle-7"
+  },
+  {
+    "index": 10,
+    "text": "0",
+    "confidence": 0.8584,
+    "bbox": {
+      "x": 1524,
+      "y": 34,
+      "width": 54,
+      "height": 30
+    },
+    "line_id": "paddle-17"
+  },
+  {
+    "index": 11,
+    "text": "Q",
+    "confidence": 0.9929,
+    "bbox": {
+      "x": 40,
+      "y": 36,
+      "width": 38,
+      "height": 34
+    },
+    "line_id": "paddle-9"
+  },
+  {
+    "index": 12,
+    "text": "JOURNAL",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 210,
+      "y": 36,
+      "width": 126,
+      "height": 34
+    },
+    "line_id": "paddle-11"
+  },
+  {
+    "index": 13,
+    "text": "E",
+    "confidence": 0.979,
+    "bbox": {
+      "x": 1060,
+      "y": 36,
+      "width": 38,
+      "height": 34
+    },
+    "line_id": "paddle-16"
+  },
+  {
+    "index": 14,
+    "text": "MAP",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 114,
+      "y": 40,
+      "width": 60,
+      "height": 28
+    },
+    "line_id": "paddle-10"
+  },
+  {
+    "index": 15,
+    "text": "GEAR",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 378,
+      "y": 40,
+      "width": 72,
+      "height": 28
+    },
+    "line_id": "paddle-12"
+  },
+  {
+    "index": 16,
+    "text": "COLLECTIONS",
+    "confidence": 0.9998,
+    "bbox": {
+      "x": 688,
+      "y": 40,
+      "width": 178,
+      "height": 26
+    },
+    "line_id": "paddle-14"
+  },
+  {
+    "index": 17,
+    "text": "OPTIONS",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 912,
+      "y": 40,
+      "width": 112,
+      "height": 28
+    },
+    "line_id": "paddle-15"
+  },
+  {
+    "index": 18,
+    "text": "TECHNIQUES",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 498,
+      "y": 42,
+      "width": 148,
+      "height": 22
+    },
+    "line_id": "paddle-13"
+  },
+  {
+    "index": 19,
+    "text": "THE TALE OF LADY MASAKO",
+    "confidence": 0.9663,
+    "bbox": {
+      "x": 890,
+      "y": 180,
+      "width": 468,
+      "height": 34
+    },
+    "line_id": "paddle-19"
+  },
+  {
+    "index": 20,
+    "text": "ACT 1: RESCUE LORD SHIMURA",
+    "confidence": 0.9899,
+    "bbox": {
+      "x": 208,
+      "y": 202,
+      "width": 402,
+      "height": 28
+    },
+    "line_id": "paddle-20"
+  },
+  {
+    "index": 21,
+    "text": "ED",
+    "confidence": 0.2866,
+    "bbox": {
+      "x": 56,
+      "y": 228,
+      "width": 66,
+      "height": 64
+    },
+    "line_id": "paddle-21"
+  },
+  {
+    "index": 22,
+    "text": "A Masako Tale (1 of 9)",
+    "confidence": 0.9691,
+    "bbox": {
+      "x": 888,
+      "y": 266,
+      "width": 214,
+      "height": 26
+    },
+    "line_id": "paddle-23"
+  },
+  {
+    "index": 23,
+    "text": "PROGRESS",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 208,
+      "y": 280,
+      "width": 108,
+      "height": 22
+    },
+    "line_id": "paddle-22"
+  },
+  {
+    "index": 24,
+    "text": "Clan Adachi has been massacred. The attackers weren't Mongols\nor bandits, but our own people. Lady Masako is the only survivor.",
+    "confidence": 0.9901,
+    "bbox": {
+      "x": 886,
+      "y": 294,
+      "width": 626,
+      "height": 56
+    },
+    "line_id": "paragraph-0"
+  },
+  {
+    "index": 25,
+    "text": "Recruit Lady Masako\nRescue Yuna's blacksmith brother\nRecruit the Straw Hat ronin",
+    "confidence": 0.9991,
+    "bbox": {
+      "x": 222,
+      "y": 358,
+      "width": 326,
+      "height": 96
+    },
+    "line_id": "paragraph-21"
+  },
+  {
+    "index": 26,
+    "text": "I will help her find those responsible, and in return, she will help\nme free Lord Shimura from the Mongol Khan.",
+    "confidence": 0.9788,
+    "bbox": {
+      "x": 886,
+      "y": 374,
+      "width": 610,
+      "height": 56
+    },
+    "line_id": "paragraph-0"
+  },
+  {
+    "index": 27,
+    "text": "13",
+    "confidence": 0.5678,
+    "bbox": {
+      "x": 70,
+      "y": 382,
+      "width": 44,
+      "height": 44
+    },
+    "line_id": "paddle-29"
+  },
+  {
+    "index": 28,
+    "text": "REWARDS",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 900,
+      "y": 534,
+      "width": 118,
+      "height": 28
+    },
+    "line_id": "paddle-33"
+  },
+  {
+    "index": 29,
+    "text": "ACTIVE TALES",
+    "confidence": 0.9765,
+    "bbox": {
+      "x": 206,
+      "y": 564,
+      "width": 162,
+      "height": 28
+    },
+    "line_id": "paddle-34"
+  },
+  {
+    "index": 30,
+    "text": "THE TALE OF LADY MASAKO\nB BLOOD ON THE GRASS\nE THE BROKEN BLACKSMITH",
+    "confidence": 0.8145,
+    "bbox": {
+      "x": 216,
+      "y": 640,
+      "width": 396,
+      "height": 286
+    },
+    "line_id": "paragraph-24"
+  },
+  {
+    "index": 31,
+    "text": "Major Legend",
+    "confidence": 0.9583,
+    "bbox": {
+      "x": 1022,
+      "y": 656,
+      "width": 146,
+      "height": 36
+    },
+    "line_id": "paddle-37"
+  },
+  {
+    "index": 32,
+    "text": "Samurai Clan",
+    "confidence": 0.9993,
+    "bbox": {
+      "x": 1256,
+      "y": 660,
+      "width": 132,
+      "height": 26
+    },
+    "line_id": "paddle-38"
+  },
+  {
+    "index": 33,
+    "text": "Armor",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 1288,
+      "y": 686,
+      "width": 68,
+      "height": 28
+    },
+    "line_id": "paddle-40"
+  },
+  {
+    "index": 34,
+    "text": "Increase",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 1058,
+      "y": 690,
+      "width": 82,
+      "height": 22
+    },
+    "line_id": "paddle-39"
+  },
+  {
+    "index": 35,
+    "text": "OBJECTIVES",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 896,
+      "y": 756,
+      "width": 152,
+      "height": 34
+    },
+    "line_id": "paddle-43"
+  },
+  {
+    "index": 36,
+    "text": "0",
+    "confidence": 0.3511,
+    "bbox": {
+      "x": 926,
+      "y": 828,
+      "width": 20,
+      "height": 20
+    },
+    "line_id": "paddle-44"
+  },
+  {
+    "index": 37,
+    "text": "Speak with Lady Masako",
+    "confidence": 0.9909,
+    "bbox": {
+      "x": 968,
+      "y": 830,
+      "width": 210,
+      "height": 20
+    },
+    "line_id": "paddle-45"
+  },
+  {
+    "index": 38,
+    "text": "COMPLETED TALES",
+    "confidence": 0.9973,
+    "bbox": {
+      "x": 208,
+      "y": 990,
+      "width": 222,
+      "height": 28
+    },
+    "line_id": "paddle-48"
+  },
+  {
+    "index": 39,
+    "text": "SHOW ON MAP",
+    "confidence": 0.9841,
+    "bbox": {
+      "x": 1448,
+      "y": 1012,
+      "width": 230,
+      "height": 48
+    },
+    "line_id": "paddle-50"
+  },
+  {
+    "index": 40,
+    "text": "[V) SORT BY MOST RECENT",
+    "confidence": 0.8998,
+    "bbox": {
+      "x": 1066,
+      "y": 1022,
+      "width": 318,
+      "height": 34
+    },
+    "line_id": "paddle-49"
+  },
+  {
+    "index": 41,
+    "text": "BACK",
+    "confidence": 0.9999,
+    "bbox": {
+      "x": 1816,
+      "y": 1022,
+      "width": 72,
+      "height": 30
+    },
+    "line_id": "paddle-52"
+  },
+  {
+    "index": 42,
+    "text": "ESC",
+    "confidence": 0.9998,
+    "bbox": {
+      "x": 1748,
+      "y": 1024,
+      "width": 60,
+      "height": 32
+    },
+    "line_id": "paddle-51"
+  }
+]

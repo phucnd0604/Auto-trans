@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from autotrans import app as app_module
@@ -164,6 +166,44 @@ def test_deep_provider_uses_paddle_provider(monkeypatch) -> None:
     assert provider._get_instance().config is config
 
 
+def test_lazy_ocr_provider_caches_init_failure() -> None:
+    calls = {"count": 0}
+
+    def factory():
+        calls["count"] += 1
+        raise RuntimeError("boom")
+
+    provider = app_module._LazyOCRProvider("paddleocr", factory)
+
+    for _ in range(2):
+        try:
+            provider._get_instance()
+        except RuntimeError as exc:
+            assert "initialization previously failed" in str(exc) or str(exc) == "boom"
+        else:
+            raise AssertionError("Expected init failure")
+
+    assert calls["count"] == 1
+
+
+def test_warmup_ocr_providers_initializes_lazy_instances() -> None:
+    calls = {"count": 0}
+
+    class PlainProvider:
+        name = "plain"
+
+    def factory():
+        calls["count"] += 1
+        return object()
+
+    lazy_provider = app_module._LazyOCRProvider("paddleocr", factory)
+
+    app_module._warmup_ocr_providers([lazy_provider, PlainProvider()])
+
+    assert calls["count"] == 1
+    assert lazy_provider._instance is not None
+
+
 def test_build_realtime_ocr_provider_rejects_unknown_provider() -> None:
     config = _make_config()
     config.ocr_provider = "unknown"
@@ -210,7 +250,23 @@ def test_paddle_provider_forces_english_only_language() -> None:
     BaseOCRProvider.__init__(provider, config)
 
     assert provider._resolve_language() == "en"
-    assert provider._resolve_recognition_model_name() == "latin_PP-OCRv5_rec_mobile"
+    assert provider._resolve_recognition_model_name() == "en_PP-OCRv5_mobile_rec"
+
+
+def test_paddle_provider_resolves_recognition_model_from_user_cache(monkeypatch, tmp_path) -> None:
+    config = _make_config()
+    provider = PaddleOCRProvider.__new__(PaddleOCRProvider)
+    BaseOCRProvider.__init__(provider, config)
+
+    fake_home = tmp_path / "home"
+    model_dir = fake_home / ".paddlex" / "official_models" / "en_PP-OCRv5_mobile_rec"
+    model_dir.mkdir(parents=True)
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    model_name, resolved_dir = provider._resolve_recognition_model()
+
+    assert model_name == "en_PP-OCRv5_mobile_rec"
+    assert resolved_dir == model_dir
 
 
 def test_paddle_provider_recognize_paragraphs_merges_lines_by_layout_region() -> None:

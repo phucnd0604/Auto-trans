@@ -365,7 +365,8 @@ def test_settings_dialog_labels_have_tooltips(tmp_path) -> None:
     )
 
     assert ocr_label is not None
-    assert "realtime translation" in ocr_label.toolTip().lower()
+    assert "paddleocr" in ocr_label.toolTip().lower()
+    assert "deep mode" in ocr_label.toolTip().lower()
     assert gemini_label is not None
     assert "deep mode" in gemini_label.toolTip().lower()
 
@@ -665,3 +666,65 @@ def test_main_window_poll_triggers_deep_mode_on_insert_only(qtbot, monkeypatch) 
     window._poll_global_hotkeys()
 
     assert fired == ["deep"]
+
+
+def test_main_window_pauses_realtime_only_during_deep_prepare(qtbot) -> None:
+    config = _make_config()
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+    window = MainWindow(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        orchestrator=PipelineOrchestrator(
+            config=config,
+            capture_service=StubCaptureService(_make_frame()),
+            ocr_provider=StubOCRProvider(_make_boxes()),
+            local_translator=StubLocalTranslator(),
+            cloud_translator=StubCloudTranslator(),
+        ),
+        overlay=overlay,
+        global_hotkeys=None,
+    )
+    qtbot.addWidget(window)
+
+    window._running = True
+    window.capture_timer.start()
+
+    window._pause_realtime_for_deep_prepare()
+
+    assert window._realtime_paused_for_deep_prepare is True
+    assert window.capture_timer.isActive() is False
+
+    window._apply_deep_translation_preview(0, [], [])
+
+    assert window._realtime_paused_for_deep_prepare is False
+    assert window.capture_timer.isActive() is True
+
+
+def test_cancel_deep_translation_resumes_realtime_after_prepare_pause(qtbot) -> None:
+    config = _make_config()
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+    window = MainWindow(
+        config=config,
+        capture_service=StubCaptureService(_make_frame()),
+        orchestrator=PipelineOrchestrator(
+            config=config,
+            capture_service=StubCaptureService(_make_frame()),
+            ocr_provider=StubOCRProvider(_make_boxes()),
+            local_translator=StubLocalTranslator(),
+            cloud_translator=StubCloudTranslator(),
+        ),
+        overlay=overlay,
+        global_hotkeys=None,
+    )
+    qtbot.addWidget(window)
+
+    window._running = True
+    window.capture_timer.start()
+    window._pause_realtime_for_deep_prepare()
+
+    window._cancel_deep_translation()
+
+    assert window._realtime_paused_for_deep_prepare is False
+    assert window.capture_timer.isActive() is True

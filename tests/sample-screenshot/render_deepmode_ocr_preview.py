@@ -109,11 +109,14 @@ class _PaddleLayoutPreviewProvider:
         self._helper = _PreviewMergeHelper(config)
         from paddleocr import LayoutDetection, PaddleOCR
 
-        recognition_model_dir = PADDLE_MODEL_ROOT / "latin_PP-OCRv5_rec_mobile"
+        recognition_model_dir = PADDLE_MODEL_ROOT / "en_PP-OCRv5_mobile_rec"
         if not recognition_model_dir.exists():
             alias_dir = PADDLE_MODEL_ROOT / "latin_PP-OCRv5_mobile_rec"
-            recognition_model_dir = alias_dir if alias_dir.exists() else PADDLE_MODEL_ROOT / "en_PP-OCRv5_mobile_rec"
-        recognition_model_name = "latin_PP-OCRv5_rec_mobile"
+            if alias_dir.exists():
+                recognition_model_dir = alias_dir
+            else:
+                recognition_model_dir = PADDLE_MODEL_ROOT / "latin_PP-OCRv5_rec_mobile"
+        recognition_model_name = "en_PP-OCRv5_mobile_rec"
         if recognition_model_dir.name != recognition_model_name:
             recognition_model_name = recognition_model_dir.name
 
