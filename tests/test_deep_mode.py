@@ -9,7 +9,7 @@ from PySide6.QtGui import QFont
 
 from autotrans.config import AppConfig
 from autotrans.models import Frame, OCRBox, OverlayItem, OverlayStyle, QualityMode, Rect, TranslationResult
-from autotrans.services.ocr import BaseOCRProvider, RapidOCRProvider
+from autotrans.services.ocr import BaseOCRProvider, PaddleOCRProvider
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiRestTranslator, GeminiTranslator
@@ -309,24 +309,23 @@ def test_layout_region_merge_groups_lines_inside_text_region() -> None:
     assert merged[1].source_text == "REWARDS"
 
 
-def test_detect_layout_regions_accepts_numpy_arrays() -> None:
-    class LayoutResult:
-        def __init__(self) -> None:
-            self.boxes = np.array([[20, 30, 140, 90]], dtype=np.float32)
-            self.class_names = np.array(["Text"], dtype=object)
-            self.scores = np.array([0.91], dtype=np.float32)
+def test_detect_layout_regions_accepts_layout_detection_result_shape() -> None:
+    provider = PaddleOCRProvider.__new__(PaddleOCRProvider)
+    BaseOCRProvider.__init__(provider, _make_config())
+    provider._paddlex_layout_disabled = False
+    provider._paddlex_layout_model = None
 
-    class FakeRapidOCRProvider(RapidOCRProvider):
-        def __init__(self, config: AppConfig, result) -> None:
-            BaseOCRProvider.__init__(self, config)
-            self._layout_result = result
-            self._layout_disabled = False
-            self._layout_engine = None
+    class FakeLayoutEngine:
+        def predict(self, _image):
+            return [
+                {
+                    "boxes": [
+                        {"label": "Text", "coordinate": np.array([20, 30, 140, 90], dtype=np.float32), "score": 0.91},
+                    ]
+                }
+            ]
 
-        def _get_layout_engine(self):
-            return lambda _image: self._layout_result
-
-    provider = FakeRapidOCRProvider(_make_config(), LayoutResult())
+    provider._get_layout_engine = lambda: FakeLayoutEngine()
 
     regions, elapsed_ms = provider._detect_layout_regions(_make_frame())
 

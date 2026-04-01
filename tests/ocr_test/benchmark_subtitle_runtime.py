@@ -2,23 +2,35 @@ from __future__ import annotations
 
 import json
 import importlib.util
+import sys
 import time
-from contextlib import contextmanager
+import types
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import cv2
-import onnxruntime as ort
 
 from autotrans.config import AppConfig
 from autotrans.models import Frame, OCRBox, QualityMode, Rect, TranslationResult
-from autotrans.services.ocr import PaddleOCRProvider, RapidOCRProvider
+from autotrans.services.ocr import PaddleOCRProvider
+
+
+capture_stub = types.ModuleType("autotrans.services.capture")
+
+
+class CaptureService:
+    def capture_window(self, hwnd: int):
+        raise NotImplementedError
+
+
+capture_stub.CaptureService = CaptureService
+sys.modules.setdefault("autotrans.services.capture", capture_stub)
+
 from autotrans.services.orchestrator import PipelineOrchestrator
 
 
 ROOT = Path(__file__).resolve().parent
 IMAGE_GLOB = "sub*.png"
-MODEL_ROOT = ROOT / "models"
 
 
 class _NoopTranslator:
@@ -53,90 +65,26 @@ class _StaticCaptureService:
         return []
 
 
-class _BenchmarkRapidOCRProvider(RapidOCRProvider):
+class _BenchmarkPaddleOCRProvider(PaddleOCRProvider):
     def __init__(
         self,
         config: AppConfig,
-        engine_kwargs: dict[str, object] | None = None,
         *,
-        use_directml: bool = False,
+        det_limit_side_len: int | None = None,
+        recognition_model_name: str | None = None,
     ) -> None:
-        super().__init__(config)
-        if engine_kwargs or use_directml:
-            from rapidocr_onnxruntime import RapidOCR
-
-            with _rapidocr_directml_patch(enabled=use_directml):
-                self._engine = RapidOCR(**(engine_kwargs or {}))
-
-
-class _BenchmarkPaddleOCRProvider(PaddleOCRProvider):
-    def __init__(self, config: AppConfig) -> None:
+        self._override_det_limit_side_len = det_limit_side_len
+        self._override_recognition_model_name = recognition_model_name
         super().__init__(config)
 
+    def _resolve_recognition_model_name(self) -> str:
+        return self._override_recognition_model_name or super()._resolve_recognition_model_name()
 
-@contextmanager
-def _rapidocr_directml_patch(enabled: bool):
-    if not enabled:
-        yield
-        return
-
-    import onnxruntime as ort
-    import rapidocr_onnxruntime.ch_ppocr_v2_cls.text_cls as text_cls_module
-    import rapidocr_onnxruntime.ch_ppocr_v3_det.text_detect as text_detect_module
-    import rapidocr_onnxruntime.ch_ppocr_v3_rec.text_recognize as text_recognize_module
-    import rapidocr_onnxruntime.utils as rapid_utils
-    from onnxruntime import GraphOptimizationLevel, SessionOptions
-    from pathlib import Path as _Path
-
-    original_utils = rapid_utils.OrtInferSession
-    original_cls = text_cls_module.OrtInferSession
-    original_det = text_detect_module.OrtInferSession
-    original_rec = text_recognize_module.OrtInferSession
-
-    class DirectMLOrtInferSession:
-        def __init__(self, config):
-            sess_opt = SessionOptions()
-            sess_opt.log_severity_level = 4
-            sess_opt.enable_cpu_mem_arena = False
-            sess_opt.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
-            model_path = _Path(config["model_path"])
-            if not model_path.exists():
-                raise FileNotFoundError(f"{model_path} does not exists.")
-            self.session = ort.InferenceSession(
-                str(model_path),
-                sess_options=sess_opt,
-                providers=["DmlExecutionProvider", "CPUExecutionProvider"],
-            )
-
-        def __call__(self, input_content):
-            input_dict = dict(zip(self.get_input_names(), [input_content]))
-            return self.session.run(self.get_output_names(), input_dict)
-
-        def get_input_names(self):
-            return [v.name for v in self.session.get_inputs()]
-
-        def get_output_names(self):
-            return [v.name for v in self.session.get_outputs()]
-
-        def get_character_list(self, key: str = "character"):
-            self.meta_dict = self.session.get_modelmeta().custom_metadata_map
-            return self.meta_dict[key].splitlines()
-
-        def have_key(self, key: str = "character") -> bool:
-            self.meta_dict = self.session.get_modelmeta().custom_metadata_map
-            return key in self.meta_dict.keys()
-
-    rapid_utils.OrtInferSession = DirectMLOrtInferSession
-    text_cls_module.OrtInferSession = DirectMLOrtInferSession
-    text_detect_module.OrtInferSession = DirectMLOrtInferSession
-    text_recognize_module.OrtInferSession = DirectMLOrtInferSession
-    try:
-        yield
-    finally:
-        rapid_utils.OrtInferSession = original_utils
-        text_cls_module.OrtInferSession = original_cls
-        text_detect_module.OrtInferSession = original_det
-        text_recognize_module.OrtInferSession = original_rec
+    def _build_ocr_kwargs(self) -> dict[str, object]:
+        kwargs = super()._build_ocr_kwargs()
+        if self._override_det_limit_side_len is not None:
+            kwargs["text_det_limit_side_len"] = self._override_det_limit_side_len
+        return kwargs
 
 
 @dataclass(slots=True)
@@ -174,7 +122,7 @@ def _load_frame(image_path: Path) -> Frame:
 
 def _make_config(*, crop_subtitle_only: bool, ocr_max_side: int) -> AppConfig:
     config = AppConfig()
-    config.ocr_provider = "rapidocr"
+    config.ocr_provider = "paddleocr"
     config.capture_backend = "printwindow"
     config.subtitle_mode = True
     config.ocr_crop_subtitle_only = crop_subtitle_only
@@ -254,22 +202,21 @@ def _run_subtitle_runtime_pass(
 
 
 def _run_scenario(
-    provider_name: str,
     name: str,
     *,
     crop_subtitle_only: bool,
     ocr_max_side: int,
-    engine_kwargs: dict[str, object] | None = None,
-    use_directml: bool = False,
+    det_limit_side_len: int | None = None,
+    recognition_model_name: str | None = None,
 ) -> dict[str, object]:
     config = _make_config(crop_subtitle_only=crop_subtitle_only, ocr_max_side=ocr_max_side)
-    config.ocr_provider = provider_name
     frames = {index: _load_frame(path) for index, path in enumerate(sorted(ROOT.glob(IMAGE_GLOB)), start=1)}
     capture_service = _StaticCaptureService(frames)
-    if provider_name == "paddleocr":
-        realtime_provider = _BenchmarkPaddleOCRProvider(config)
-    else:
-        realtime_provider = _BenchmarkRapidOCRProvider(config, engine_kwargs, use_directml=use_directml)
+    realtime_provider = _BenchmarkPaddleOCRProvider(
+        config,
+        det_limit_side_len=det_limit_side_len,
+        recognition_model_name=recognition_model_name,
+    )
     orchestrator = PipelineOrchestrator(
         config=config,
         capture_service=capture_service,
@@ -287,15 +234,15 @@ def _run_scenario(
     average_selected = sum(item.selected_boxes for item in snapshots) / max(len(snapshots), 1)
     return {
         "scenario": name,
-        "provider": provider_name,
+        "provider": "paddleocr",
         "config": {
             "ocr_crop_subtitle_only": crop_subtitle_only,
             "ocr_max_side": ocr_max_side,
             "subtitle_mode": True,
             "translation_stable_scans": config.translation_stable_scans,
             "debounce_frames": config.debounce_frames,
-            "engine_kwargs": engine_kwargs or {},
-            "use_directml": use_directml,
+            "det_limit_side_len": det_limit_side_len,
+            "recognition_model_name": recognition_model_name or realtime_provider._resolve_recognition_model_name(),
         },
         "summary": {
             "images": len(snapshots),
@@ -309,145 +256,39 @@ def _run_scenario(
 
 def main() -> None:
     scenarios = [
-        ("runtime-default", {"crop_subtitle_only": True, "ocr_max_side": 960, "engine_kwargs": {}}),
-        ("runtime-no-crop", {"crop_subtitle_only": False, "ocr_max_side": 960, "engine_kwargs": {}}),
-        ("runtime-no-cls", {"crop_subtitle_only": True, "ocr_max_side": 960, "engine_kwargs": {"use_angle_cls": False}}),
+        ("runtime-default", {"crop_subtitle_only": True, "ocr_max_side": 960}),
+        ("runtime-no-crop", {"crop_subtitle_only": False, "ocr_max_side": 960}),
+        ("runtime-det-640", {"crop_subtitle_only": True, "ocr_max_side": 960, "det_limit_side_len": 640}),
         (
-            "runtime-no-cls-no-crop",
-            {"crop_subtitle_only": False, "ocr_max_side": 960, "engine_kwargs": {"use_angle_cls": False}},
-        ),
-        (
-            "runtime-det-640",
+            "runtime-latin-rec",
             {
                 "crop_subtitle_only": True,
                 "ocr_max_side": 960,
-                "engine_kwargs": {"det_model_path": None, "det_limit_side_len": 640},
-            },
-        ),
-        (
-            "runtime-det-512",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {"det_model_path": None, "det_limit_side_len": 512},
-            },
-        ),
-        (
-            "runtime-no-cls-det-640",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {"use_angle_cls": False, "det_model_path": None, "det_limit_side_len": 640},
-            },
-        ),
-        ("runtime-no-det", {"crop_subtitle_only": True, "ocr_max_side": 960, "engine_kwargs": {"use_text_det": False}}),
-        (
-            "runtime-en-v4-rec",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {"rec_model_path": str((MODEL_ROOT / "en_PP-OCRv4_rec_infer.onnx").resolve())},
-            },
-        ),
-        (
-            "runtime-en-v5-rec",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {"rec_model_path": str((MODEL_ROOT / "en_PP-OCRv5_rec_mobile_infer.onnx").resolve())},
-            },
-        ),
-        (
-            "runtime-latin-v5-rec",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {"rec_model_path": str((MODEL_ROOT / "latin_PP-OCRv5_rec_mobile_infer.onnx").resolve())},
-            },
-        ),
-        (
-            "runtime-v5-det-en-v5-rec",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {
-                    "det_model_path": str((MODEL_ROOT / "ch_PP-OCRv5_mobile_det.onnx").resolve()),
-                    "rec_model_path": str((MODEL_ROOT / "en_PP-OCRv5_rec_mobile_infer.onnx").resolve()),
-                },
-            },
-        ),
-        (
-            "runtime-v5-det-latin-v5-rec",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {
-                    "det_model_path": str((MODEL_ROOT / "ch_PP-OCRv5_mobile_det.onnx").resolve()),
-                    "rec_model_path": str((MODEL_ROOT / "latin_PP-OCRv5_rec_mobile_infer.onnx").resolve()),
-                },
-            },
-        ),
-        (
-            "runtime-directml-latin-v5-rec",
-            {
-                "crop_subtitle_only": True,
-                "ocr_max_side": 960,
-                "engine_kwargs": {"rec_model_path": str((MODEL_ROOT / "latin_PP-OCRv5_rec_mobile_infer.onnx").resolve())},
-                "use_directml": True,
+                "recognition_model_name": "latin_PP-OCRv5_rec_mobile",
             },
         ),
     ]
 
-    available_providers = set(ort.get_available_providers())
-    filtered_scenarios: list[tuple[str, str, dict[str, object]]] = []
-    for provider_name in ("rapidocr", "paddleocr"):
-        if provider_name == "paddleocr" and importlib.util.find_spec("paddleocr") is None:
-            print("- paddleocr: skipped (dependency not installed)")
-            continue
-        for scenario_name, kwargs in scenarios:
-            if provider_name == "paddleocr" and kwargs.get("use_directml"):
-                continue
-            engine_kwargs = kwargs.get("engine_kwargs", {})
-            required_paths = [
-                Path(str(value))
-                for key, value in engine_kwargs.items()
-                if key.endswith("_model_path") and value
-            ]
-            if any(not path.exists() for path in required_paths):
-                print(f"- {provider_name}/{scenario_name}: skipped (missing model file)")
-                continue
-            if kwargs.get("use_directml") and "DmlExecutionProvider" not in available_providers:
-                print(f"- {provider_name}/{scenario_name}: skipped (DmlExecutionProvider unavailable)")
-                continue
-            filtered_scenarios.append((provider_name, scenario_name, kwargs))
+    if importlib.util.find_spec("paddleocr") is None:
+        print("- paddleocr: skipped (dependency not installed)")
+        return
 
-    report = {"root": str(ROOT), "results": []}
-    print("Subtitle OCR runtime benchmark")
-    print(f"Image root: {ROOT}")
-    for provider_name, scenario_name, kwargs in filtered_scenarios:
+    results = []
+    for scenario_name, kwargs in scenarios:
         started = time.perf_counter()
-        result = _run_scenario(provider_name, scenario_name, **kwargs)
+        result = _run_scenario(scenario_name, **kwargs)
         elapsed_ms = (time.perf_counter() - started) * 1000.0
-        report["results"].append(result)
         summary = result["summary"]
         print(
-            f"- {provider_name}/{scenario_name}: avg_total={summary['avg_total_ms']}ms "
-            f"avg_ocr={summary['avg_ocr_ms']}ms avg_selected={summary['avg_selected_boxes']} "
-            f"scenario_wall={elapsed_ms:.0f}ms"
+            f"- paddleocr/{scenario_name}: avg_ocr={summary['avg_ocr_ms']}ms "
+            f"avg_total={summary['avg_total_ms']}ms selected={summary['avg_selected_boxes']} "
+            f"elapsed={elapsed_ms:.0f}ms"
         )
-        for snapshot in result["snapshots"]:
-            print(
-                f"  {Path(snapshot['file']).name}: total={snapshot['total_ms']:.1f}ms "
-                f"ocr={snapshot['ocr_ms']:.1f}ms crop={snapshot['crop_ms']:.1f}ms "
-                f"raw={snapshot['raw_boxes']} deduped={snapshot['deduped_boxes']} "
-                f"selected={snapshot['selected_boxes']} tracked={snapshot['tracked_boxes']}"
-            )
-            for text in snapshot["texts"]:
-                print(f"    - {text}")
+        results.append(result)
 
-    report_path = ROOT / "subtitle_runtime_benchmark.json"
-    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\nSaved report: {report_path}")
+    output_path = ROOT / "subtitle_runtime_benchmark.json"
+    output_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Wrote benchmark report to {output_path}")
 
 
 if __name__ == "__main__":

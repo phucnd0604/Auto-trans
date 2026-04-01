@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 
 
 DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
-    "ocr_provider": "rapidocr",
+    "ocr_provider": "paddleocr",
     "capture_backend": "printwindow",
     "capture_fps": 4.0,
     "subtitle_mode": True,
@@ -52,7 +52,7 @@ SETTING_TOOLTIPS: dict[str, str] = {
     "Factions / Organizations": "Danh sach phe phai, to chuc, tong mon, quoc gia hoac nhom quan trong de deep mode dich on dinh hon.",
     "Characters & Honorifics": "Nhan vat chinh, cach xung ho, danh xung va honorific can uu tien khi deep mode dich hoi thoai.",
     "Terms / Items / Skills": "Thuat ngu rieng, vat pham, ky nang, canh gioi, ten ky nang va cach viet mong muon trong deep mode.",
-    "OCR Provider": "OCR engine cho realtime translation. PaddleOCR hien duoc khoa English-only de giam model tai ve va thoi gian khoi dong; deep mode van co dinh dung RapidOCR.",
+    "OCR Provider": "OCR engine da duoc co dinh thanh PaddleOCR cho ca realtime va deep mode de giam do phuc tap va kich thuoc ung dung.",
     "Capture Backend": "Cach chup hinh cua cua so game. PrintWindow on dinh hon, BetterCam nhanh hon voi mot so game, MSS la fallback tong quat.",
     "Capture FPS": "Tan suat chup hinh cho pipeline realtime. Tang cao hon se cap nhat nhanh hon nhung ton CPU/GPU hon.",
     "Subtitle Mode": "Bat bo loc subtitle. Khi bat, pipeline uu tien text o vung subtitle thay vi HUD/menu text.",
@@ -67,6 +67,7 @@ SETTING_TOOLTIPS: dict[str, str] = {
 
 def _normalize_loaded_settings(settings: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(settings)
+    normalized["ocr_provider"] = "paddleocr"
     if "deep_translation_api_key" not in normalized:
         normalized["deep_translation_api_key"] = str(normalized.get("openai_api_key", "")).strip()
     if "deep_translation_model" not in normalized:
@@ -162,7 +163,7 @@ class SettingsDialog(QDialog):
         self.advanced_check.setChecked(bool(settings["advanced_settings"]))
 
         self.ocr_provider_combo = QComboBox()
-        self.ocr_provider_combo.addItems(["rapidocr", "paddleocr"])
+        self.ocr_provider_combo.addItems(["paddleocr"])
         self.ocr_provider_combo.setCurrentText(str(settings["ocr_provider"]))
 
         self.capture_backend_combo = QComboBox()

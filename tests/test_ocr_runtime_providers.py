@@ -139,12 +139,12 @@ def test_build_realtime_ocr_provider_selects_paddle(monkeypatch) -> None:
     assert provider._get_instance().config is config
 
 
-def test_deep_provider_stays_rapid_when_realtime_uses_paddle(monkeypatch) -> None:
+def test_deep_provider_uses_paddle_provider(monkeypatch) -> None:
     config = _make_config()
     config.ocr_provider = "paddleocr"
 
-    class FakeRapidProvider:
-        name = "rapidocr"
+    class FakePaddleProvider:
+        name = "paddleocr"
 
         def __init__(self, passed_config: AppConfig) -> None:
             self.config = passed_config
@@ -155,12 +155,12 @@ def test_deep_provider_stays_rapid_when_realtime_uses_paddle(monkeypatch) -> Non
         def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
             return []
 
-    monkeypatch.setattr(app_module, "RapidOCRProvider", FakeRapidProvider)
+    monkeypatch.setattr(app_module, "PaddleOCRProvider", FakePaddleProvider)
 
     provider = app_module._build_deep_ocr_provider(config)
 
-    assert provider.name == "rapidocr"
-    assert isinstance(provider._get_instance(), FakeRapidProvider)
+    assert provider.name == "paddleocr"
+    assert isinstance(provider._get_instance(), FakePaddleProvider)
     assert provider._get_instance().config is config
 
 
@@ -210,7 +210,46 @@ def test_paddle_provider_forces_english_only_language() -> None:
     BaseOCRProvider.__init__(provider, config)
 
     assert provider._resolve_language() == "en"
-    assert provider._resolve_recognition_model_name() == "en_PP-OCRv5_mobile_rec"
+    assert provider._resolve_recognition_model_name() == "latin_PP-OCRv5_rec_mobile"
+
+
+def test_paddle_provider_recognize_paragraphs_merges_lines_by_layout_region() -> None:
+    provider = PaddleOCRProvider.__new__(PaddleOCRProvider)
+    BaseOCRProvider.__init__(provider, _make_config())
+    provider._language = "en"
+    provider._paddlex_layout_disabled = False
+
+    class FakeEngine:
+        def predict(self, image):
+            return [[
+                (
+                    [[10, 20], [180, 20], [180, 48], [10, 48]],
+                    ("Quest Objective", 0.93),
+                ),
+                (
+                    [[12, 56], [240, 56], [240, 84], [12, 84]],
+                    ("Find the lost relic", 0.91),
+                ),
+            ]]
+
+    class FakeStructureEngine:
+        def predict(self, image):
+            return [
+                {
+                    "boxes": [
+                        {"label": "text", "coordinate": [0, 10, 260, 100], "score": 0.97},
+                    ]
+                }
+            ]
+
+    provider._engine = FakeEngine()
+    provider._paddlex_layout_model = FakeStructureEngine()
+
+    boxes = provider.recognize_paragraphs(_make_frame())
+
+    assert len(boxes) == 1
+    assert boxes[0].source_text == "Quest Objective\nFind the lost relic"
+    assert boxes[0].bbox == Rect(x=10, y=20, width=230, height=64)
 
 
 def test_live_process_uses_realtime_provider_only() -> None:

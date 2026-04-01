@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-04-01
+
+### OCR
+- Deep mode now uses `PaddleOCR` paragraph OCR with Paddle layout detection instead of the old `rapid-layout` path.
+- Realtime OCR now defaults to `paddleocr` to match the latest subtitle runtime benchmark results.
+- Removed `RapidOCR`, `rapid-layout`, and their related benchmark/debug scripts from the app and test workspace.
+- Standardized Paddle recognition on `latin_PP-OCRv5_rec_mobile` for OCR, with compatibility fallback only when older local cache folders are still present.
+
 ## 2026-03-31
 
 ### Realtime OCR

@@ -1,5 +1,11 @@
 # AutoTrans
 
+## OCR Runtime
+
+- OCR runtime hien tai da duoc chuan hoa thanh `PaddleOCR` cho ca realtime va deep mode.
+- Benchmark subtitle OCR va deep mode preview co the chay lai bang guide trong [GUIDE_OCR_BENCHMARK_AND_DEEPMODE.md](/Users/phucnd/Documents/Auto-trans/Auto-trans/GUIDE_OCR_BENCHMARK_AND_DEEPMODE.md).
+- Bao cao chot trang thai Paddle-only OCR nam o [REPORT_2026-04-01_PADDLEOCR_ONLY.md](/Users/phucnd/Documents/Auto-trans/Auto-trans/REPORT_2026-04-01_PADDLEOCR_ONLY.md).
+
 ## Tao File Share
 
 Chay:
@@ -40,6 +46,3 @@ Neu muon ban nhe hon:
 ```text
 run_portable.cmd
 ```
-
-
-key: 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

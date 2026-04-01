@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 from autotrans.config import AppConfig
 from autotrans.models import Frame, OverlayItem, Rect, VisibilityState
 from autotrans.services.cache import TranslationCache
-from autotrans.services.ocr import RapidOCRProvider
+from autotrans.services.ocr import PaddleOCRProvider
 from autotrans.services.translation import GeminiRestTranslator, GeminiTranslator, WordByWordTranslator
 
 
@@ -33,7 +33,7 @@ from autotrans.services.orchestrator import PipelineOrchestrator
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_IMAGES = ("quest1.png", "quest2.png")
-LAYOUT_BACKEND = os.environ.get("AUTOTRANS_LAYOUT_BACKEND", "rapid-layout").strip().lower() or "rapid-layout"
+LAYOUT_BACKEND = os.environ.get("AUTOTRANS_LAYOUT_BACKEND", "pp_doclayout_s").strip().lower() or "pp_doclayout_s"
 TRANSLATOR_BACKEND = os.environ.get("AUTOTRANS_TRANSLATOR_BACKEND", "word").strip().lower() or "word"
 OVERLAY_BRUSH_PATH = ROOT.parent.parent / "src" / "autotrans" / "ui" / "assets" / "overlay-brush.png"
 
@@ -206,19 +206,12 @@ def _draw_overlay_item(image: np.ndarray, item: OverlayItem) -> np.ndarray:
     return cv2.cvtColor(np.array(pil_image.convert("RGB")), cv2.COLOR_RGB2BGR)
 
 
-def _make_provider(config: AppConfig) -> RapidOCRProvider:
-    provider = RapidOCRProvider(config)
-    if LAYOUT_BACKEND == "rapid-layout":
-        provider._paddlex_layout_disabled = True
-        provider._paddlex_layout_model = None
-    elif LAYOUT_BACKEND == "paddlex":
-        provider._layout_disabled = True
-        provider._layout_engine = None
-    elif LAYOUT_BACKEND != "auto":
+def _make_deep_provider(config: AppConfig) -> PaddleOCRProvider:
+    if LAYOUT_BACKEND not in {"auto", "pp_doclayout_s", "pp-structure"}:
         raise RuntimeError(
-            f"Unsupported AUTOTRANS_LAYOUT_BACKEND={LAYOUT_BACKEND!r}. Use auto, paddlex, or rapid-layout."
+            f"Unsupported AUTOTRANS_LAYOUT_BACKEND={LAYOUT_BACKEND!r}. Use auto, pp_doclayout_s, or pp-structure."
         )
-    return provider
+    return PaddleOCRProvider(config)
 
 
 def _make_cloud_translator(config: AppConfig):
@@ -329,7 +322,7 @@ def _write_outputs(
 
 def main() -> None:
     config = AppConfig()
-    config.ocr_provider = "rapidocr"
+    config.ocr_provider = "paddleocr"
     config.subtitle_mode = False
     config.ocr_crop_subtitle_only = False
     config.ocr_max_boxes = 0
@@ -351,7 +344,8 @@ def main() -> None:
         orchestrator = PipelineOrchestrator(
             config=config,
             capture_service=ImageCapture(image),
-            ocr_provider=_make_provider(config),
+            ocr_provider=_make_deep_provider(config),
+            deep_ocr_provider=_make_deep_provider(config),
             local_translator=_make_local_translator(),
             cloud_translator=_make_cloud_translator(config),
             cache=TranslationCache(),

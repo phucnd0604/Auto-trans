@@ -14,14 +14,12 @@ dependencies = [
   "Pillow>=10.4",
   "mss>=10.0",
   "rapidfuzz>=3.9",
-  "pywin32>=308",
-  "bettercam>=1.0.0",
+  "pywin32>=308; sys_platform == 'win32'",
+  "bettercam>=1.0.0; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
 ocr = [
-  "rapidocr_onnxruntime>=1.2",
-  "rapid-layout>=1.2",
   "opencv-python>=4.10",
   "paddlepaddle>=3.2,<3.3",
   "paddleocr>=3.2,<3.3",
@@ -44,4 +42,3 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 [tool.pyside6-project]
 files = ["main.py"]
-

@@ -59,6 +59,20 @@ class BaseOCRProvider:
         if self._config.translation_log_enabled:
             print(f"[AutoTrans][OCR] {message}", flush=True)
 
+    def _resize_for_ocr(self, image: np.ndarray) -> tuple[np.ndarray, float]:
+        height, width = image.shape[:2]
+        longest = max(height, width)
+        if longest <= self._config.ocr_max_side:
+            return image, 1.0
+
+        scale = self._config.ocr_max_side / float(longest)
+        new_width = max(1, int(width * scale))
+        new_height = max(1, int(height * scale))
+        import cv2
+
+        resized = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+        return resized, 1.0 / scale
+
     @staticmethod
     def _text_score(text: str) -> int:
         return sum(char.isalnum() for char in text)
@@ -129,7 +143,7 @@ class BaseOCRProvider:
         output.sort(key=lambda item: (item.bbox.y, item.bbox.x))
         return output
 
-    def _merge_paragraph_boxes(self, boxes: list[OCRBox]) -> list[OCRBox]:
+    def _merge_paragraph_boxes(self, boxes: list[OCRBox], *, line_separator: str = " ") -> list[OCRBox]:
         if len(boxes) <= 1:
             return boxes
 
@@ -162,7 +176,7 @@ class BaseOCRProvider:
             merged.append(
                 OCRBox(
                     id="",
-                    source_text=normalize_text(" ".join(item.source_text for item in group)),
+                    source_text=line_separator.join(item.source_text for item in group),
                     confidence=sum(item.confidence for item in group) / len(group),
                     bbox=Rect(x=x, y=y, width=right - x, height=bottom - y),
                     language_hint=group[0].language_hint,
@@ -183,6 +197,8 @@ class BaseOCRProvider:
         self,
         boxes: list[OCRBox],
         layout_regions: list[tuple[Rect, str, float]],
+        *,
+        line_separator: str = " ",
     ) -> list[OCRBox]:
         if not boxes or not layout_regions:
             return boxes
@@ -229,11 +245,11 @@ class BaseOCRProvider:
         for group in assigned_groups:
             if not group:
                 continue
-            paragraph_boxes = self._merge_paragraph_boxes(group)
+            paragraph_boxes = self._merge_paragraph_boxes(group, line_separator=line_separator)
             merged.extend(paragraph_boxes)
 
         if unassigned:
-            merged.extend(self._merge_paragraph_boxes(unassigned))
+            merged.extend(self._merge_paragraph_boxes(unassigned, line_separator=line_separator))
 
         merged.sort(key=lambda item: (item.bbox.y, item.bbox.x))
         return merged
@@ -266,189 +282,11 @@ class BaseOCRProvider:
         return True
 
 
-class RapidOCRProvider(BaseOCRProvider):
-    name = "rapidocr"
-
-    def __init__(self, config: AppConfig) -> None:
-        super().__init__(config)
-        from rapidocr_onnxruntime import RapidOCR
-
-        self._engine = RapidOCR(**self._engine_kwargs())
-        self._layout_engine = None
-        self._layout_disabled = False
-
-    def _engine_kwargs(self) -> dict[str, object]:
-        kwargs: dict[str, object] = {}
-        rec_model_path = self._resolve_rec_model_path()
-        if rec_model_path is not None:
-            kwargs["rec_model_path"] = str(rec_model_path)
-            self._log(f"rapidocr rec model override={rec_model_path}")
-        return kwargs
-
-    def _resolve_rec_model_path(self) -> Path | None:
-        if self._config.ocr_rec_model_path is not None and self._config.ocr_rec_model_path.exists():
-            return self._config.ocr_rec_model_path
-
-        default_candidate = self._config.ocr_model_dir / "latin_PP-OCRv5_rec_mobile_infer.onnx"
-        if default_candidate.exists():
-            return default_candidate
-        return None
-
-    def _get_layout_engine(self):
-        if self._layout_disabled:
-            return None
-        if self._layout_engine is not None:
-            return self._layout_engine
-        try:
-            from rapid_layout import RapidLayout
-        except ImportError:
-            self._layout_disabled = True
-            self._log("rapid-layout is not installed; deep mode will use line/paragraph OCR only")
-            return None
-        try:
-            self._layout_engine = RapidLayout(
-                model_type="yolov8n_layout_general6",
-                conf_thresh=0.35,
-                iou_thresh=0.45,
-            )
-        except Exception as exc:
-            self._layout_disabled = True
-            self._log(f"rapid-layout init failed: {exc}")
-            return None
-        return self._layout_engine
-
-    def _detect_layout_regions(self, frame: Frame) -> tuple[list[tuple[Rect, str, float]], float]:
-        layout_engine = self._get_layout_engine()
-        if layout_engine is None:
-            return [], 0.0
-        started = time.perf_counter()
-        try:
-            result = layout_engine(frame.image)
-        except Exception as exc:
-            self._log(f"rapid-layout detect failed: {exc}")
-            return [], (time.perf_counter() - started) * 1000.0
-        elapsed_ms = (time.perf_counter() - started) * 1000.0
-        boxes = result.boxes if result.boxes is not None else []
-        class_names = result.class_names if result.class_names is not None else []
-        scores = result.scores if result.scores is not None else []
-        regions: list[tuple[Rect, str, float]] = []
-        for raw_box, class_name, score in zip(boxes, class_names, scores, strict=False):
-            if isinstance(raw_box, np.ndarray):
-                raw_box = raw_box.tolist()
-            if not isinstance(raw_box, list | tuple) or len(raw_box) < 4:
-                continue
-            x1, y1, x2, y2 = [int(round(float(value))) for value in raw_box[:4]]
-            rect = Rect(
-                x=min(x1, x2),
-                y=min(y1, y2),
-                width=max(0, abs(x2 - x1)),
-                height=max(0, abs(y2 - y1)),
-            )
-            if rect.width < 8 or rect.height < 8:
-                continue
-            regions.append((rect, normalize_text(str(class_name)), float(score)))
-        if regions:
-            self._log(
-                f"deep-layout backend=rapid-layout model=yolov8n_layout_general6 regions={len(regions)} elapsed={elapsed_ms:.0f}ms"
-            )
-        return regions, elapsed_ms
-
-    def _resize_for_ocr(self, image: np.ndarray) -> tuple[np.ndarray, float]:
-        height, width = image.shape[:2]
-        longest = max(height, width)
-        if longest <= self._config.ocr_max_side:
-            return image, 1.0
-
-        scale = self._config.ocr_max_side / float(longest)
-        new_width = max(1, int(width * scale))
-        new_height = max(1, int(height * scale))
-        import cv2
-
-        resized = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
-        return resized, 1.0 / scale
-
-    def _run_engine(self, frame: Frame) -> tuple[list[OCRBox], float, float, float]:
-        started = time.perf_counter()
-        resize_started = started
-        image, scale_back = self._resize_for_ocr(frame.image)
-        resize_ms = (time.perf_counter() - resize_started) * 1000.0
-        predict_started = time.perf_counter()
-        result, _ = self._engine(image)
-        predict_ms = (time.perf_counter() - predict_started) * 1000.0
-        boxes: list[OCRBox] = []
-        if not result:
-            return boxes, resize_ms, predict_ms, (time.perf_counter() - started) * 1000.0
-
-        for index, item in enumerate(result):
-            points, text, confidence = item
-            normalized = normalize_text(text)
-            confidence_value = float(confidence)
-            xs = [int(point[0] * scale_back) for point in points]
-            ys = [int(point[1] * scale_back) for point in points]
-            bbox = Rect(
-                x=min(xs),
-                y=min(ys),
-                width=max(xs) - min(xs),
-                height=max(ys) - min(ys),
-            )
-            if not self._is_meaningful(normalized, bbox, confidence_value):
-                continue
-            boxes.append(
-                OCRBox(
-                    id="",
-                    source_text=normalized,
-                    confidence=confidence_value,
-                    bbox=bbox,
-                    language_hint="en",
-                    line_id=f"rapid-{index}",
-                )
-            )
-        total_ms = (time.perf_counter() - started) * 1000.0
-        return boxes, resize_ms, predict_ms, total_ms
-
-    def recognize(self, frame: Frame) -> list[OCRBox]:
-        boxes, resize_ms, predict_ms, total_ms = self._run_engine(frame)
-        if not boxes:
-            self._log(f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms raw=0 merged=0 total={total_ms:.0f}ms")
-            return boxes
-        merge_started = time.perf_counter()
-        merged = self._merge_line_boxes(boxes)
-        merge_ms = (time.perf_counter() - merge_started) * 1000.0
-        self._log(
-            f"rapid resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms merge={merge_ms:.0f}ms raw={len(boxes)} merged={len(merged)} total={total_ms:.0f}ms"
-        )
-        return merged
-
-    def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
-        boxes, resize_ms, predict_ms, total_ms = self._run_engine(frame)
-        if not boxes:
-            self._log(f"rapid-deep resize={resize_ms:.0f}ms predict={predict_ms:.0f}ms raw=0 lines=0 paragraphs=0 total={total_ms:.0f}ms")
-            return boxes
-        line_merge_started = time.perf_counter()
-        line_boxes = self._merge_line_boxes(boxes)
-        line_merge_ms = (time.perf_counter() - line_merge_started) * 1000.0
-        layout_regions, layout_ms = self._detect_layout_regions(frame)
-        paragraph_merge_started = time.perf_counter()
-        paragraph_boxes = self._merge_layout_regions(line_boxes, layout_regions)
-        paragraph_merge_ms = (time.perf_counter() - paragraph_merge_started) * 1000.0
-        self._log(
-            "rapid-deep "
-            f"resize={resize_ms:.0f}ms "
-            f"predict={predict_ms:.0f}ms "
-            f"layout={layout_ms:.0f}ms "
-            f"line_merge={line_merge_ms:.0f}ms "
-            f"paragraph_merge={paragraph_merge_ms:.0f}ms "
-            f"layout_regions={len(layout_regions)} "
-            f"raw={len(boxes)} lines={len(line_boxes)} paragraphs={len(paragraph_boxes)} "
-            f"total={total_ms:.0f}ms"
-        )
-        return paragraph_boxes
-
-
 class PaddleOCRProvider(BaseOCRProvider):
     name = "paddleocr"
     _FIXED_LANGUAGE = "en"
-    _FIXED_RECOGNITION_MODEL = "en_PP-OCRv5_mobile_rec"
+    _FIXED_RECOGNITION_MODEL = "latin_PP-OCRv5_rec_mobile"
+    _RECOGNITION_MODEL_ALIASES = ("latin_PP-OCRv5_mobile_rec", "en_PP-OCRv5_mobile_rec")
 
     def __init__(self, config: AppConfig) -> None:
         super().__init__(config)
@@ -456,25 +294,59 @@ class PaddleOCRProvider(BaseOCRProvider):
         from paddleocr import PaddleOCR
 
         self._language = self._resolve_language()
-        self._engine = PaddleOCR(
-            text_detection_model_name="PP-OCRv5_mobile_det",
-            text_recognition_model_name=self._resolve_recognition_model_name(),
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
-            text_det_limit_side_len=192,
-            text_recognition_batch_size=8,
-        )
+        self._engine = PaddleOCR(**self._build_ocr_kwargs())
+        self._paddlex_layout_model = None
+        self._paddlex_layout_disabled = False
 
     def _resolve_language(self) -> str:
         if self._config.ocr_languages:
             configured = ", ".join(normalize_text(language) for language in self._config.ocr_languages if language)
             if configured:
-                self._log(f"paddleocr realtime forced to English-only; ignoring configured languages: {configured}")
+                self._log(f"paddleocr realtime uses a fixed Latin-script recognition model; ignoring configured languages: {configured}")
         return self._FIXED_LANGUAGE
 
     def _resolve_recognition_model_name(self) -> str:
         return self._FIXED_RECOGNITION_MODEL
+
+    def _resolve_recognition_model(self) -> tuple[str, Path | None]:
+        primary_name = self._resolve_recognition_model_name()
+        model_dir = self._resolve_paddlex_model_dir(primary_name)
+        if model_dir is None:
+            return primary_name, None
+        return model_dir.name, model_dir
+
+    def _build_ocr_kwargs(self) -> dict[str, object]:
+        det_model_dir = self._resolve_paddlex_model_dir("PP-OCRv5_mobile_det")
+        rec_model_name, rec_model_dir = self._resolve_recognition_model()
+        kwargs: dict[str, object] = {
+            "text_detection_model_name": "PP-OCRv5_mobile_det",
+            "text_recognition_model_name": rec_model_name,
+            "use_doc_orientation_classify": False,
+            "use_doc_unwarping": False,
+            "use_textline_orientation": False,
+            "text_det_limit_side_len": 192,
+            "text_recognition_batch_size": 8,
+        }
+        if det_model_dir is not None:
+            kwargs["text_detection_model_dir"] = str(det_model_dir)
+        if rec_model_dir is not None:
+            kwargs["text_recognition_model_dir"] = str(rec_model_dir)
+        return kwargs
+
+    def _resolve_paddlex_model_dir(self, model_name: str) -> Path | None:
+        raw_cache_home = os.environ.get("PADDLE_PDX_CACHE_HOME")
+        if raw_cache_home:
+            base = Path(raw_cache_home).expanduser().resolve()
+        else:
+            base = (self._config.runtime_root_dir / "paddlex-cache").resolve()
+        candidates = [model_name]
+        if model_name == self._FIXED_RECOGNITION_MODEL:
+            candidates.extend(self._RECOGNITION_MODEL_ALIASES)
+        for candidate_name in candidates:
+            candidate = base / "official_models" / candidate_name
+            if candidate.exists():
+                return candidate
+        return None
 
     @staticmethod
     def _extract_result_fields(item: object) -> tuple[object, object, object] | None:
@@ -528,7 +400,7 @@ class PaddleOCRProvider(BaseOCRProvider):
 
     def _run_engine(self, frame: Frame) -> tuple[list[OCRBox], float]:
         started = time.perf_counter()
-        image, scale_back = RapidOCRProvider._resize_for_ocr(self, frame.image)
+        image, scale_back = self._resize_for_ocr(frame.image)
         result = self._engine.predict(image)
         predict_ms = (time.perf_counter() - started) * 1000.0
         boxes: list[OCRBox] = []
@@ -564,6 +436,127 @@ class PaddleOCRProvider(BaseOCRProvider):
             )
         return boxes, predict_ms
 
+    def _get_layout_engine(self):
+        if self._paddlex_layout_disabled:
+            return None
+        if self._paddlex_layout_model is not None:
+            return self._paddlex_layout_model
+        try:
+            from paddleocr import LayoutDetection
+        except ImportError:
+            self._paddlex_layout_disabled = True
+            self._log("Paddle layout detection is not installed; deep mode will use line/paragraph OCR only")
+            return None
+
+        try:
+            layout_model_dir = self._resolve_paddlex_model_dir("PP-DocLayout-S")
+            kwargs: dict[str, object] = {
+                "model_name": "PP-DocLayout-S",
+                "threshold": 0.35,
+                "layout_nms": True,
+            }
+            if layout_model_dir is not None:
+                kwargs["model_dir"] = str(layout_model_dir)
+            self._paddlex_layout_model = LayoutDetection(**kwargs)
+        except Exception as exc:
+            self._paddlex_layout_disabled = True
+            self._log(f"paddle layout init failed: {exc}")
+            return None
+        return self._paddlex_layout_model
+
+    @staticmethod
+    def _coerce_rect(raw_box: object) -> Rect | None:
+        if isinstance(raw_box, np.ndarray):
+            raw_box = raw_box.tolist()
+        if not isinstance(raw_box, list | tuple) or not raw_box:
+            return None
+        if len(raw_box) >= 4:
+            try:
+                x1, y1, x2, y2 = [int(round(float(value))) for value in raw_box[:4]]
+            except (TypeError, ValueError):
+                x1 = y1 = x2 = y2 = 0
+            else:
+                rect = Rect(
+                    x=min(x1, x2),
+                    y=min(y1, y2),
+                    width=max(0, abs(x2 - x1)),
+                    height=max(0, abs(y2 - y1)),
+                )
+                return rect if rect.width >= 8 and rect.height >= 8 else None
+        try:
+            xs = [int(round(float(point[0]))) for point in raw_box]
+            ys = [int(round(float(point[1]))) for point in raw_box]
+        except (TypeError, ValueError, IndexError):
+            return None
+        rect = Rect(
+            x=min(xs),
+            y=min(ys),
+            width=max(xs) - min(xs),
+            height=max(ys) - min(ys),
+        )
+        return rect if rect.width >= 8 and rect.height >= 8 else None
+
+    def _extract_layout_regions(self, raw_result: object) -> list[tuple[Rect, str, float]]:
+        if not isinstance(raw_result, list):
+            return []
+
+        regions: list[tuple[Rect, str, float]] = []
+        first_item = raw_result[0] if raw_result else None
+        if first_item is not None and hasattr(first_item, "get"):
+            layout_boxes = first_item.get("boxes") or []
+            for item in layout_boxes:
+                if not isinstance(item, dict):
+                    continue
+                label = normalize_text(str(item.get("label", "")))
+                if label == "paragraph_title":
+                    label = "title"
+                coordinate = item.get("coordinate") or []
+                if len(coordinate) < 4:
+                    continue
+                rect = self._coerce_rect(coordinate[:4])
+                if rect is None:
+                    continue
+                score = item.get("score", item.get("confidence", 1.0))
+                try:
+                    score_value = float(score)
+                except (TypeError, ValueError):
+                    score_value = 1.0
+                regions.append((rect, label, score_value))
+            return regions
+
+        for item in raw_result:
+            if not isinstance(item, dict):
+                continue
+            label = normalize_text(str(item.get("type", "")))
+            if not label:
+                continue
+            rect = self._coerce_rect(item.get("bbox"))
+            if rect is None:
+                continue
+            score = item.get("score", item.get("confidence", 1.0))
+            try:
+                score_value = float(score)
+            except (TypeError, ValueError):
+                score_value = 1.0
+            regions.append((rect, label, score_value))
+        return regions
+
+    def _detect_layout_regions(self, frame: Frame) -> tuple[list[tuple[Rect, str, float]], float]:
+        layout_engine = self._get_layout_engine()
+        if layout_engine is None:
+            return [], 0.0
+        started = time.perf_counter()
+        try:
+            result = layout_engine.predict(frame.image)
+        except Exception as exc:
+            self._log(f"paddle layout detect failed: {exc}")
+            return [], (time.perf_counter() - started) * 1000.0
+        elapsed_ms = (time.perf_counter() - started) * 1000.0
+        regions = self._extract_layout_regions(result)
+        if regions:
+            self._log(f"deep-layout backend=pp-doclayout-s regions={len(regions)} elapsed={elapsed_ms:.0f}ms")
+        return regions, elapsed_ms
+
     def recognize(self, frame: Frame) -> list[OCRBox]:
         boxes, predict_ms = self._run_engine(frame)
         if not boxes:
@@ -578,6 +571,24 @@ class PaddleOCRProvider(BaseOCRProvider):
         return merged
 
     def recognize_paragraphs(self, frame: Frame) -> list[OCRBox]:
-        # Deep mode never uses PaddleOCR in this app, but keep protocol compatibility.
-        return self.recognize(frame)
-
+        boxes, predict_ms = self._run_engine(frame)
+        if not boxes:
+            self._log("paddle-deep predict={predict_ms:.0f}ms raw=0 lines=0 paragraphs=0".format(predict_ms=predict_ms))
+            return boxes
+        line_merge_started = time.perf_counter()
+        line_boxes = self._merge_line_boxes(boxes)
+        line_merge_ms = (time.perf_counter() - line_merge_started) * 1000.0
+        layout_regions, layout_ms = self._detect_layout_regions(frame)
+        paragraph_merge_started = time.perf_counter()
+        paragraph_boxes = self._merge_layout_regions(line_boxes, layout_regions, line_separator="\n")
+        paragraph_merge_ms = (time.perf_counter() - paragraph_merge_started) * 1000.0
+        self._log(
+            "paddle-deep "
+            f"predict={predict_ms:.0f}ms "
+            f"layout={layout_ms:.0f}ms "
+            f"line_merge={line_merge_ms:.0f}ms "
+            f"paragraph_merge={paragraph_merge_ms:.0f}ms "
+            f"layout_regions={len(layout_regions)} "
+            f"raw={len(boxes)} lines={len(line_boxes)} paragraphs={len(paragraph_boxes)}"
+        )
+        return paragraph_boxes

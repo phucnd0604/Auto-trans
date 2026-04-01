@@ -12,7 +12,6 @@ from autotrans.config import AppConfig
 from autotrans.services.capture import WindowsWindowCapture
 from autotrans.services.ocr import (
     PaddleOCRProvider,
-    RapidOCRProvider,
 )
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.translation import GeminiRestTranslator, build_default_local_translator
@@ -117,19 +116,15 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
 
 
 def _build_realtime_ocr_provider(config: AppConfig):
-    if config.ocr_provider == "paddleocr":
-        print("[AutoTrans] Realtime OCR provider selected: paddleocr (lazy)", flush=True)
-        return _LazyOCRProvider("paddleocr", lambda: PaddleOCRProvider(config))
-    if config.ocr_provider == "rapidocr":
-        print("[AutoTrans] Realtime OCR provider selected: rapidocr (lazy)", flush=True)
-        return _LazyOCRProvider("rapidocr", lambda: RapidOCRProvider(config))
-
-    raise ValueError(f"Unsupported realtime OCR provider: {config.ocr_provider}")
+    if config.ocr_provider != "paddleocr":
+        raise ValueError(f"Unsupported realtime OCR provider: {config.ocr_provider}")
+    print("[AutoTrans] Realtime OCR provider selected: paddleocr (lazy)", flush=True)
+    return _LazyOCRProvider("paddleocr", lambda: PaddleOCRProvider(config))
 
 
 def _build_deep_ocr_provider(config: AppConfig):
-    print("[AutoTrans] Deep OCR provider selected: rapidocr (lazy)", flush=True)
-    return _LazyOCRProvider("rapidocr", lambda: RapidOCRProvider(config))
+    print("[AutoTrans] Deep OCR provider selected: paddleocr (lazy)", flush=True)
+    return _LazyOCRProvider("paddleocr", lambda: PaddleOCRProvider(config))
 
 
 def _build_local_translator(config: AppConfig):
@@ -163,7 +158,7 @@ def _build_cloud_translator(config: AppConfig):
 
 
 def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> AppConfig:
-    config.ocr_provider = str(settings.get("ocr_provider", config.ocr_provider))
+    config.ocr_provider = "paddleocr"
     config.capture_backend = str(settings.get("capture_backend", config.capture_backend))
     config.local_translator_backend = "ctranslate2"
     raw_api_key = str(settings.get("deep_translation_api_key", config.deep_translation_api_key or "")).strip()

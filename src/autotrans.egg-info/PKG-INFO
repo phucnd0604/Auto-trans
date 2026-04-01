@@ -9,18 +9,17 @@ Requires-Dist: numpy>=1.26
 Requires-Dist: Pillow>=10.4
 Requires-Dist: mss>=10.0
 Requires-Dist: rapidfuzz>=3.9
-Requires-Dist: httpx>=0.28
-Requires-Dist: pydantic>=2.9
-Requires-Dist: pywin32>=308
-Requires-Dist: bettercam>=1.0.0
+Requires-Dist: pywin32>=308; sys_platform == "win32"
+Requires-Dist: bettercam>=1.0.0; sys_platform == "win32"
 Provides-Extra: ocr
-Requires-Dist: rapidocr_onnxruntime>=1.2; extra == "ocr"
+Requires-Dist: opencv-python>=4.10; extra == "ocr"
+Requires-Dist: paddlepaddle<3.3,>=3.2; extra == "ocr"
+Requires-Dist: paddleocr<3.3,>=3.2; extra == "ocr"
+Requires-Dist: paddlex[ocr-core]<3.3,>=3.2; extra == "ocr"
 Provides-Extra: local-translate
 Requires-Dist: ctranslate2>=4.5; extra == "local-translate"
 Requires-Dist: sentencepiece>=0.2; extra == "local-translate"
 Requires-Dist: huggingface_hub>=0.36; extra == "local-translate"
-Provides-Extra: openai
-Requires-Dist: openai>=1.68; extra == "openai"
 Provides-Extra: dev
 Requires-Dist: pytest>=8.3; extra == "dev"
 Requires-Dist: pytest-qt>=4.4; extra == "dev"
