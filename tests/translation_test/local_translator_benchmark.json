@@ -1,0 +1,216 @@
+[
+  {
+    "scenario": "quickmt-en-vi",
+    "repo": "quickmt/quickmt-en-vi",
+    "model_dir": "E:\\GameDownload\\AutoTrans\\.runtime\\models\\quickmt-en-vi",
+    "summary": {
+      "dataset_size": 12,
+      "cold_start_ms": 2565.89,
+      "warm_single_avg_ms": 61.81,
+      "warm_single_p50_ms": 48.09,
+      "warm_single_p95_ms": 96.27,
+      "warm_small_batch_ms": 107.93,
+      "throughput_batch_ms": 263.67,
+      "throughput_items_per_second": 45.51,
+      "consistency_mismatches": 0
+    },
+    "category_summary": {
+      "quest_narrative": {
+        "count": 4,
+        "avg_ms": 69.39,
+        "p95_ms": 96.27
+      },
+      "subtitle_dialogue": {
+        "count": 4,
+        "avg_ms": 76.14,
+        "p95_ms": 103.86
+      },
+      "ui_menu": {
+        "count": 4,
+        "avg_ms": 39.91,
+        "p95_ms": 45.53
+      }
+    },
+    "samples": [
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "Masako: We have to go, or we'll lose him.",
+        "translated_text": "Masako: Chúng ta phải đi, hoặc chúng ta sẽ mất anh ấy.",
+        "latency_ms": 103.86149998521432
+      },
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "Do you have news of your family's killers?",
+        "translated_text": "Anh có tin tức về kẻ giết gia đình anh không?",
+        "latency_ms": 58.71850001858547
+      },
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "Because he is an ungrateful traitor.",
+        "translated_text": "Vì hắn là kẻ phản bội vô ơn.",
+        "latency_ms": 50.64609996043146
+      },
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "After what happened at the inn, I didn't think you'd visit the temple again.",
+        "translated_text": "Sau chuyện xảy ra ở quán trọ, tôi không nghĩ anh sẽ đến thăm đền thờ lần nữa.",
+        "latency_ms": 91.32740000495687
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "Yuna's brother is finally safe, but we had to split up after our escape.",
+        "translated_text": "Em trai của Yuna cuối cùng cũng an toàn, nhưng chúng tôi đã phải chia tay sau khi trốn thoát.",
+        "latency_ms": 96.27170005114749
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "I should make sure they reached the town of Komatsu Forge.",
+        "translated_text": "Tôi nên đảm bảo họ đến thị trấn Komatsu Forge.",
+        "latency_ms": 44.96389999985695
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "If Taka has had time to recover, he may be able to make me a tool to climb the walls of Castle Kaneda.",
+        "translated_text": "Nếu Taka có thời gian hồi phục, anh ấy có thể làm cho tôi một công cụ để leo lên tường của Lâu đài Kaneda.",
+        "latency_ms": 95.75010003754869
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "Find the monk before the bandits reach the bridge.",
+        "translated_text": "Tìm nhà sư trước khi bọn cướp đến cầu.",
+        "latency_ms": 40.58460000669584
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "RESTART FROM LAST CHECKPOINT",
+        "translated_text": "RỘNG TỪ KIỂM TRA LỚN",
+        "latency_ms": 45.527599984779954
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "EXIT TO TITLE SCREEN",
+        "translated_text": "TẮT TIÊU CHUẨN",
+        "latency_ms": 38.91309996834025
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "SAVE GAME",
+        "translated_text": "TIẾT KIỆM GAME",
+        "latency_ms": 31.776399991940707
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "GO TO THE TOWN OF KOMATSU FORGE",
+        "translated_text": "ĐẾN TÂY DỰNG KOMATSU FORGE",
+        "latency_ms": 43.42579998774454
+      }
+    ]
+  },
+  {
+    "scenario": "opus-mt-en-vi-ctranslate2",
+    "repo": "gaudi/opus-mt-en-vi-ctranslate2",
+    "model_dir": "E:\\GameDownload\\AutoTrans\\.runtime\\models\\opus-mt-en-vi-ctranslate2",
+    "summary": {
+      "dataset_size": 12,
+      "cold_start_ms": 421.72,
+      "warm_single_avg_ms": 316.51,
+      "warm_single_p50_ms": 303.46,
+      "warm_single_p95_ms": 585.9,
+      "warm_small_batch_ms": 334.8,
+      "throughput_batch_ms": 2150.35,
+      "throughput_items_per_second": 5.58,
+      "consistency_mismatches": 0
+    },
+    "category_summary": {
+      "quest_narrative": {
+        "count": 4,
+        "avg_ms": 210.96,
+        "p95_ms": 326.01
+      },
+      "subtitle_dialogue": {
+        "count": 4,
+        "avg_ms": 141.56,
+        "p95_ms": 286.84
+      },
+      "ui_menu": {
+        "count": 4,
+        "avg_ms": 597.01,
+        "p95_ms": 647.83
+      }
+    },
+    "samples": [
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "Masako: We have to go, or we'll lose him.",
+        "translated_text": "Chúng ta phải đi, nếu không không chúng ta sẽ mất nó.",
+        "latency_ms": 93.12619996489957
+      },
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "Do you have news of your family's killers?",
+        "translated_text": "Anh có tin gì về những kẻ giết gia đình anh không?",
+        "latency_ms": 74.75919998250902
+      },
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "Because he is an ungrateful traitor.",
+        "translated_text": "Bởi vì hắn là kẻ phản bội phản bội, hắn là một kẻ phản phản bội.",
+        "latency_ms": 286.84360004263
+      },
+      {
+        "category": "subtitle_dialogue",
+        "source_text": "After what happened at the inn, I didn't think you'd visit the temple again.",
+        "translated_text": "Sau chuyện xảy ra ở quán trọ, tôi không nghĩ là anh lại đến thăm đền thờ lần nữa.",
+        "latency_ms": 111.52890004450455
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "Yuna's brother is finally safe, but we had to split up after our escape.",
+        "translated_text": "Em trai của chị Yun người đã an toàn, nhưng chúng ta phải chia nhau lại sau khi trốn thoát.",
+        "latency_ms": 130.2929999656044
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "I should make sure they reached the town of Komatsu Forge.",
+        "translated_text": "Tôi phải đảm đảm đảm bảo chắc rằng họ tới thị trấn Kmatttsuttta phải chắc chắc chắc rằng chúng đã tới thị thị trấn Kost an an an chắc chắc là thành phố Kmamamatmats của tỉnh Kmastttthttry Toge.",
+        "latency_ms": 326.0094000142999
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "If Taka has had time to recover, he may be able to make me a tool to climb the walls of Castle Kaneda.",
+        "translated_text": "Nếu Taka đã có thời gian để hồi phục lại, hắn có thể có thể cho tôi một công cụ để leo được tường thành của thành Castle Kane Kane Kane.",
+        "latency_ms": 320.0760000036098
+      },
+      {
+        "category": "quest_narrative",
+        "source_text": "Find the monk before the bandits reach the bridge.",
+        "translated_text": "Hãy tìm cho tên hòa thượng trước khi bọn cướp đến được cây cầu.",
+        "latency_ms": 67.46310001472011
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "RESTART FROM LAST CHECKPOINT",
+        "translated_text": "K___ ít__ cuối__ qua__A__ ả__ thoát__ khuya__ này__ -__ K_ ít ít_ cuối cuối_ cuối qua_ ít qua_ cuối ;__ khỏi__ tìm__ cho__ muộn__ KDE__ ngươi__L__ lệnh__ trải__ chống__ CHÚ__ nghe__̀__ Tim__ nó__ ,__ Lọc__ sót__ tới__ tránh__ thay__ lời__ mất__ Ủ__ LỜI__ 5__ ;",
+        "latency_ms": 647.8339999448508
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "EXIT TO TITLE SCREEN",
+        "translated_text": "- Để đến cả mấy thằng Steve Steve Steve Buddy Steve Steve, Steve Steve Ted Steve Steve rải rải rải đến đến đến tới đến đến để để đến đến gặp đến đến cả đến đến mấy mấy mấy thằng người Steve Steve nhau Steve Steve cảnh Steve Steve--- Steve Steve nhiều Steve Steve người Steve rải Steve Steve lên Steve Steve 2 Steve Steve bồ rải rải Steve rải-- rải rải- Steve rải đến rải rải nạn rải rải hơn rải rải để để để rải đến tới tới đến rải đến với đến đến qua đến đến rải tới đến tới rải đến để đến tới mấy đến đến bao đến đến nhiều đến đến hơn đến đến với",
+        "latency_ms": 585.9005999518558
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "SAVE GAME",
+        "translated_text": "- Chúng ta chúng ta - - - Chúng - - Quá - - chúng - - Giết - - tiền - - G - - GA - - sĩ - - khuyên - - đổi tiền - tiền tiền tiền - chúng chúng chúng - Giết chúng - chúng! - - Cái - - Tiền - - CỦ - -! - Giết khuyên - chúng khuyên - tiền chúng - tiền! - Chúng chúng - Quá chúng -!",
+        "latency_ms": 584.3077000463381
+      },
+      {
+        "category": "ui_menu",
+        "source_text": "GO TO THE TOWN OF KOMATSU FORGE",
+        "translated_text": "N K K K VÀ K K D K K_ K K khuyên K K CHO K K TRẺ K K CỦ K K NĂM K K phán K K đề K K M K K N K D D D K VÀ D K_ D K D CHO K D VÀ K D phán D K CỦ D K CHO D K khuyên CHO K__ K D_ K_ VÀ K_ CHO K VÀ VÀ K VÀ CHO K khuyên D K NĂM D K M D K TRẺ D K quyết K K K K ĐẾN K K vào K K, K K BẠN K K Ở K K trải K K V K K LÀM K K",
+        "latency_ms": 570.0074000051245
+      }
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "category": "subtitle_dialogue",
+    "source_text": "Masako: We have to go, or we'll lose him."
+  },
+  {
+    "category": "subtitle_dialogue",
+    "source_text": "Do you have news of your family's killers?"
+  },
+  {
+    "category": "subtitle_dialogue",
+    "source_text": "Because he is an ungrateful traitor."
+  },
+  {
+    "category": "subtitle_dialogue",
+    "source_text": "After what happened at the inn, I didn't think you'd visit the temple again."
+  },
+  {
+    "category": "quest_narrative",
+    "source_text": "Yuna's brother is finally safe, but we had to split up after our escape."
+  },
+  {
+    "category": "quest_narrative",
+    "source_text": "I should make sure they reached the town of Komatsu Forge."
+  },
+  {
+    "category": "quest_narrative",
+    "source_text": "If Taka has had time to recover, he may be able to make me a tool to climb the walls of Castle Kaneda."
+  },
+  {
+    "category": "quest_narrative",
+    "source_text": "Find the monk before the bandits reach the bridge."
+  },
+  {
+    "category": "ui_menu",
+    "source_text": "RESTART FROM LAST CHECKPOINT"
+  },
+  {
+    "category": "ui_menu",
+    "source_text": "EXIT TO TITLE SCREEN"
+  },
+  {
+    "category": "ui_menu",
+    "source_text": "SAVE GAME"
+  },
+  {
+    "category": "ui_menu",
+    "source_text": "GO TO THE TOWN OF KOMATSU FORGE"
+  }
+]

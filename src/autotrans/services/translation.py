@@ -4,6 +4,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Protocol
@@ -78,6 +79,7 @@ class CTranslate2Translator:
         import sentencepiece as spm
         from huggingface_hub import snapshot_download
 
+        self._config = config
         self._model_dir = Path(config.local_model_dir)
         self._model_dir.mkdir(parents=True, exist_ok=True)
         if not any(self._model_dir.iterdir()):
@@ -129,12 +131,24 @@ class CTranslate2Translator:
         if shared_txt.exists() and not shared_json.exists() and source_vocab.exists() and target_vocab.exists():
             shared_txt.unlink()
 
+    @staticmethod
+    def _safe_log_text(text: str) -> str:
+        normalized = normalize_text(text)
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        try:
+            normalized.encode(encoding)
+            return normalized
+        except UnicodeEncodeError:
+            return normalized.encode(encoding, errors="backslashreplace").decode(encoding)
+
     def _translate_texts(self, texts: list[str]) -> list[str]:
         tokenized = [self._source_sp.encode(normalize_text(text), out_type=str) for text in texts]
         results = self._translator.translate_batch(
             tokenized,
-            beam_size=1,
-            max_decoding_length=128,
+            beam_size=max(self._config.local_beam_size, 1),
+            repetition_penalty=max(self._config.local_repetition_penalty, 1.0),
+            no_repeat_ngram_size=max(self._config.local_no_repeat_ngram_size, 0),
+            max_decoding_length=max(self._config.local_max_decoding_length, 1),
             return_scores=False,
         )
         outputs: list[str] = []
@@ -166,7 +180,7 @@ class CTranslate2Translator:
         print(f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms", flush=True)
         for item, result in list(zip(items, results, strict=False))[:6]:
             print(
-                f"[AutoTrans][{self.name}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
+                f"[AutoTrans][{self.name}] {self._safe_log_text(item.source_text)!r} -> {self._safe_log_text(result.translated_text)!r}",
                 flush=True,
             )
         return results

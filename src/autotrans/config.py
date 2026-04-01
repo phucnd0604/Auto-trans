@@ -112,6 +112,10 @@ class AppConfig:
     local_inter_threads: int = int(getenv("AUTOTRANS_LOCAL_INTER_THREADS", "1"))
     local_intra_threads: int = int(getenv("AUTOTRANS_LOCAL_INTRA_THREADS", _DEFAULT_INTRA_THREADS))
     local_target_prefix: str = getenv("AUTOTRANS_LOCAL_TARGET_PREFIX", ">>vie<<")
+    local_beam_size: int = int(getenv("AUTOTRANS_LOCAL_BEAM_SIZE", "2"))
+    local_repetition_penalty: float = float(getenv("AUTOTRANS_LOCAL_REPETITION_PENALTY", "1.1"))
+    local_no_repeat_ngram_size: int = int(getenv("AUTOTRANS_LOCAL_NO_REPEAT_NGRAM_SIZE", "3"))
+    local_max_decoding_length: int = int(getenv("AUTOTRANS_LOCAL_MAX_DECODING_LENGTH", "128"))
     xdg_data_home: Path = _DEFAULT_XDG_DATA_HOME
     xdg_cache_home: Path = _DEFAULT_XDG_CACHE_HOME
     xdg_config_home: Path = _DEFAULT_XDG_CONFIG_HOME

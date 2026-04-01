@@ -1,52 +1,55 @@
- # Changelog
+# Changelog
 
 ## 2026-04-01
 
 ### Repo
 
-- Chuẩn hóa repo theo hướng chạy từ source bằng `venv` hoặc build `.exe`.
-- Gom tài liệu dự án về thư mục `docs/` để dễ tra cứu và bảo trì.
+- Chuan hoa repo theo huong chay tu source bang `venv` hoac build `.exe`.
+- Gom tai lieu du an ve thu muc `docs/` de de tra cuu va bao tri.
 
 ### OCR
 
-- Chuẩn hóa cả realtime OCR và deep mode OCR sang `PaddleOCR`.
-- Chuyển recognition model mặc định sang `en_PP-OCRv5_mobile_rec`.
-- Giữ fallback cho cache model cũ như `latin_PP-OCRv5_rec_mobile` và `latin_PP-OCRv5_mobile_rec`.
-- Sửa retry vô hạn khi `PaddleOCR` init fail: lazy OCR provider giờ giữ lại lỗi gốc và không khởi tạo lặp lại mỗi tick.
-- Warm up OCR ngay sau startup ở background để giảm độ trễ ở lần OCR đầu tiên.
-- Khi bật deep mode, realtime pipeline sẽ tạm pause trong pha `prepare_deep_translation` để giảm tranh chấp tài nguyên.
-- Sửa parser layout region để xử lý đúng `numpy.ndarray` từ `LayoutDetection`.
+- Chuan hoa ca realtime OCR va deep mode OCR sang `PaddleOCR`.
+- Chuyen recognition model mac dinh sang `en_PP-OCRv5_mobile_rec`.
+- Giu fallback cho cache model cu nhu `latin_PP-OCRv5_rec_mobile` va `latin_PP-OCRv5_mobile_rec`.
+- Sua retry vo han khi `PaddleOCR` init fail: lazy OCR provider gio giu lai loi goc va khong khoi tao lap lai moi tick.
+- Warm up OCR ngay sau startup o background de giam do tre o lan OCR dau tien.
+- Khi bat deep mode, realtime pipeline se tam pause trong pha `prepare_deep_translation` de giam tranh chap tai nguyen.
+- Sua parser layout region de xu ly dung `numpy.ndarray` tu `LayoutDetection`.
 
 ### Translation
 
-- Realtime chỉ dùng local `ctranslate2`.
-- Deep mode giữ luồng `Gemini -> fallback ctranslate2`.
+- Realtime chi dung local `ctranslate2`.
+- Deep mode giu luong `Gemini -> fallback ctranslate2`.
+- Them benchmark local translator tach rieng khoi OCR, co JSON/Markdown report va tap cau subtitle/quest/UI dai dien.
+- Sua logging cua `CTranslate2Translator` de khong crash tren Windows console codepage khi in tieng Viet.
+- Benchmark thuc te cho thay `quickmt/quickmt-en-vi` van la default tot nhat trong shortlist da test.
 
 ### UI
 
-- Khi pipeline OCR runtime gặp lỗi, UI tự dừng realtime thay vì tiếp tục retry với log spam.
-- Giữ các trạng thái deep mode, overlay và tooltip đồng bộ với flow runtime hiện tại.
+- Khi pipeline OCR runtime gap loi, UI tu dung realtime thay vi tiep tuc retry voi log spam.
+- Giu cac trang thai deep mode, overlay va tooltip dong bo voi flow runtime hien tai.
 
-### Test Và Tài Liệu
+### Test va Tai lieu
 
-- Cập nhật benchmark/documentation theo model `en_PP-OCRv5_mobile_rec`.
-- Cập nhật script retest cho `ocr realtime` và `ocr deepmode` trên Windows PowerShell.
-- Làm mới baseline benchmark realtime và deepmode preview.
-- Bổ sung test cho warmup OCR, cache lỗi init OCR và pause realtime trong pha prepare của deep mode.
+- Cap nhat benchmark/documentation theo model `en_PP-OCRv5_mobile_rec`.
+- Cap nhat script retest cho `ocr realtime` va `ocr deepmode` tren Windows PowerShell.
+- Lam moi baseline benchmark realtime va deep mode preview.
+- Bo sung test cho warmup OCR, cache loi init OCR, pause realtime trong pha prepare cua deep mode, va benchmark local translator.
 
 ## 2026-03-31
 
 ### Realtime OCR
 
-- Thêm `PaddleOCR` vào luồng OCR realtime để đánh giá hiệu năng.
-- Tối ưu OCR realtime cho workload subtitle crop.
-- Bổ sung benchmark subtitle runtime với bộ 11 ảnh mẫu.
+- Them `PaddleOCR` vao luong OCR realtime de danh gia hieu nang.
+- Toi uu OCR realtime cho workload subtitle crop.
+- Bo sung benchmark subtitle runtime voi bo 11 anh mau.
 
-### Startup Và Logging
+### Startup va Logging
 
-- Đưa việc khởi tạo OCR/translator nặng về lazy initialization.
-- Bổ sung log runtime chi tiết cho OCR, cache và translation để thuận tiện benchmark.
+- Dua viec khoi tao OCR/translator nang ve lazy initialization.
+- Bo sung log runtime chi tiet cho OCR, cache va translation de thuan tien benchmark.
 
 ### UI
 
-- Thêm tooltip mô tả chi tiết cho các setting runtime và deep translation.
+- Them tooltip mo ta chi tiet cho cac setting runtime va deep translation.

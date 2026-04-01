@@ -1,18 +1,18 @@
-# Cấu Hình Và Biến Môi Trường
+# Cau Hinh Va Bien Moi Truong
 
-## Nguồn cấu hình
+## Nguon cau hinh
 
-App hiện nhận cấu hình từ 3 lớp:
+App hien nhan cau hinh tu 3 lop:
 
 1. `AppConfig` trong `src/autotrans/config.py`
-2. `ui-settings.json` do `SettingsDialog` lưu
-3. biến môi trường `AUTOTRANS_*`
+2. `ui-settings.json` do `SettingsDialog` luu
+3. bien moi truong `AUTOTRANS_*`
 
-Trong runtime thực tế:
-- `SettingsDialog` là nguồn cấu hình người dùng chính
-- một số path/runtime behavior vẫn lấy từ env
+Trong runtime thuc te:
+- `SettingsDialog` la nguon cau hinh nguoi dung chinh
+- mot so path va runtime behavior van lay tu env
 
-## Các nhóm cấu hình quan trọng
+## Cac nhom cau hinh quan trong
 
 ### Runtime paths
 
@@ -25,7 +25,7 @@ Trong runtime thực tế:
 - `AUTOTRANS_HF_HOME`
 - `AUTOTRANS_LOG_DIR`
 
-Các path này được normalize về app root trong `AppConfig.__post_init__()`.
+Cac path nay duoc normalize ve app root trong `AppConfig.__post_init__()`.
 
 ### Capture
 
@@ -63,9 +63,9 @@ Các path này được normalize về app root trong `AppConfig.__post_init__()
 - `AUTOTRANS_OCR_MAX_BOXES`
 - `AUTOTRANS_OCR_CROP_SUBTITLE_ONLY`
 
-Lưu ý:
-- code hiện chỉ hỗ trợ `paddleocr`
-- `ocr_languages` tồn tại ở config nhưng `PaddleOCRProvider` hiện cố định dùng recognition model Latin-script
+Luu y:
+- code hien chi ho tro `paddleocr`
+- `ocr_languages` ton tai o config nhung `PaddleOCRProvider` hien co dinh dung recognition model Latin-script
 
 ### Local translator
 
@@ -76,6 +76,18 @@ Lưu ý:
 - `AUTOTRANS_LOCAL_INTER_THREADS`
 - `AUTOTRANS_LOCAL_INTRA_THREADS`
 - `AUTOTRANS_LOCAL_TARGET_PREFIX`
+- `AUTOTRANS_LOCAL_BEAM_SIZE`
+- `AUTOTRANS_LOCAL_REPETITION_PENALTY`
+- `AUTOTRANS_LOCAL_NO_REPEAT_NGRAM_SIZE`
+- `AUTOTRANS_LOCAL_MAX_DECODING_LENGTH`
+
+Realtime local translator hien duoc tune mac dinh theo huong:
+- `beam_size=2`
+- `repetition_penalty=1.1`
+- `no_repeat_ngram_size=3`
+- `max_decoding_length=128`
+
+Muc tieu cua bo mac dinh nay la giu latency realtime gan baseline QuickMT nhung bot literal va giam nguy co lap token.
 
 ### Deep translation
 
@@ -93,13 +105,13 @@ Lưu ý:
 - `AUTOTRANS_GAME_PROFILE_CHARACTERS_HONORIFICS`
 - `AUTOTRANS_GAME_PROFILE_TERMS_ITEMS_SKILLS`
 
-Các field này được đưa vào system instruction của deep mode Gemini.
+Cac field nay duoc dua vao system instruction cua deep mode Gemini.
 
-## Runtime directories mặc định
+## Runtime directories mac dinh
 
-Mặc định app dùng thư mục `.runtime/` tại root repo hoặc cạnh file executable khi build.
+Mac dinh app dung thu muc `.runtime/` tai root repo hoac canh file executable khi build.
 
-Các nhánh dữ liệu chính:
+Cac nhanh du lieu chinh:
 - `.runtime/paddlex-cache`
 - `.runtime/models`
 - `.runtime/translation-cache`
@@ -107,35 +119,36 @@ Các nhánh dữ liệu chính:
 - `.runtime/xdg`
 - `.runtime/huggingface`
 
-## Cache và model
+## Cache va model
 
 ### OCR model
 
-Paddle model được tìm trong:
+Paddle model duoc tim trong:
 - `PADDLE_PDX_CACHE_HOME/official_models/...`
-- `~/.paddlex/official_models/...` nếu app không tìm thấy model trong runtime cache
+- `~/.paddlex/official_models/...` neu app khong tim thay model trong runtime cache
 
-Ưu tiên recognition model:
+Uu tien recognition model:
 - `en_PP-OCRv5_mobile_rec`
 
-Alias vẫn được resolve nếu máy còn cache cũ:
+Alias van duoc resolve neu may con cache cu:
 - `latin_PP-OCRv5_rec_mobile`
 - `latin_PP-OCRv5_mobile_rec`
 - `en_PP-OCRv5_mobile_rec`
 
 ### Local translation model
 
-`CTranslate2Translator` dùng:
-- local dir từ `local_model_dir`
-- hoặc tự tải từ `local_model_repo` nếu thư mục model đang rỗng
+`CTranslate2Translator` dung:
+- local dir tu `local_model_dir`
+- hoac tu tai tu `local_model_repo` neu thu muc model dang rong
 
-## Cấu hình nào nhạy cảm nhất
+## Cau hinh nao nhay cam nhat
 
-Khi maintain, chú ý đặc biệt:
+Khi maintain, chu y dac biet:
 - `ocr_crop_subtitle_only`
 - `subtitle_region_top_ratio`
 - `capture_backend`
 - `deep_translation_model`
 - `overlay_max_groups`
 - `local_model_compute_type`
-
+- `local_beam_size`
+- `local_repetition_penalty`
