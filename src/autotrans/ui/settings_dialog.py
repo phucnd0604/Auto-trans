@@ -46,22 +46,22 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
 }
 
 SETTING_TOOLTIPS: dict[str, str] = {
-    "Gemini API Key": "API key cho deep mode Gemini. Realtime translation van dung ctranslate2, khong dung key nay.",
-    "Game Title": "Ten game de bo sung ngu canh cho deep mode, giup Gemini giu dung thuat ngu va khong khi.",
-    "World / Setting": "Mo ta boi canh, thoi dai, the gioi, he thong suc manh va tone chung cua game cho deep mode.",
-    "Factions / Organizations": "Danh sach phe phai, to chuc, tong mon, quoc gia hoac nhom quan trong de deep mode dich on dinh hon.",
-    "Characters & Honorifics": "Nhan vat chinh, cach xung ho, danh xung va honorific can uu tien khi deep mode dich hoi thoai.",
-    "Terms / Items / Skills": "Thuat ngu rieng, vat pham, ky nang, canh gioi, ten ky nang va cach viet mong muon trong deep mode.",
-    "OCR Provider": "OCR engine da duoc co dinh thanh PaddleOCR cho ca realtime va deep mode de giam do phuc tap va kich thuoc ung dung.",
-    "Capture Backend": "Cach chup hinh cua cua so game. PrintWindow on dinh hon, BetterCam nhanh hon voi mot so game, MSS la fallback tong quat.",
-    "Capture FPS": "Tan suat chup hinh cho pipeline realtime. Tang cao hon se cap nhat nhanh hon nhung ton CPU/GPU hon.",
-    "Subtitle Mode": "Bat bo loc subtitle. Khi bat, pipeline uu tien text o vung subtitle thay vi HUD/menu text.",
-    "Subtitle Crop": "Chi OCR vung subtitle o phia duoi man hinh. Thuong giup tang toc do rat nhieu va giam nhieu text rac.",
-    "Overlay FPS": "Tan suat ve lai overlay ban dich. Cao hon cho cam giac muot hon nhung co them chi phi render.",
-    "Overlay TTL (s)": "Thoi gian giu mot overlay tren man hinh truoc khi tu dong an di.",
-    "Font Size": "Co chu mac dinh cua overlay ban dich.",
-    "Logging": "Ghi log runtime va chi tiet OCR/translation vao file .runtime/logs/autotrans.log de debug va benchmark.",
-    "Gemini Model": "Model Gemini dung cho deep mode. Khong anh huong toi realtime ctranslate2.",
+    "Gemini API Key": "API key cho deep mode Gemini. Realtime translation vẫn dùng ctranslate2, không dùng key này.",
+    "Game Title": "Tên game để bổ sung ngữ cảnh cho deep mode, giúp Gemini giữ đúng thuật ngữ và không khí.",
+    "World / Setting": "Mô tả bối cảnh, thời đại, thế giới, hệ thống sức mạnh và tông chung của game cho deep mode.",
+    "Factions / Organizations": "Danh sách phe phái, tổ chức, tông môn, quốc gia hoặc nhóm quan trọng để deep mode dịch ổn định hơn.",
+    "Characters & Honorifics": "Nhân vật chính, cách xưng hô, danh xưng và honorific cần ưu tiên khi deep mode dịch hội thoại.",
+    "Terms / Items / Skills": "Thuật ngữ riêng, vật phẩm, kỹ năng, cảnh giới, tên kỹ năng và cách viết mong muốn trong deep mode.",
+    "OCR Provider": "OCR engine đã được cố định thành PaddleOCR cho cả realtime và deep mode để giảm độ phức tạp và kích thước ứng dụng.",
+    "Capture Backend": "Cách chụp hình của cửa sổ game. PrintWindow ổn định hơn, BetterCam nhanh hơn với một số game, MSS là fallback tổng quát.",
+    "Capture FPS": "Tần suất chụp hình cho pipeline realtime. Tăng cao hơn sẽ cập nhật nhanh hơn nhưng tốn CPU/GPU hơn.",
+    "Subtitle Mode": "Bật bộ lọc subtitle. Khi bật, pipeline ưu tiên text ở vùng subtitle thay vì HUD/menu text.",
+    "Subtitle Crop": "Chỉ OCR vùng subtitle ở phía dưới màn hình. Thường giúp tăng tốc độ rất nhiều và giảm nhiều text rác.",
+    "Overlay FPS": "Tần suất vẽ lại overlay bản dịch. Cao hơn cho cảm giác mượt hơn nhưng có thêm chi phí render.",
+    "Overlay TTL (s)": "Thời gian giữ một overlay trên màn hình trước khi tự động ẩn đi.",
+    "Font Size": "Cỡ chữ mặc định của overlay bản dịch.",
+    "Logging": "Ghi log runtime và chi tiết OCR/translation vào file .runtime/logs/autotrans.log để debug và benchmark.",
+    "Gemini Model": "Model Gemini dùng cho deep mode. Không ảnh hưởng tới realtime ctranslate2.",
 }
 
 
@@ -134,29 +134,29 @@ class SettingsDialog(QDialog):
 
         self.deep_translation_api_key_edit = QLineEdit(str(settings["deep_translation_api_key"]))
         self.deep_translation_api_key_edit.setEchoMode(QLineEdit.Password)
-        self.deep_translation_api_key_edit.setPlaceholderText("Nhap Gemini API key, de trong se fallback sang ctranslate2")
+        self.deep_translation_api_key_edit.setPlaceholderText("Nhập Gemini API key, để trống sẽ fallback sang ctranslate2")
 
         self.game_profile_title_edit = QLineEdit(str(settings["game_profile_title"]))
-        self.game_profile_title_edit.setPlaceholderText("Ten game")
+        self.game_profile_title_edit.setPlaceholderText("Tên game")
 
         self.game_profile_world_edit = QTextEdit()
         self.game_profile_world_edit.setPlainText(str(settings["game_profile_world"]))
-        self.game_profile_world_edit.setPlaceholderText("Bo canh, the gioi, thoi dai, he thong suc manh")
+        self.game_profile_world_edit.setPlaceholderText("Bối cảnh, thế giới, thời đại, hệ thống sức mạnh")
         self.game_profile_world_edit.setFixedHeight(56)
 
         self.game_profile_factions_edit = QTextEdit()
         self.game_profile_factions_edit.setPlainText(str(settings["game_profile_factions"]))
-        self.game_profile_factions_edit.setPlaceholderText("Tong mon, the luc, to chuc, phe phai")
+        self.game_profile_factions_edit.setPlaceholderText("Tông môn, thế lực, tổ chức, phe phái")
         self.game_profile_factions_edit.setFixedHeight(56)
 
         self.game_profile_characters_honorifics_edit = QTextEdit()
         self.game_profile_characters_honorifics_edit.setPlainText(str(settings["game_profile_characters_honorifics"]))
-        self.game_profile_characters_honorifics_edit.setPlaceholderText("Nhan vat chinh va danh xung nen dung")
+        self.game_profile_characters_honorifics_edit.setPlaceholderText("Nhân vật chính và danh xưng nên dùng")
         self.game_profile_characters_honorifics_edit.setFixedHeight(56)
 
         self.game_profile_terms_items_skills_edit = QTextEdit()
         self.game_profile_terms_items_skills_edit.setPlainText(str(settings["game_profile_terms_items_skills"]))
-        self.game_profile_terms_items_skills_edit.setPlaceholderText("Thuat ngu, vat pham, ky nang, canh gioi")
+        self.game_profile_terms_items_skills_edit.setPlaceholderText("Thuật ngữ, vật phẩm, kỹ năng, cảnh giới")
         self.game_profile_terms_items_skills_edit.setFixedHeight(56)
 
         self.advanced_check = QCheckBox("Advanced")
@@ -260,7 +260,7 @@ class SettingsDialog(QDialog):
         deep_column_layout.setContentsMargins(0, 0, 0, 0)
         deep_column_layout.addWidget(QLabel("Deep Translation"))
         deep_column_layout.addWidget(
-            QLabel("Deep translation mac dinh dung Gemini. Neu khong nhap API key, he thong se fallback sang ctranslate2.")
+            QLabel("Deep translation mặc định dùng Gemini. Nếu không nhập API key, hệ thống sẽ fallback sang ctranslate2.")
         )
         deep_column_layout.addLayout(deep_form)
         deep_column_layout.addWidget(self.advanced_check)

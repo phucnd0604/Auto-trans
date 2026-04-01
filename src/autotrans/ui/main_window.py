@@ -365,8 +365,8 @@ class MainWindow(QMainWindow):
         self._cancel_deep_translation()
         self.deep_translate_button.setText("Deep Translate")
         message = (
-            f"Deep translation timeout sau {int(elapsed_ms)}ms o buoc {stage}. "
-            "Kiem tra Gemini API key, mang va log."
+            f"Deep translation timeout sau {int(elapsed_ms)}ms ở bước {stage}. "
+            "Kiểm tra Gemini API key, mạng và log."
         )
         print(f"[AutoTrans] {message}", flush=True)
         self.status_label.setText(message)
@@ -395,7 +395,7 @@ class MainWindow(QMainWindow):
         self._deep_translation_stage = "prepare"
         self.deep_translate_button.setText("Translating...")
         self.status_label.setText("Running deep translation for the full game screen...")
-        self._show_deep_translation_message("Dang phan tich man hinh de dich chuyen sau...")
+        self._show_deep_translation_message("Đang phân tích màn hình để dịch chuyên sâu...")
         self.deep_translation_watchdog.start()
         if self._overlay_enabled and not self.overlay.isVisible():
             self.overlay.show()
@@ -563,4 +563,3 @@ class MainWindow(QMainWindow):
         error_message = f"Deep translation error: {message}"
         self.status_label.setText(error_message)
         self._show_deep_translation_message(error_message)
-

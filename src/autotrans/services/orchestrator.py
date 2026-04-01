@@ -453,7 +453,7 @@ class PipelineOrchestrator:
         pending_overlay_items = [
             OverlayItem(
                 bbox=box.bbox,
-                translated_text="Dang dich...",
+                translated_text="Đang dịch...",
                 style=style,
                 visibility_state=VisibilityState.PENDING,
                 source_text=box.source_text,
@@ -953,5 +953,4 @@ class PipelineOrchestrator:
             f"live summary translator={getattr(self.local_translator, 'name', 'local')} cache_hits={cache_hits} misses={cache_misses} shown={len(overlay_items)}"
         )
         return overlay_items
-
 
