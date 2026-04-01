@@ -5,10 +5,10 @@ Set-Location $repoRoot
 
 $python = Join-Path $repoRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path $python)) {
-    throw "Virtualenv not found. Run .\setup_windows.ps1 first."
+    throw "Virtualenv not found. Create .venv and install dependencies first."
 }
 
-Set-ExecutionPolicy -Scope Process Bypass
 $env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "src"
 
 & $python -m autotrans.app

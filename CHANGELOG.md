@@ -2,6 +2,10 @@
 
 ## 2026-04-01
 
+### Repo
+- Removed the old portable/share packaging scripts and Windows command wrappers.
+- Simplified the repo to a source-first workflow with a single `run.ps1` entrypoint and a `build_exe.ps1` helper.
+
 ### OCR
 - Deep mode now uses `PaddleOCR` paragraph OCR with Paddle layout detection instead of the old `rapid-layout` path.
 - Realtime OCR now defaults to `paddleocr` to match the latest subtitle runtime benchmark results.
