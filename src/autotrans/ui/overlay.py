@@ -222,6 +222,11 @@ class OverlayWindow(QWidget):
             resolved.moveTop(max(self.height() - resolved.height(), 0))
         return resolved
 
+    def _resolve_panel_rect(self, item: OverlayItem, panel_rect: QRect, placed_rects: list[QRect]) -> QRect:
+        if self._is_deep_ui_item(item):
+            return QRect(panel_rect)
+        return self._resolve_overlap(panel_rect, placed_rects)
+
     def _alpha_multiplier(self, item: OverlayItem) -> float:
         key = self._item_key(item)
         data = self._live_items.get(key)
@@ -477,7 +482,7 @@ class OverlayWindow(QWidget):
                 is_subtitle=False,
                 deep_ui=self._is_deep_ui_item(item),
             )
-            resolved_panel = self._resolve_overlap(panel_rect, placed_rects)
+            resolved_panel = self._resolve_panel_rect(item, panel_rect, placed_rects)
             offset_x = resolved_panel.x() - panel_rect.x()
             offset_y = resolved_panel.y() - panel_rect.y()
             resolved_text = QRect(text_rect)

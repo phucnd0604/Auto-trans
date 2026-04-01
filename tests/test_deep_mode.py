@@ -668,6 +668,33 @@ def test_overlay_uses_bold_font_for_deep_ui_only(qtbot) -> None:
     assert normal_font.weight() < QFont.DemiBold
 
 
+def test_overlay_keeps_deep_ui_panel_anchored_even_when_overlapping(qtbot) -> None:
+    overlay = OverlayWindow()
+    qtbot.addWidget(overlay)
+    overlay.resize(800, 600)
+
+    deep_item = OverlayItem(
+        bbox=Rect(x=100, y=100, width=240, height=60),
+        translated_text="Deep anchored",
+        style=OverlayStyle(),
+        region="deep-ui",
+    )
+    subtitle_like_item = OverlayItem(
+        bbox=Rect(x=100, y=100, width=240, height=60),
+        translated_text="Normal moved",
+        style=OverlayStyle(),
+        region="",
+    )
+    panel_rect = QRect(100, 100, 240, 60)
+    placed_rects = [QRect(100, 100, 240, 60)]
+
+    deep_resolved = overlay._resolve_panel_rect(deep_item, panel_rect, placed_rects)
+    normal_resolved = overlay._resolve_panel_rect(subtitle_like_item, panel_rect, placed_rects)
+
+    assert deep_resolved == panel_rect
+    assert normal_resolved != panel_rect
+
+
 def test_main_window_uses_insert_for_deep_hotkey(qtbot) -> None:
     config = _make_config()
     overlay = OverlayWindow()

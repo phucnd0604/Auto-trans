@@ -52,3 +52,16 @@ def test_ctranslate2_uses_configured_decode_options() -> None:
             "return_scores": False,
         }
     ]
+
+
+def test_ctranslate2_postprocesses_modern_pronouns_to_cultivation_style() -> None:
+    config = AppConfig()
+    translator = CTranslate2Translator.__new__(CTranslate2Translator)
+    translator._config = config
+    translator._source_sp = _FakeSentencePiece()
+    translator._target_sp = _FakeSentencePiece()
+    translator._translator = _FakeTranslatorBackend()
+
+    translated = translator._apply_honorific_postprocess("tôi sẽ giết bạn và các bạn của bạn sẽ chạy")
+
+    assert translated == "Ta sẽ giết Ngươi và Chư vị của Ngươi sẽ chạy"

@@ -142,6 +142,32 @@ class CTranslate2Translator:
         except UnicodeEncodeError:
             return normalized.encode(encoding, errors="backslashreplace").decode(encoding)
 
+    @staticmethod
+    def _apply_honorific_postprocess(text: str) -> str:
+        normalized = normalize_text(text)
+        if not normalized:
+            return normalized
+
+        replacements = [
+            (r"\bcác bạn\b", "Chư vị"),
+            (r"\bbọn tôi\b", "Bọn ta"),
+            (r"\bchúng tôi\b", "Chúng ta"),
+            (r"\bchúng tao\b", "Chúng ta"),
+            (r"\btụi tôi\b", "Bọn ta"),
+            (r"\btụi tao\b", "Bọn ta"),
+            (r"\btôi\b", "Ta"),
+            (r"\btao\b", "Ta"),
+            (r"\btớ\b", "Ta"),
+            (r"\bmình\b", "Ta"),
+            (r"\bbạn\b", "Ngươi"),
+            (r"\bcậu\b", "Ngươi"),
+        ]
+
+        output = normalized
+        for pattern, replacement in replacements:
+            output = re.sub(pattern, replacement, output, flags=re.IGNORECASE)
+        return normalize_text(output)
+
     def _translate_texts(self, texts: list[str]) -> list[str]:
         tokenized = [self._source_sp.encode(normalize_text(text), out_type=str) for text in texts]
         results = self._translator.translate_batch(
@@ -155,7 +181,7 @@ class CTranslate2Translator:
         outputs: list[str] = []
         for result in results:
             hypothesis = result.hypotheses[0] if result.hypotheses else []
-            outputs.append(normalize_text(self._target_sp.decode(hypothesis)))
+            outputs.append(self._apply_honorific_postprocess(self._target_sp.decode(hypothesis)))
         return outputs
 
     def translate_batch(
