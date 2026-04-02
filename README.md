@@ -31,11 +31,25 @@ Hoặc để script tự đồng bộ môi trường trước khi chạy:
 .\run.ps1 -SyncModels -SkipRun
 ```
 
+Để mở nhanh thư mục log/session diagnostics:
+
+```powershell
+.\run.ps1 -OpenLogs -SkipRun
+```
+
 Nếu cần dựng lại `.venv` từ đầu:
 
 ```powershell
 .\run.ps1 -RecreateVenv
 ```
+
+## Runtime Diagnostics
+
+- `Runtime Verbose Log`: log text chi tiết vào `.runtime/logs/autotrans.log`
+- `Diagnostics Capture`: ghi JSON theo phiên vào `.runtime/logs/sessions`
+- `Diagnostics Threshold (ms)`: tạo snapshot event khi `ocr_ms` hoặc `total_ms` vượt ngưỡng
+
+Khi app bị spike hoặc crash, ưu tiên xem file session JSON mới nhất trong `.runtime/logs/sessions` thay vì chỉ đọc `autotrans.log`.
 
 ## Build EXE
 

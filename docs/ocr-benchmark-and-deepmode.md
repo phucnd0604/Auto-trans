@@ -20,6 +20,7 @@ $env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddle"
 Khuyen nghi:
 - Dung `.\run.ps1 -SyncModels -SkipRun` truoc khi benchmark de dam bao local model va Paddle model da nam trong `.runtime`
 - Neu may khong co mang, chi cac model da co san trong `.runtime` moi dung duoc
+- Neu can dieu tra spike/crash, bat `Diagnostics Capture` trong settings va doc file moi nhat trong `.runtime\logs\sessions`
 
 ## 1. Dong bo model runtime
 
@@ -109,13 +110,26 @@ $env:PYTHONPATH = "src"
   src\autotrans\app.py `
   src\autotrans\config.py `
   src\autotrans\services\ocr.py `
+  src\autotrans\services\orchestrator.py `
   src\autotrans\services\translation.py `
   src\autotrans\services\subtitle_filter.py `
   src\autotrans\ui\main_window.py `
-  src\autotrans\ui\settings_dialog.py
+  src\autotrans\ui\settings_dialog.py `
+  src\autotrans\utils\runtime_diagnostics.py
 ```
 
-## 7. Khi nao nen chay lai
+## 7. Dieu tra runtime theo phien
+
+Sau khi app gap spike, fallback hoac timeout:
+- Mo `.runtime\logs\autotrans.log` de xem tom tat text
+- Mo file moi nhat trong `.runtime\logs\sessions`
+
+Trong session JSON can uu tien:
+- `events`: spike, deep fallback, timeout, error
+- `samples`: snapshot nhe theo chu ky
+- `last_state`: trang thai cuoi cung duoc ghi truoc khi app thoat
+
+## 8. Khi nao nen chay lai
 
 Chay lai benchmark va test deepmode khi:
 - doi model OCR

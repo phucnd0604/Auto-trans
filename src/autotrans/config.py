@@ -84,7 +84,9 @@ class AppConfig:
     overlay_box_padding: int = int(getenv("AUTOTRANS_OVERLAY_BOX_PADDING", "8"))
     overlay_ttl_seconds: float = float(getenv("AUTOTRANS_OVERLAY_TTL_SECONDS", "1.5"))
     overlay_max_groups: int = int(getenv("AUTOTRANS_OVERLAY_MAX_GROUPS", "8"))
-    translation_log_enabled: bool = getenv("AUTOTRANS_TRANSLATION_LOG_ENABLED", "1") != "0"
+    runtime_verbose_log: bool = getenv("AUTOTRANS_RUNTIME_VERBOSE_LOG", "0") != "0"
+    diagnostics_enabled: bool = getenv("AUTOTRANS_DIAGNOSTICS_ENABLED", "1") != "0"
+    diagnostics_trigger_threshold_ms: int = int(getenv("AUTOTRANS_DIAGNOSTICS_TRIGGER_THRESHOLD_MS", "1000"))
     translation_log_max_items: int = int(getenv("AUTOTRANS_TRANSLATION_LOG_MAX_ITEMS", "6"))
     translation_stable_scans: int = int(getenv("AUTOTRANS_TRANSLATION_STABLE_SCANS", "2"))
     glossary_version: str = getenv("AUTOTRANS_GLOSSARY_VERSION", "word-v1")
@@ -160,6 +162,14 @@ class AppConfig:
     @property
     def translation_mode(self) -> str:
         return self.mode
+
+    @property
+    def translation_log_enabled(self) -> bool:
+        return self.runtime_verbose_log
+
+    @translation_log_enabled.setter
+    def translation_log_enabled(self, value: bool) -> None:
+        self.runtime_verbose_log = bool(value)
 
     @staticmethod
     def deep_translation_host(provider: str | None = None) -> str:

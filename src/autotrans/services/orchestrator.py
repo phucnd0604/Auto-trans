@@ -25,6 +25,7 @@ from autotrans.services.ocr import OCRProvider
 from autotrans.services.subtitle import SubtitleDetector
 from autotrans.services.tracker import OCRTracker
 from autotrans.services.translation import TranslatorProvider
+from autotrans.utils.runtime_diagnostics import RuntimeDiagnostics
 from autotrans.utils.text import canonicalize_text, is_probably_garbage_text, normalize_text, tokenize_words
 
 
@@ -40,6 +41,7 @@ class PipelineOrchestrator:
         cache: TranslationCache | None = None,
         tracker: OCRTracker | None = None,
         subtitle_detector: SubtitleDetector | None = None,
+        diagnostics: RuntimeDiagnostics | None = None,
     ) -> None:
         self.config = config
         self.capture_service = capture_service
@@ -53,12 +55,14 @@ class PipelineOrchestrator:
             max_missed_frames=config.subtitle_hold_frames,
         )
         self.subtitle_detector = subtitle_detector or SubtitleDetector(config)
+        self.diagnostics = diagnostics
         self.stats = PipelineStats()
         self._stable_counts: dict[str, int] = {}
         self._last_text_signature = ""
         self._last_overlay_items: list[OverlayItem] = []
         self._last_window_height = 1080
         self._last_window_width = 1920
+        self._last_translate_step_ms = 0.0
 
     def _select_deep_translator(self) -> tuple[TranslatorProvider, str]:
         translator = self.cloud_translator
@@ -67,8 +71,53 @@ class PipelineOrchestrator:
         return self.local_translator, "local"
 
     def _log(self, message: str) -> None:
-        if self.config.translation_log_enabled:
+        if self.config.runtime_verbose_log:
             print(f"[AutoTrans] {message}", flush=True)
+
+    def _record_runtime_sample(
+        self,
+        kind: str,
+        *,
+        timings_ms: dict[str, float],
+        counts: dict[str, int],
+        state: dict[str, object],
+    ) -> None:
+        if self.diagnostics is None:
+            return
+        self.diagnostics.record_sample(kind, timings_ms=timings_ms, counts=counts, state=state)
+        spike_threshold = max(self.config.diagnostics_trigger_threshold_ms, 1)
+        ocr_ms = float(timings_ms.get("ocr", 0.0))
+        total_ms = float(timings_ms.get("total", 0.0))
+        if ocr_ms < spike_threshold and total_ms < spike_threshold:
+            return
+        event_kind = "ocr_spike" if ocr_ms >= spike_threshold else "pipeline_spike"
+        self.diagnostics.record_event(
+            event_kind,
+            f"{kind} runtime spike detected",
+            details={
+                "threshold_ms": spike_threshold,
+                "ocr_ms": round(ocr_ms, 1),
+                "total_ms": round(total_ms, 1),
+            },
+            snapshot={
+                "kind": kind,
+                "timings_ms": timings_ms,
+                "counts": counts,
+                "state": state,
+            },
+        )
+
+    def _record_event(
+        self,
+        kind: str,
+        message: str,
+        *,
+        details: dict[str, object] | None = None,
+        snapshot: dict[str, object] | None = None,
+    ) -> None:
+        if self.diagnostics is None:
+            return
+        self.diagnostics.record_event(kind, message, details=details, snapshot=snapshot)
 
     def _network_available(self) -> bool:
         try:
@@ -158,7 +207,7 @@ class PipelineOrchestrator:
         return filtered
 
     def _log_subtitle_selection_diagnostics(self, frame: Frame, boxes: list[OCRBox]) -> None:
-        if not self.config.translation_log_enabled or not boxes:
+        if not self.config.runtime_verbose_log or not boxes:
             return
         rejection_counts: Counter[str] = Counter()
         accepted = 0
@@ -423,6 +472,11 @@ class PipelineOrchestrator:
         started = time.perf_counter()
         frame = self.capture_service.capture_window(hwnd)
         if frame is None:
+            self._record_event(
+                "deep_prepare_skipped",
+                "Deep translation prepare skipped because capture returned no frame",
+                details={"hwnd": hwnd},
+            )
             return []
 
         self._last_window_height = max(frame.window_rect.height, 1)
@@ -439,7 +493,22 @@ class PipelineOrchestrator:
         self._log(
             f"deep ocr blocks raw={len(ocr_boxes)} selected={len(selected_boxes)} grouped={len(grouped_boxes)} paragraph_ocr={used_paragraph_ocr}"
         )
-        self._log(f"deep prepare total_ms={(time.perf_counter() - started) * 1000.0:.0f}")
+        total_ms = (time.perf_counter() - started) * 1000.0
+        self._log(f"deep prepare total_ms={total_ms:.0f}")
+        self._record_runtime_sample(
+            "deep_prepare",
+            timings_ms={"capture": 0.0, "ocr": total_ms, "total": total_ms},
+            counts={
+                "raw_boxes": len(ocr_boxes),
+                "selected_boxes": len(selected_boxes),
+                "grouped_boxes": len(grouped_boxes),
+            },
+            state={
+                "hwnd": hwnd,
+                "paragraph_ocr": used_paragraph_ocr,
+                "translator": getattr(self.cloud_translator or self.local_translator, "name", "unknown"),
+            },
+        )
         return [box for box in grouped_boxes if normalize_text(box.source_text)]
 
     def _deep_overlay_style(self) -> OverlayStyle:
@@ -479,6 +548,12 @@ class PipelineOrchestrator:
         capture_elapsed_ms = (time.perf_counter() - capture_started) * 1000.0
         if frame is None:
             self._log(f"timing capture={capture_elapsed_ms:.0f}ms total={capture_elapsed_ms:.0f}ms boxes=0->0->0 items=0")
+            self._record_runtime_sample(
+                "live",
+                timings_ms={"capture": capture_elapsed_ms, "ocr": 0.0, "select": 0.0, "translate": 0.0, "overlay": 0.0, "total": capture_elapsed_ms},
+                counts={"raw_boxes": 0, "selected_boxes": 0, "stable_boxes": 0, "overlay_items": 0},
+                state={"hwnd": hwnd, "translator": getattr(self.local_translator, "name", "local"), "frame_captured": False},
+            )
             return []
 
         self._last_window_height = max(frame.window_rect.height, 1)
@@ -542,12 +617,42 @@ class PipelineOrchestrator:
             f"boxes={len(ocr_boxes)}->{len(selected_boxes)}->{len(stable_boxes)} "
             f"items={len(overlay_items)}"
         )
+        self._record_runtime_sample(
+            "live",
+            timings_ms={
+                "capture": capture_elapsed_ms,
+                "ocr": ocr_elapsed_ms,
+                "select": select_elapsed_ms,
+                "translate": translate_elapsed_ms,
+                "overlay": overlay_elapsed_ms,
+                "total": elapsed * 1000.0,
+            },
+            counts={
+                "raw_boxes": len(ocr_boxes),
+                "selected_boxes": len(selected_boxes),
+                "stable_boxes": len(stable_boxes),
+                "overlay_items": len(overlay_items),
+            },
+            state={
+                "hwnd": hwnd,
+                "translator": getattr(self.local_translator, "name", "local"),
+                "capture_backend": self.config.capture_backend,
+                "subtitle_mode": self.config.subtitle_mode,
+                "overlay_source_text": self.config.overlay_source_text,
+                "cache_hits": self.cache.hits,
+            },
+        )
         return overlay_items
 
     def prepare_deep_translation(self, hwnd: int) -> tuple[list[OCRBox], list[OverlayItem]]:
         grouped_boxes = self._collect_deep_grouped_boxes(hwnd)
         if not grouped_boxes:
             self._log("deep translate skipped: no usable OCR blocks")
+            self._record_event(
+                "deep_prepare_empty",
+                "Deep translation found no usable OCR blocks",
+                details={"hwnd": hwnd},
+            )
             return [], []
         return grouped_boxes, self.build_pending_deep_overlay(grouped_boxes)
 
@@ -591,6 +696,20 @@ class PipelineOrchestrator:
                 if translator is self.local_translator:
                     raise
                 self._log(f"deep cloud fallback triggered: {exc}")
+                self._record_event(
+                    "deep_cloud_fallback",
+                    "Deep cloud translation failed and fell back to local translator",
+                    details={
+                        "from_translator": translator_name,
+                        "provider": translator_kind,
+                        "pending_items": len(pending),
+                        "error": repr(exc),
+                    },
+                    snapshot={
+                        "grouped_boxes": len(grouped_boxes),
+                        "pending_items": len(pending),
+                    },
+                )
                 translator = self.local_translator
                 translator_kind = "local"
                 translator_name = getattr(translator, "name", translator_kind)
@@ -644,6 +763,25 @@ class PipelineOrchestrator:
         self._log(
             f"deep summary translator={translator_name} provider={translator_kind} "
             f"cache_hits={cache_hits} misses={len(pending)} grouped={len(grouped_boxes)} shown={len(overlay_items)} total_ms={elapsed_ms:.0f}"
+        )
+        self._record_runtime_sample(
+            "deep_translate",
+            timings_ms={
+                "translate": getattr(self, "_last_translate_step_ms", 0.0),
+                "total": elapsed_ms,
+            },
+            counts={
+                "grouped_boxes": len(grouped_boxes),
+                "pending_boxes": len(pending),
+                "cache_hits": cache_hits,
+                "overlay_items": len(overlay_items),
+            },
+            state={
+                "translator": translator_name,
+                "provider": translator_kind,
+                "cloud_provider": self.config.deep_translation_provider,
+                "cloud_model": self.config.deep_translation_model,
+            },
         )
         return overlay_items
 

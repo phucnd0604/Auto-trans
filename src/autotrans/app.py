@@ -21,7 +21,62 @@ from autotrans.ui.global_hotkeys import GlobalHotkeyManager
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
 from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
+from autotrans.utils.runtime_diagnostics import RuntimeDiagnostics
 from autotrans.utils.runtime_logging import setup_runtime_logging
+
+
+def _install_global_exception_hooks(diagnostics: RuntimeDiagnostics | None = None) -> None:
+    previous_sys_hook = sys.excepthook
+    previous_thread_hook = getattr(threading, "excepthook", None)
+
+    def _log_uncaught_exception(
+        source: str,
+        exc_type: type[BaseException],
+        exc_value: BaseException,
+        exc_traceback,
+        *,
+        thread_name: str | None = None,
+    ) -> None:
+        details = {
+            "source": source,
+            "thread_name": thread_name or threading.current_thread().name,
+            "exception_type": getattr(exc_type, "__name__", str(exc_type)),
+            "exception": repr(exc_value),
+        }
+        formatted_traceback = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        print(
+            f"[AutoTrans] Uncaught exception source={source} thread={details['thread_name']}: {details['exception']}",
+            flush=True,
+        )
+        print(formatted_traceback, flush=True)
+        if diagnostics is not None:
+            diagnostics.record_event(
+                "uncaught_exception",
+                "Uncaught Python exception",
+                details=details,
+                snapshot={"traceback": formatted_traceback},
+            )
+            diagnostics.close()
+
+    def _sys_excepthook(exc_type, exc_value, exc_traceback) -> None:
+        _log_uncaught_exception("sys.excepthook", exc_type, exc_value, exc_traceback)
+        if previous_sys_hook is not None:
+            previous_sys_hook(exc_type, exc_value, exc_traceback)
+
+    def _thread_excepthook(args) -> None:
+        _log_uncaught_exception(
+            "threading.excepthook",
+            args.exc_type,
+            args.exc_value,
+            args.exc_traceback,
+            thread_name=args.thread.name if args.thread is not None else None,
+        )
+        if callable(previous_thread_hook):
+            previous_thread_hook(args)
+
+    sys.excepthook = _sys_excepthook
+    if callable(previous_thread_hook):
+        threading.excepthook = _thread_excepthook
 
 
 class _LazyOCRProvider:
@@ -119,7 +174,7 @@ def _clear_runtime_path_overrides() -> None:
         os.environ.pop(key, None)
 
 
-def _prepare_runtime_environment(config: AppConfig) -> None:
+def _prepare_runtime_environment(config: AppConfig) -> RuntimeDiagnostics:
     runtime_dirs = [
         config.runtime_root_dir,
         config.local_model_dir,
@@ -142,9 +197,18 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
     os.environ["PADDLE_PDX_CACHE_HOME"] = str(config.paddle_cache_dir.resolve())
 
     setup_runtime_logging(config)
+    diagnostics = RuntimeDiagnostics(config)
     print(f"[AutoTrans] Runtime root: {config.runtime_root_dir}", flush=True)
     print(f"[AutoTrans] Cache root: {config.cache_root_dir}", flush=True)
     print(f"[AutoTrans] Paddle cache root: {config.paddle_cache_dir}", flush=True)
+    if diagnostics.is_enabled():
+        print(f"[AutoTrans] Diagnostics session: {diagnostics.session_path}", flush=True)
+        diagnostics.record_event(
+            "session_started",
+            "Runtime diagnostics session started",
+            details={"session_path": diagnostics.session_path},
+        )
+    return diagnostics
 
 
 def _build_realtime_ocr_provider(config: AppConfig):
@@ -181,7 +245,7 @@ def _mask_api_key(api_key: str | None) -> str:
     return f"{api_key[:4]}...{api_key[-4:]}"
 
 
-def _build_cloud_translator(config: AppConfig):
+def _build_cloud_translator(config: AppConfig, diagnostics: RuntimeDiagnostics | None = None):
     provider = _normalize_deep_provider_name(config.deep_translation_provider)
     config.deep_translation_provider = provider
     print(
@@ -194,6 +258,12 @@ def _build_cloud_translator(config: AppConfig):
     )
     if not config.deep_translation_api_key:
         print("[AutoTrans] Deep translator: disabled, fallback to ctranslate2", flush=True)
+        if diagnostics is not None:
+            diagnostics.record_event(
+                "deep_translator_disabled",
+                "Deep translator disabled, using local fallback",
+                details={"provider": provider, "model": config.deep_translation_model, "reason": "missing_api_key"},
+            )
         return None
 
     try:
@@ -204,7 +274,7 @@ def _build_cloud_translator(config: AppConfig):
                 api_key=config.deep_translation_api_key,
                 config=config,
                 timeout_s=config.deep_translation_timeout_ms / 1000.0,
-                verbose=config.translation_log_enabled,
+                verbose=config.runtime_verbose_log,
                 max_logged_items=config.translation_log_max_items,
             )
         elif provider == "gemini":
@@ -213,7 +283,7 @@ def _build_cloud_translator(config: AppConfig):
                 api_key=config.deep_translation_api_key,
                 config=config,
                 timeout_s=config.deep_translation_timeout_ms / 1000.0,
-                verbose=config.translation_log_enabled,
+                verbose=config.runtime_verbose_log,
                 max_logged_items=config.translation_log_max_items,
             )
         else:
@@ -222,6 +292,12 @@ def _build_cloud_translator(config: AppConfig):
             f"[AutoTrans] Deep translator: {translator.name} provider={provider} model={config.deep_translation_model}",
             flush=True,
         )
+        if diagnostics is not None:
+            diagnostics.record_event(
+                "deep_translator_ready",
+                "Deep translator initialized",
+                details={"provider": provider, "model": config.deep_translation_model, "translator": translator.name},
+            )
         return translator
     except Exception as exc:
         print(
@@ -230,6 +306,12 @@ def _build_cloud_translator(config: AppConfig):
             flush=True,
         )
         traceback.print_exc()
+        if diagnostics is not None:
+            diagnostics.record_event(
+                "deep_translator_unavailable",
+                "Deep translator unavailable, using local fallback",
+                details={"provider": provider, "model": config.deep_translation_model, "error": repr(exc)},
+            )
         return None
 
 
@@ -285,7 +367,13 @@ def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> A
     config.capture_fps = float(settings.get("capture_fps", config.capture_fps))
     config.overlay_fps = int(settings.get("overlay_fps", config.overlay_fps))
     config.overlay_ttl_seconds = float(settings.get("overlay_ttl_seconds", config.overlay_ttl_seconds))
-    config.translation_log_enabled = bool(settings.get("translation_log_enabled", config.translation_log_enabled))
+    config.runtime_verbose_log = bool(
+        settings.get("runtime_verbose_log", settings.get("translation_log_enabled", config.runtime_verbose_log))
+    )
+    config.diagnostics_enabled = bool(settings.get("diagnostics_enabled", config.diagnostics_enabled))
+    config.diagnostics_trigger_threshold_ms = int(
+        settings.get("diagnostics_trigger_threshold_ms", config.diagnostics_trigger_threshold_ms)
+    )
     config.font_size = int(settings.get("font_size", config.font_size))
     return config
 
@@ -323,7 +411,8 @@ def main() -> int:
     log_startup_step("apply_startup_settings", step_started)
 
     step_started = time.perf_counter()
-    _prepare_runtime_environment(config)
+    diagnostics = _prepare_runtime_environment(config)
+    _install_global_exception_hooks(diagnostics)
     log_startup_step("prepare_runtime_environment", step_started)
 
     step_started = time.perf_counter()
@@ -348,7 +437,8 @@ def main() -> int:
         ocr_provider=realtime_ocr_provider,
         deep_ocr_provider=deep_ocr_provider,
         local_translator=_build_local_translator(config),
-        cloud_translator=_build_cloud_translator(config),
+        cloud_translator=_build_cloud_translator(config, diagnostics),
+        diagnostics=diagnostics,
     )
     log_startup_step("PipelineOrchestrator init", step_started)
 
@@ -359,6 +449,7 @@ def main() -> int:
         orchestrator=orchestrator,
         overlay=overlay,
         global_hotkeys=hotkeys,
+        diagnostics=diagnostics,
     )
     log_startup_step("MainWindow init", step_started)
 
@@ -371,6 +462,7 @@ def main() -> int:
     try:
         return app.exec()
     finally:
+        diagnostics.close()
         hotkeys.unregister_all()
 
 

@@ -2,10 +2,20 @@
 
 ## 2026-04-02
 
+### Runtime Diagnostics
+
+- Tach `translation log` cu thanh `Runtime Verbose Log` va `Diagnostics Capture`.
+- Them session diagnostics JSON theo phien trong `.runtime/logs/sessions/<session-id>.json`.
+- Moi session gio ghi `config`, `samples`, `events`, `last_state` va dong dau `session_start/session_end`.
+- Them snapshot event cho OCR spike, pipeline spike, deep timeout, deep fallback, deep error va pipeline error.
+- Them `sys.excepthook` va `threading.excepthook` de ghi lai uncaught Python exception vao `autotrans.log` va session JSON.
+- `autotrans.log` giu vai tro xem nhanh, con session JSON la nguon dieu tra chinh sau crash.
+
 ### Runtime va Moi truong
 
 - Chuan hoa `run.ps1` de co the tu tao `.venv`, sync dependency, sync model runtime va chay app trong cung mot flow.
 - Bo sung che do `-SyncEnv`, `-SyncModels`, `-RecreateVenv`, `-SkipRun` cho script runtime.
+- Them `-OpenLogs` de mo nhanh thu muc `.runtime/logs`.
 - Them buoc bootstrap model runtime de local translator model va Paddle models duoc tai/kiem tra truoc khi mo app.
 - Chuan hoa duong dan cache Paddle/PaddleX ve `.runtime/paddle` thay vi de phan tan ra thu muc home cua user.
 

@@ -32,7 +32,9 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "ocr_crop_subtitle_only": True,
     "overlay_fps": 30,
     "overlay_ttl_seconds": 1.5,
-    "translation_log_enabled": True,
+    "runtime_verbose_log": False,
+    "diagnostics_enabled": True,
+    "diagnostics_trigger_threshold_ms": 1000,
     "font_size": 18,
     "deep_translation_api_key": "",
     "deep_translation_provider": "gemini",
@@ -90,7 +92,9 @@ SETTING_TOOLTIPS: dict[str, str] = {
     "Overlay FPS": "Tần suất vẽ lại overlay bản dịch. Cao hơn cho cảm giác mượt hơn nhưng có thêm chi phí render.",
     "Overlay TTL (s)": "Thời gian giữ một overlay trên màn hình trước khi tự động ẩn đi.",
     "Font Size": "Cỡ chữ mặc định của overlay bản dịch.",
-    "Logging": "Ghi log runtime và chi tiết OCR/translation vào file .runtime/logs/autotrans.log để debug và benchmark.",
+    "Runtime Verbose Log": "Bat log runtime chi tiet vao autotrans.log. Nen tat khi choi binh thuong de tranh spam log.",
+    "Diagnostics Capture": "Ghi session JSON vao .runtime/logs/sessions de dieu tra spike, fallback va crash path.",
+    "Diagnostics Threshold (ms)": "Nguong kich hoat snapshot khi OCR hoac tong thoi gian pipeline vuot moc nay.",
 }
 
 
@@ -105,6 +109,12 @@ def _normalize_loaded_settings(settings: dict[str, Any]) -> dict[str, Any]:
     normalized["deep_translation_provider"] = provider
     if "deep_translation_api_key" not in normalized:
         normalized["deep_translation_api_key"] = str(normalized.get("openai_api_key", "")).strip()
+    if "runtime_verbose_log" not in normalized:
+        normalized["runtime_verbose_log"] = bool(normalized.get("translation_log_enabled", False))
+    if "diagnostics_enabled" not in normalized:
+        normalized["diagnostics_enabled"] = DEFAULT_STARTUP_SETTINGS["diagnostics_enabled"]
+    if "diagnostics_trigger_threshold_ms" not in normalized:
+        normalized["diagnostics_trigger_threshold_ms"] = DEFAULT_STARTUP_SETTINGS["diagnostics_trigger_threshold_ms"]
     if "deep_translation_model" not in normalized:
         model = str(normalized.get("openai_model", "")).strip()
         normalized["deep_translation_model"] = model or DEFAULT_STARTUP_SETTINGS["deep_translation_model"]
@@ -148,8 +158,14 @@ def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
         settings["overlay_ttl_seconds"] = float(overlay["ttl_seconds"])
     if "font_size" in overlay:
         settings["font_size"] = int(overlay["font_size"])
-    if "translation_log_enabled" in logging:
-        settings["translation_log_enabled"] = bool(logging["translation_log_enabled"])
+    if "runtime_verbose_log" in logging:
+        settings["runtime_verbose_log"] = bool(logging["runtime_verbose_log"])
+    elif "translation_log_enabled" in logging:
+        settings["runtime_verbose_log"] = bool(logging["translation_log_enabled"])
+    if "diagnostics_enabled" in logging:
+        settings["diagnostics_enabled"] = bool(logging["diagnostics_enabled"])
+    if "diagnostics_trigger_threshold_ms" in logging:
+        settings["diagnostics_trigger_threshold_ms"] = int(logging["diagnostics_trigger_threshold_ms"])
     if "provider" in translation:
         settings["deep_translation_provider"] = str(translation["provider"]).strip()
     if "cloud_provider" in translation:
@@ -255,8 +271,16 @@ class SettingsDialog(QDialog):
         self.font_size_spin.setRange(12, 36)
         self.font_size_spin.setValue(int(settings["font_size"]))
 
-        self.translation_log_check = QCheckBox("Enable translation log")
-        self.translation_log_check.setChecked(bool(settings["translation_log_enabled"]))
+        self.runtime_verbose_log_check = QCheckBox("Enable runtime verbose log")
+        self.runtime_verbose_log_check.setChecked(bool(settings["runtime_verbose_log"]))
+
+        self.diagnostics_enabled_check = QCheckBox("Enable runtime diagnostics capture")
+        self.diagnostics_enabled_check.setChecked(bool(settings["diagnostics_enabled"]))
+
+        self.diagnostics_trigger_threshold_spin = QSpinBox()
+        self.diagnostics_trigger_threshold_spin.setRange(100, 10000)
+        self.diagnostics_trigger_threshold_spin.setSingleStep(100)
+        self.diagnostics_trigger_threshold_spin.setValue(int(settings["diagnostics_trigger_threshold_ms"]))
 
         expanding_fields = (
             self.deep_translation_api_key_edit,
@@ -275,7 +299,9 @@ class SettingsDialog(QDialog):
             self.overlay_fps_spin,
             self.overlay_ttl_spin,
             self.font_size_spin,
-            self.translation_log_check,
+            self.runtime_verbose_log_check,
+            self.diagnostics_enabled_check,
+            self.diagnostics_trigger_threshold_spin,
         )
         for widget in expanding_fields:
             widget.setSizePolicy(QSizePolicy.Expanding, widget.sizePolicy().verticalPolicy())
@@ -304,7 +330,9 @@ class SettingsDialog(QDialog):
         self._add_labeled_row(advanced_form, "Overlay FPS", self.overlay_fps_spin)
         self._add_labeled_row(advanced_form, "Overlay TTL (s)", self.overlay_ttl_spin)
         self._add_labeled_row(advanced_form, "Font Size", self.font_size_spin)
-        self._add_labeled_row(advanced_form, "Logging", self.translation_log_check)
+        self._add_labeled_row(advanced_form, "Runtime Verbose Log", self.runtime_verbose_log_check)
+        self._add_labeled_row(advanced_form, "Diagnostics Capture", self.diagnostics_enabled_check)
+        self._add_labeled_row(advanced_form, "Diagnostics Threshold (ms)", self.diagnostics_trigger_threshold_spin)
         self._add_labeled_row(advanced_form, "Cloud Model", self.deep_translation_model_combo)
         self.advanced_container = QWidget()
         self.advanced_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -388,7 +416,9 @@ class SettingsDialog(QDialog):
             "ocr_crop_subtitle_only": self.crop_subtitle_check.isChecked(),
             "overlay_fps": self.overlay_fps_spin.value(),
             "overlay_ttl_seconds": self.overlay_ttl_spin.value(),
-            "translation_log_enabled": self.translation_log_check.isChecked(),
+            "runtime_verbose_log": self.runtime_verbose_log_check.isChecked(),
+            "diagnostics_enabled": self.diagnostics_enabled_check.isChecked(),
+            "diagnostics_trigger_threshold_ms": self.diagnostics_trigger_threshold_spin.value(),
             "font_size": self.font_size_spin.value(),
             "deep_translation_api_key": self.deep_translation_api_key_edit.text().strip(),
             "deep_translation_provider": self.deep_translation_provider_combo.currentText(),

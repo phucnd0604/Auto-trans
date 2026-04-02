@@ -2,7 +2,8 @@ param(
     [switch]$SyncEnv,
     [switch]$SyncModels,
     [switch]$RecreateVenv,
-    [switch]$SkipRun
+    [switch]$SkipRun,
+    [switch]$OpenLogs
 )
 
 $ErrorActionPreference = "Stop"
@@ -130,4 +131,12 @@ $env:PYTHONPATH = "src"
 
 if (-not $SkipRun) {
     & $python -m autotrans.app
+}
+
+if ($OpenLogs) {
+    $logsDir = Join-Path $repoRoot ".runtime\logs"
+    if (-not (Test-Path $logsDir)) {
+        New-Item -ItemType Directory -Path $logsDir | Out-Null
+    }
+    Invoke-Item $logsDir
 }

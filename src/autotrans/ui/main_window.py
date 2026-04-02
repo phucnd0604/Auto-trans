@@ -26,6 +26,7 @@ from autotrans.services.capture import WindowInfo, WindowsWindowCapture
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.ui.global_hotkeys import GlobalHotkeyManager
 from autotrans.ui.overlay import OverlayWindow
+from autotrans.utils.runtime_diagnostics import RuntimeDiagnostics
 
 
 class MainWindow(QMainWindow):
@@ -47,6 +48,7 @@ class MainWindow(QMainWindow):
         orchestrator: PipelineOrchestrator,
         overlay: OverlayWindow,
         global_hotkeys: GlobalHotkeyManager | None = None,
+        diagnostics: RuntimeDiagnostics | None = None,
     ) -> None:
         super().__init__()
         self.config = config
@@ -54,6 +56,7 @@ class MainWindow(QMainWindow):
         self.orchestrator = orchestrator
         self.overlay = overlay
         self.global_hotkeys = global_hotkeys
+        self.diagnostics = diagnostics
         self._selected_hwnd: int | None = None
         self._windows: list[WindowInfo] = []
         self._running = False
@@ -387,6 +390,12 @@ class MainWindow(QMainWindow):
             "Kiểm tra Gemini API key, mạng và log."
         )
         print(f"[AutoTrans] {message}", flush=True)
+        if self.diagnostics is not None:
+            self.diagnostics.record_event(
+                "deep_timeout",
+                "Deep translation watchdog timeout",
+                details={"elapsed_ms": int(elapsed_ms), "stage": stage},
+            )
         self.status_label.setText(message)
         self._show_deep_translation_message(message)
 
@@ -419,6 +428,12 @@ class MainWindow(QMainWindow):
             self.overlay.show()
         self._pause_realtime_for_deep_prepare()
         print(f"[AutoTrans] Starting deep translation for hwnd {self._selected_hwnd}", flush=True)
+        if self.diagnostics is not None:
+            self.diagnostics.record_event(
+                "deep_requested",
+                "Deep translation requested",
+                details={"hwnd": self._selected_hwnd},
+            )
         worker = threading.Thread(
             target=self._prepare_deep_translation_background,
             args=(self._deep_translation_job_id, self._selected_hwnd),
@@ -559,6 +574,8 @@ class MainWindow(QMainWindow):
         self.start_button.setText("Start")
         self.stats_label.setText("Paused due to pipeline error")
         self.status_label.setText(f"Pipeline error: {message}")
+        if self.diagnostics is not None:
+            self.diagnostics.record_event("pipeline_error", "Realtime pipeline error", details={"error": message})
 
     def _apply_deep_translation_result(self, job_id: int, overlay_items) -> None:
         if job_id != self._deep_translation_job_id:
@@ -574,6 +591,12 @@ class MainWindow(QMainWindow):
         if self._overlay_enabled and not self.overlay.isVisible():
             self.overlay.show()
         print(f"[AutoTrans] Deep translation result items={len(overlay_items)}", flush=True)
+        if self.diagnostics is not None:
+            self.diagnostics.record_event(
+                "deep_result",
+                "Deep translation completed",
+                details={"items": len(overlay_items)},
+            )
         if overlay_items:
             self.status_label.setText(f"Deep translation ready with {len(overlay_items)} text block(s).")
         else:
@@ -585,6 +608,8 @@ class MainWindow(QMainWindow):
         self._cancel_deep_translation()
         self.deep_translate_button.setText("Deep Translate")
         print(f"[AutoTrans] Deep translation error: {message}", flush=True)
+        if self.diagnostics is not None:
+            self.diagnostics.record_event("deep_error", "Deep translation error", details={"error": message})
         error_message = f"Deep translation error: {message}"
         self.status_label.setText(error_message)
         self._show_deep_translation_message(error_message)

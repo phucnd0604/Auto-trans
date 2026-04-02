@@ -44,6 +44,12 @@ De chi kiem tra va tai model runtime ve `.runtime`:
 .\run.ps1 -SyncModels -SkipRun
 ```
 
+De mo nhanh thu muc log va session diagnostics:
+
+```powershell
+.\run.ps1 -OpenLogs -SkipRun
+```
+
 Neu can dung lai `.venv` tu dau:
 
 ```powershell
@@ -65,6 +71,24 @@ Neu can dung lai `.venv` tu dau:
 - `AUTOTRANS_DEEP_TRANSLATION_MODEL`
 
 Neu local cache chua co model va may co mang, `run.ps1 -SyncModels` se tai cac model can thiet ve `.runtime`.
+
+## Runtime diagnostics
+
+Settings lien quan:
+- `Runtime Verbose Log`: bat/tat log text chi tiet
+- `Diagnostics Capture`: bat/tat session JSON
+- `Diagnostics Threshold (ms)`: nguong tao event spike
+
+Du lieu diagnostics duoc ghi vao:
+- `.runtime/logs/autotrans.log`
+- `.runtime/logs/sessions/<session-id>.json`
+
+Sau khi crash, xem file JSON moi nhat trong `sessions` de lay:
+- `session_start`, `session_end`
+- `config`
+- `samples`
+- `events`
+- `last_state`
 
 ## Tai lieu lien quan
 

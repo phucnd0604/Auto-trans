@@ -56,7 +56,7 @@ class BaseOCRProvider:
         self._config = config
 
     def _log(self, message: str) -> None:
-        if self._config.translation_log_enabled:
+        if self._config.runtime_verbose_log:
             print(f"[AutoTrans][OCR] {message}", flush=True)
 
     def _resize_for_ocr(self, image: np.ndarray) -> tuple[np.ndarray, float]:
