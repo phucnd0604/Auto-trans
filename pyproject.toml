@@ -14,6 +14,7 @@ dependencies = [
   "Pillow>=10.4",
   "mss>=10.0",
   "rapidfuzz>=3.9",
+  "groq>=0.31",
   "pywin32>=308; sys_platform == 'win32'",
   "bettercam>=1.0.0; sys_platform == 'win32'",
 ]

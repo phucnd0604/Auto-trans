@@ -92,12 +92,13 @@ Muc tieu cua bo mac dinh nay la giu latency realtime gan baseline QuickMT nhung 
 ### Deep translation
 
 - `AUTOTRANS_DEEP_TRANSLATION_API_KEY`
+- `AUTOTRANS_DEEP_TRANSLATION_PROVIDER` (`gemini` hoặc `groq`)
 - `AUTOTRANS_DEEP_TRANSLATION_MODEL`
 - `AUTOTRANS_DEEP_TRANSLATION_TRANSPORT`
 - `AUTOTRANS_DEEP_TRANSLATION_TIMEOUT_MS`
 - `AUTOTRANS_CLOUD_TIMEOUT_MS`
 
-### Game profile cho Gemini
+### Game profile cho deep cloud translation
 
 - `AUTOTRANS_GAME_PROFILE_TITLE`
 - `AUTOTRANS_GAME_PROFILE_WORLD`
@@ -105,7 +106,7 @@ Muc tieu cua bo mac dinh nay la giu latency realtime gan baseline QuickMT nhung 
 - `AUTOTRANS_GAME_PROFILE_CHARACTERS_HONORIFICS`
 - `AUTOTRANS_GAME_PROFILE_TERMS_ITEMS_SKILLS`
 
-Cac field nay duoc dua vao system instruction cua deep mode Gemini.
+Cac field nay duoc dua vao system instruction cua deep mode cloud provider.
 
 ## Runtime directories mac dinh
 

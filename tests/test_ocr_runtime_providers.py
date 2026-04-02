@@ -216,6 +216,38 @@ def test_build_realtime_ocr_provider_rejects_unknown_provider() -> None:
         raise AssertionError("Expected ValueError for unknown provider")
 
 
+def test_build_cloud_translator_selects_provider_backend(monkeypatch) -> None:
+    config = _make_config()
+    config.deep_translation_provider = "groq"
+
+    class FakeGroqTranslator:
+        name = "groq"
+
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+
+    class FakeGeminiRestTranslator:
+        name = "gemini-rest"
+
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+
+    monkeypatch.setattr(app_module, "GroqTranslator", FakeGroqTranslator)
+    monkeypatch.setattr(app_module, "GeminiRestTranslator", FakeGeminiRestTranslator)
+
+    groq_translator = app_module._build_cloud_translator(config)
+
+    assert groq_translator is not None
+    assert groq_translator.name == "groq"
+    assert groq_translator.kwargs["api_key"] == "test-key"
+
+    config.deep_translation_provider = "gemini"
+    gemini_translator = app_module._build_cloud_translator(config)
+
+    assert gemini_translator is not None
+    assert gemini_translator.name == "gemini-rest"
+
+
 def test_paddle_provider_converts_nested_result_to_ocr_boxes() -> None:
     provider = PaddleOCRProvider.__new__(PaddleOCRProvider)
     BaseOCRProvider.__init__(provider, _make_config())

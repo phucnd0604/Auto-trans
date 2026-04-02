@@ -124,6 +124,7 @@ class AppConfig:
     log_max_lines: int = int(getenv("AUTOTRANS_LOG_MAX_LINES", "10000"))
     log_trim_to_lines: int = int(getenv("AUTOTRANS_LOG_TRIM_TO_LINES", "5000"))
     deep_translation_api_key: str | None = getenv("AUTOTRANS_DEEP_TRANSLATION_API_KEY") or None
+    deep_translation_provider: str = getenv("AUTOTRANS_DEEP_TRANSLATION_PROVIDER", "gemini")
     deep_translation_model: str = getenv("AUTOTRANS_DEEP_TRANSLATION_MODEL", "gemini-2.0-flash")
     deep_translation_transport: str = getenv("AUTOTRANS_DEEP_TRANSLATION_TRANSPORT", "rest")
     game_profile_title: str = getenv("AUTOTRANS_GAME_PROFILE_TITLE", "")
@@ -146,11 +147,15 @@ class AppConfig:
         self.xdg_config_home = _resolve_from_app_root(self.xdg_config_home)
         self.hf_home = _resolve_from_app_root(self.hf_home)
         self.log_dir = _resolve_from_app_root(self.log_dir)
+        self.deep_translation_provider = self.deep_translation_provider.strip().lower() or "gemini"
 
     @property
     def translation_mode(self) -> str:
         return self.mode
 
     @staticmethod
-    def deep_translation_host() -> str:
+    def deep_translation_host(provider: str | None = None) -> str:
+        normalized = (provider or "gemini").strip().lower()
+        if normalized == "groq":
+            return "api.groq.com"
         return "generativelanguage.googleapis.com"

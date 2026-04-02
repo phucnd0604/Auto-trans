@@ -72,7 +72,7 @@ class PipelineOrchestrator:
 
     def _network_available(self) -> bool:
         try:
-            socket.gethostbyname(self.config.deep_translation_host())
+            socket.gethostbyname(self.config.deep_translation_host(self.config.deep_translation_provider))
             return True
         except OSError:
             return False
@@ -953,4 +953,3 @@ class PipelineOrchestrator:
             f"live summary translator={getattr(self.local_translator, 'name', 'local')} cache_hits={cache_hits} misses={cache_misses} shown={len(overlay_items)}"
         )
         return overlay_items
-

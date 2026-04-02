@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import time
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Protocol
 
@@ -194,17 +195,15 @@ class CTranslate2Translator:
         return self.translate_batch(items, source_lang, target_lang, QualityMode.HIGH_QUALITY)
 
 
-class GeminiTranslator:
-    name = "gemini"
-    _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+class DeepCloudTranslatorBase(ABC):
     _LEADING_NUMBER_RE = re.compile(r"^\s*[\"'`]*\s*\d+[\.\):\-]\s*")
     _LEADING_BULLET_RE = re.compile(r"^\s*[\"'`]*\s*[-*]+\s*")
     _BLOCK_RE = re.compile(r"<BLOCK_(\d+)>\s*(.*?)\s*</BLOCK_\1>", re.DOTALL)
 
     def __init__(
         self,
-        model: str = "gemini-2.0-flash",
-        api_key: str | None = None,
+        model: str,
+        api_key: str | None,
         config: AppConfig | None = None,
         timeout_s: float = 2.5,
         verbose: bool = False,
@@ -221,19 +220,27 @@ class GeminiTranslator:
         if not self._verbose:
             return
         started = time.perf_counter()
-        print(f"[AutoTrans][{self._model}] {label} BEGIN", flush=True)
+        print(f"[AutoTrans][{self.name}] {label} BEGIN", flush=True)
         print(text, flush=True)
-        print(f"[AutoTrans][{self._model}] {label} END", flush=True)
+        print(f"[AutoTrans][{self.name}] {label} END", flush=True)
         elapsed_ms = (time.perf_counter() - started) * 1000
-        print(f"[AutoTrans][{self._model}] {label} log_ms={elapsed_ms:.0f}", flush=True)
+        print(f"[AutoTrans][{self.name}] {label} log_ms={elapsed_ms:.0f}", flush=True)
 
     @staticmethod
-    def _find_curl_binary() -> str:
-        for candidate in ("curl.exe", "curl"):
-            resolved = shutil.which(candidate)
-            if resolved:
-                return resolved
-        raise RuntimeError("curl is not available")
+    def _safe_log_text(text: str) -> str:
+        normalized = normalize_text(text)
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        try:
+            normalized.encode(encoding)
+            return normalized
+        except UnicodeEncodeError:
+            return normalized.encode(encoding, errors="backslashreplace").decode(encoding)
+
+    @staticmethod
+    def _get_payload_value(payload: object, key: str, default: object = None) -> object:
+        if isinstance(payload, dict):
+            return payload.get(key, default)
+        return getattr(payload, key, default)
 
     @staticmethod
     def _normalize_response_payload(payload: object) -> dict[str, object]:
@@ -243,8 +250,12 @@ class GeminiTranslator:
             for item in payload:
                 if isinstance(item, dict):
                     return item
-            raise RuntimeError("Gemini REST returned a list without any object payload")
-        raise RuntimeError(f"Gemini REST returned unsupported payload type: {type(payload).__name__}")
+            raise RuntimeError("Cloud translator returned a list without any object payload")
+        if hasattr(payload, "model_dump"):
+            dumped = payload.model_dump()
+            if isinstance(dumped, dict):
+                return dumped
+        raise RuntimeError(f"Cloud translator returned unsupported payload type: {type(payload).__name__}")
 
     @classmethod
     def _sanitize_line(cls, text: str) -> str:
@@ -322,6 +333,179 @@ class GeminiTranslator:
             prompt_lines.append(f"</BLOCK_{index}>")
         return "\n".join(prompt_lines)
 
+    @staticmethod
+    def _extract_content_text(content: object) -> str:
+        if isinstance(content, str):
+            return normalize_text(content).strip()
+        if isinstance(content, list):
+            fragments: list[str] = []
+            for item in content:
+                if isinstance(item, dict):
+                    item_type = normalize_text(str(item.get("type", ""))).strip().lower()
+                    text_value = item.get("text")
+                else:
+                    item_type = normalize_text(str(getattr(item, "type", ""))).strip().lower()
+                    text_value = getattr(item, "text", None)
+                if item_type not in {"", "text", "output_text"}:
+                    continue
+                if isinstance(text_value, str) and text_value.strip():
+                    fragments.append(normalize_text(text_value).strip())
+            return normalize_text("\n".join(fragment for fragment in fragments if fragment)).strip()
+        return ""
+
+    @classmethod
+    def _extract_standard_choice_text(cls, payload: object) -> str:
+        choices = cls._get_payload_value(payload, "choices")
+        if not isinstance(choices, list) or not choices:
+            return ""
+        first = choices[0]
+        message = cls._get_payload_value(first, "message")
+        if message is None:
+            return ""
+        return cls._extract_content_text(cls._get_payload_value(message, "content"))
+
+    @classmethod
+    def _extract_message_text(cls, payload: object) -> str:
+        if isinstance(payload, list):
+            for item in payload:
+                text = cls._extract_message_text(item)
+                if text:
+                    return text
+            return ""
+        text = cls._extract_standard_choice_text(payload)
+        if text:
+            return text
+        if not isinstance(payload, dict) and not hasattr(payload, "model_dump"):
+            return ""
+        normalized_payload = payload.model_dump() if hasattr(payload, "model_dump") else payload
+        for candidate in (
+            normalized_payload.get("output_text"),
+            normalized_payload.get("text"),
+            normalized_payload.get("content"),
+        ):
+            text = cls._extract_content_text(candidate)
+            if text:
+                return text
+        return ""
+
+    @abstractmethod
+    def _generate_batch_text(self, contents: str) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _generate_deep_text(self, system_instruction: str, contents: str) -> str:
+        raise NotImplementedError
+
+    def translate_batch(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+        mode: QualityMode,
+    ) -> list[TranslationResult]:
+        started = time.perf_counter()
+        prompt_lines = [
+            "Ngươi đang dịch văn bản OCR từ giao diện game sang tiếng Việt tự nhiên.",
+            "Quy tắc:",
+            "- Trả về đúng một dòng dịch cho mỗi dòng input, đúng thứ tự.",
+            "- Giữ nguyên tên riêng như nhân vật, địa danh, phe phái, vật phẩm khi phù hợp.",
+            "- Dịch nhãn menu, mục tiêu nhiệm vụ, và phụ đề một cách tự nhiên, ngắn gọn.",
+            "- Không giải thích, không thêm ghi chú, không đánh số.",
+            "- Nếu OCR bị nhiễu, hãy giữ đúng ý đọc được và không tự bịa thêm nội dung.",
+            "",
+            "Các dòng input:",
+        ]
+        prompt_lines.extend(f"{index + 1}. {item.source_text}" for index, item in enumerate(items))
+        contents = "\n".join(prompt_lines)
+        self._log_verbose_block("batch contents", contents)
+        output_text = self._generate_batch_text(contents)
+        self._log_verbose_block("batch response", output_text or "<empty>")
+        translated_lines = [self._sanitize_line(line) for line in output_text.splitlines() if self._sanitize_line(line)]
+        results: list[TranslationResult] = []
+        for index, item in enumerate(items):
+            translated = translated_lines[index] if index < len(translated_lines) else item.source_text
+            results.append(
+                TranslationResult(
+                    source_text=item.source_text,
+                    translated_text=translated,
+                    provider=self.name,
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                )
+            )
+        if self._verbose:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            print(f"[AutoTrans][{self.name}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms", flush=True)
+            for item, result in list(zip(items, results, strict=False))[: self._max_logged_items]:
+                print(
+                    f"[AutoTrans][{self.name}] {self._safe_log_text(item.source_text)!r} -> {self._safe_log_text(result.translated_text)!r}",
+                    flush=True,
+                )
+        return results
+
+    def translate_screen_blocks(
+        self,
+        items: list[OCRBox],
+        source_lang: str,
+        target_lang: str,
+    ) -> list[TranslationResult]:
+        started = time.perf_counter()
+        build_started = time.perf_counter()
+        system_instruction = self._build_deep_system_instruction()
+        contents = self._build_deep_translation_contents(items)
+        build_elapsed_ms = (time.perf_counter() - build_started) * 1000
+        self._log_verbose_block("deep system_instruction", system_instruction)
+        self._log_verbose_block("deep contents", contents)
+        request_started = time.perf_counter()
+        output_text = self._generate_deep_text(system_instruction, contents)
+        request_elapsed_ms = (time.perf_counter() - request_started) * 1000
+        self._log_verbose_block("deep response", output_text or "<empty>")
+        parse_started = time.perf_counter()
+        translated_blocks = self._parse_block_response(output_text, len(items))
+        parse_elapsed_ms = (time.perf_counter() - parse_started) * 1000
+        results: list[TranslationResult] = []
+        for index, item in enumerate(items):
+            translated = translated_blocks[index] if index < len(translated_blocks) else ""
+            results.append(
+                TranslationResult(
+                    source_text=item.source_text,
+                    translated_text=translated or normalize_text(item.source_text),
+                    provider=self.name,
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                )
+            )
+        if self._verbose:
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            print(f"[AutoTrans][{self.name}] deep-translated {len(items)} block(s) in {elapsed_ms:.0f}ms", flush=True)
+            print(
+                f"[AutoTrans][{self.name}] deep timing build_ms={build_elapsed_ms:.0f} request_ms={request_elapsed_ms:.0f} parse_ms={parse_elapsed_ms:.0f}",
+                flush=True,
+            )
+        return results
+
+
+class GeminiTranslator(DeepCloudTranslatorBase):
+    name = "gemini"
+    _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+
+    def __init__(
+        self,
+        model: str = "gemini-2.0-flash",
+        api_key: str | None = None,
+        config: AppConfig | None = None,
+        timeout_s: float = 2.5,
+        verbose: bool = False,
+        max_logged_items: int = 6,
+    ) -> None:
+        super().__init__(model, api_key, config, timeout_s=timeout_s, verbose=verbose, max_logged_items=max_logged_items)
+
+    @staticmethod
+    def _find_curl_binary() -> str:
+        for candidate in ("curl.exe", "curl"):
+            resolved = shutil.which(candidate)
+            if resolved:
+                return resolved
+        raise RuntimeError("curl is not available")
+
     def _post_json(self, payload: dict[str, object]) -> dict[str, object]:
         if not self._api_key:
             raise RuntimeError("Gemini API key is required")
@@ -369,57 +553,6 @@ class GeminiTranslator:
             raise RuntimeError(f"Gemini REST API error: {json.dumps(error_payload, ensure_ascii=False)}")
         return parsed
 
-    @staticmethod
-    def _extract_content_text(content: object) -> str:
-        if isinstance(content, str):
-            return normalize_text(content).strip()
-        if isinstance(content, list):
-            fragments: list[str] = []
-            for item in content:
-                if isinstance(item, dict):
-                    item_type = normalize_text(str(item.get("type", ""))).strip().lower()
-                    if item_type not in {"", "text", "output_text"}:
-                        continue
-                    text_value = item.get("text")
-                    if isinstance(text_value, str) and text_value.strip():
-                        fragments.append(normalize_text(text_value).strip())
-            return normalize_text("\n".join(fragment for fragment in fragments if fragment)).strip()
-        return ""
-
-    @classmethod
-    def _extract_standard_choice_text(cls, payload: object) -> str:
-        if not isinstance(payload, dict):
-            return ""
-        choices = payload.get("choices")
-        if not isinstance(choices, list) or not choices:
-            return ""
-        first = choices[0]
-        if not isinstance(first, dict):
-            return ""
-        message = first.get("message")
-        if not isinstance(message, dict):
-            return ""
-        return cls._extract_content_text(message.get("content"))
-
-    @staticmethod
-    def _extract_message_text(payload: object) -> str:
-        if isinstance(payload, list):
-            for item in payload:
-                text = GeminiTranslator._extract_message_text(item)
-                if text:
-                    return text
-            return ""
-        text = GeminiTranslator._extract_standard_choice_text(payload)
-        if text:
-            return text
-        if not isinstance(payload, dict):
-            return ""
-        for candidate in (payload.get("output_text"), payload.get("text"), payload.get("content")):
-            text = GeminiTranslator._extract_content_text(candidate)
-            if text:
-                return text
-        return ""
-
     def _generate_batch_text(self, contents: str) -> str:
         payload: dict[str, object] = {
             "model": self._model,
@@ -449,91 +582,49 @@ class GeminiTranslator:
         )
         return self._extract_message_text(response_payload)
 
-    def translate_batch(
-        self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-        mode: QualityMode,
-    ) -> list[TranslationResult]:
-        started = time.perf_counter()
-        prompt_lines = [
-            "Ngươi đang dịch văn bản OCR từ giao diện game sang tiếng Việt tự nhiên.",
-            "Quy tắc:",
-            "- Trả về đúng một dòng dịch cho mỗi dòng input, đúng thứ tự.",
-            "- Giữ nguyên tên riêng như nhân vật, địa danh, phe phái, vật phẩm khi phù hợp.",
-            "- Dịch nhãn menu, mục tiêu nhiệm vụ, và phụ đề một cách tự nhiên, ngắn gọn.",
-            "- Không giải thích, không thêm ghi chú, không đánh số.",
-            "- Nếu OCR bị nhiễu, hãy giữ đúng ý đọc được và không tự bịa thêm nội dung.",
-            "",
-            "Các dòng input:",
-        ]
-        prompt_lines.extend(f"{index + 1}. {item.source_text}" for index, item in enumerate(items))
-        contents = "\n".join(prompt_lines)
-        self._log_verbose_block("gemini batch contents", contents)
-        output_text = self._generate_batch_text(contents)
-        self._log_verbose_block("gemini batch response", output_text or "<empty>")
-        translated_lines = [self._sanitize_line(line) for line in output_text.splitlines() if self._sanitize_line(line)]
-        results: list[TranslationResult] = []
-        for index, item in enumerate(items):
-            translated = translated_lines[index] if index < len(translated_lines) else item.source_text
-            results.append(
-                TranslationResult(
-                    source_text=item.source_text,
-                    translated_text=translated,
-                    provider=self.name,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                )
-            )
-        if self._verbose:
-            elapsed_ms = (time.perf_counter() - started) * 1000
-            print(f"[AutoTrans][{self._model}] translated {len(items)} item(s) in {elapsed_ms:.0f}ms", flush=True)
-            for item, result in list(zip(items, results, strict=False))[: self._max_logged_items]:
-                print(
-                    f"[AutoTrans][{self._model}] {normalize_text(item.source_text)!r} -> {normalize_text(result.translated_text)!r}",
-                    flush=True,
-                )
-        return results
 
-    def translate_screen_blocks(
+class GroqTranslator(DeepCloudTranslatorBase):
+    name = "groq"
+
+    def __init__(
         self,
-        items: list[OCRBox],
-        source_lang: str,
-        target_lang: str,
-    ) -> list[TranslationResult]:
-        started = time.perf_counter()
-        build_started = time.perf_counter()
-        system_instruction = self._build_deep_system_instruction()
-        contents = self._build_deep_translation_contents(items)
-        build_elapsed_ms = (time.perf_counter() - build_started) * 1000
-        self._log_verbose_block("gemini deep system_instruction", system_instruction)
-        self._log_verbose_block("gemini deep contents", contents)
-        request_started = time.perf_counter()
-        output_text = self._generate_deep_text(system_instruction, contents)
-        request_elapsed_ms = (time.perf_counter() - request_started) * 1000
-        self._log_verbose_block("gemini deep response", output_text or "<empty>")
-        parse_started = time.perf_counter()
-        translated_blocks = self._parse_block_response(output_text, len(items))
-        parse_elapsed_ms = (time.perf_counter() - parse_started) * 1000
-        results: list[TranslationResult] = []
-        for index, item in enumerate(items):
-            translated = translated_blocks[index] if index < len(translated_blocks) else ""
-            results.append(
-                TranslationResult(
-                    source_text=item.source_text,
-                    translated_text=translated or normalize_text(item.source_text),
-                    provider=self.name,
-                    latency_ms=(time.perf_counter() - started) * 1000,
-                )
-            )
-        if self._verbose:
-            elapsed_ms = (time.perf_counter() - started) * 1000
-            print(f"[AutoTrans][{self._model}] deep-translated {len(items)} block(s) in {elapsed_ms:.0f}ms", flush=True)
-            print(
-                f"[AutoTrans][{self._model}] deep timing build_ms={build_elapsed_ms:.0f} request_ms={request_elapsed_ms:.0f} parse_ms={parse_elapsed_ms:.0f}",
-                flush=True,
-            )
-        return results
+        model: str,
+        api_key: str | None = None,
+        config: AppConfig | None = None,
+        timeout_s: float = 2.5,
+        verbose: bool = False,
+        max_logged_items: int = 6,
+    ) -> None:
+        super().__init__(model, api_key, config, timeout_s=timeout_s, verbose=verbose, max_logged_items=max_logged_items)
+        if not self._api_key:
+            raise RuntimeError("Groq API key is required")
+        try:
+            from groq import Groq
+        except Exception as exc:  # pragma: no cover - dependency import error
+            raise RuntimeError("groq package is required for Groq deep translation") from exc
+        self._client = Groq(api_key=self._api_key, timeout=self._timeout_s)
+
+    def _create_chat_completion(self, messages: list[dict[str, str]]) -> object:
+        return self._client.chat.completions.create(messages=messages, model=self._model)
+
+    def _generate_batch_text(self, contents: str) -> str:
+        payload = [{"role": "user", "content": contents}]
+        self._log_verbose_block("groq batch request", json.dumps({"model": self._model, "messages": payload}, ensure_ascii=False, indent=2))
+        response = self._create_chat_completion(payload)
+        response_dict = self._normalize_response_payload(response)
+        self._log_verbose_block("groq batch response raw", json.dumps(response_dict, ensure_ascii=False, indent=2))
+        return self._extract_message_text(response)
+
+    def _generate_deep_text(self, system_instruction: str, contents: str) -> str:
+        payload = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": contents},
+        ]
+        self._log_verbose_block("groq deep request", json.dumps({"model": self._model, "messages": payload}, ensure_ascii=False, indent=2))
+        response = self._create_chat_completion(payload)
+        response_dict = self._normalize_response_payload(response)
+        self._log_verbose_block("groq deep response raw", json.dumps(response_dict, ensure_ascii=False, indent=2))
+        return self._extract_message_text(response)
 
 
 class GeminiRestTranslator(GeminiTranslator):

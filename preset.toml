@@ -47,11 +47,12 @@ languages = ["en", "jp"]
 # Local translation is fixed to ctranslate2 in the runtime app.
 local_translator = "ctranslate2"
 
-# Deep translation uses Gemini when an API key is provided in startup settings.
-# The preset still keeps the legacy key name `openai_model` for compatibility.
+# Deep translation uses a cloud provider when an API key is provided in startup settings.
+# `cloud_provider` selects the backend, while `openai_model` is kept for compatibility.
+cloud_provider = "gemini"
 openai_model = "gemini-2.0-flash"
 
-# Game-specific Gemini context is stored in ui-settings.json via game_profile_* fields.
+# Game-specific cloud translation context is stored in ui-settings.json via game_profile_* fields.
 
 # Stable scans before translation/render.
 # 1 keeps response immediate; raising it reduces flicker but delays updates.

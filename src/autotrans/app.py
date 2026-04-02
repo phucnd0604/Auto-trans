@@ -16,7 +16,7 @@ from autotrans.services.ocr import (
     PaddleOCRProvider,
 )
 from autotrans.services.orchestrator import PipelineOrchestrator
-from autotrans.services.translation import GeminiRestTranslator, build_default_local_translator
+from autotrans.services.translation import GeminiRestTranslator, GroqTranslator, build_default_local_translator
 from autotrans.ui.global_hotkeys import GlobalHotkeyManager
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
@@ -155,6 +155,15 @@ def _build_deep_ocr_provider(config: AppConfig):
     return _LazyOCRProvider("paddleocr", lambda: PaddleOCRProvider(config))
 
 
+def _normalize_deep_provider_name(provider: str) -> str:
+    normalized = provider.strip().lower()
+    if normalized in {"openai", "gemini-rest", "gemini"}:
+        return "gemini"
+    if normalized == "groq":
+        return "groq"
+    return normalized
+
+
 def _build_local_translator(config: AppConfig):
     print("[AutoTrans] Local translator selected: ctranslate2 (lazy)", flush=True)
     return _LazyTranslatorProvider("local-ctranslate2", lambda: build_default_local_translator(config))
@@ -166,17 +175,31 @@ def _build_cloud_translator(config: AppConfig):
         return None
 
     try:
+        provider = _normalize_deep_provider_name(config.deep_translation_provider)
+        config.deep_translation_provider = provider
         config.deep_translation_transport = "rest"
-        translator = GeminiRestTranslator(
-            model=config.deep_translation_model,
-            api_key=config.deep_translation_api_key,
-            config=config,
-            timeout_s=config.deep_translation_timeout_ms / 1000.0,
-            verbose=config.translation_log_enabled,
-            max_logged_items=config.translation_log_max_items,
-        )
+        if provider == "groq":
+            translator = GroqTranslator(
+                model=config.deep_translation_model,
+                api_key=config.deep_translation_api_key,
+                config=config,
+                timeout_s=config.deep_translation_timeout_ms / 1000.0,
+                verbose=config.translation_log_enabled,
+                max_logged_items=config.translation_log_max_items,
+            )
+        elif provider == "gemini":
+            translator = GeminiRestTranslator(
+                model=config.deep_translation_model,
+                api_key=config.deep_translation_api_key,
+                config=config,
+                timeout_s=config.deep_translation_timeout_ms / 1000.0,
+                verbose=config.translation_log_enabled,
+                max_logged_items=config.translation_log_max_items,
+            )
+        else:
+            raise ValueError(f"Unsupported deep translation provider: {config.deep_translation_provider}")
         print(
-            f"[AutoTrans] Deep translator: {translator.name} model={config.deep_translation_model}",
+            f"[AutoTrans] Deep translator: {translator.name} provider={provider} model={config.deep_translation_model}",
             flush=True,
         )
         return translator
@@ -216,6 +239,8 @@ def _apply_startup_settings(config: AppConfig, settings: dict[str, object]) -> A
     config.local_translator_backend = "ctranslate2"
     raw_api_key = str(settings.get("deep_translation_api_key", config.deep_translation_api_key or "")).strip()
     config.deep_translation_api_key = raw_api_key or None
+    provider = str(settings.get("deep_translation_provider", config.deep_translation_provider)).strip()
+    config.deep_translation_provider = _normalize_deep_provider_name(provider)
     config.deep_translation_model = (
         str(settings.get("deep_translation_model", config.deep_translation_model)).strip()
         or config.deep_translation_model

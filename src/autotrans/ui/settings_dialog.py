@@ -35,6 +35,7 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "translation_log_enabled": True,
     "font_size": 18,
     "deep_translation_api_key": "",
+    "deep_translation_provider": "gemini",
     "deep_translation_model": "gemini-2.0-flash",
     "deep_translation_transport": "rest",
     "game_profile_title": "",
@@ -46,8 +47,10 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
 }
 
 SETTING_TOOLTIPS: dict[str, str] = {
-    "Gemini API Key": "API key cho deep mode Gemini. Realtime translation vẫn dùng ctranslate2, không dùng key này.",
-    "Game Title": "Tên game để bổ sung ngữ cảnh cho deep mode, giúp Gemini giữ đúng thuật ngữ và không khí.",
+    "Cloud API Key": "API key cho deep mode cloud provider. Realtime translation vẫn dùng ctranslate2, không dùng key này.",
+    "Cloud Provider": "Chọn provider cloud cho deep mode. Hiện hỗ trợ Gemini REST và Groq SDK.",
+    "Cloud Model": "Model cloud dùng cho deep mode. Không ảnh hưởng tới realtime ctranslate2.",
+    "Game Title": "Tên game để bổ sung ngữ cảnh cho deep mode, giúp cloud provider giữ đúng thuật ngữ và không khí.",
     "World / Setting": "Mô tả bối cảnh, thời đại, thế giới, hệ thống sức mạnh và tông chung của game cho deep mode.",
     "Factions / Organizations": "Danh sách phe phái, tổ chức, tông môn, quốc gia hoặc nhóm quan trọng để deep mode dịch ổn định hơn.",
     "Characters & Honorifics": "Nhân vật chính, cách xưng hô, danh xưng và honorific cần ưu tiên khi deep mode dịch hội thoại.",
@@ -61,13 +64,18 @@ SETTING_TOOLTIPS: dict[str, str] = {
     "Overlay TTL (s)": "Thời gian giữ một overlay trên màn hình trước khi tự động ẩn đi.",
     "Font Size": "Cỡ chữ mặc định của overlay bản dịch.",
     "Logging": "Ghi log runtime và chi tiết OCR/translation vào file .runtime/logs/autotrans.log để debug và benchmark.",
-    "Gemini Model": "Model Gemini dùng cho deep mode. Không ảnh hưởng tới realtime ctranslate2.",
 }
 
 
 def _normalize_loaded_settings(settings: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(settings)
     normalized["ocr_provider"] = "paddleocr"
+    provider = str(normalized.get("deep_translation_provider", normalized.get("cloud_provider", "gemini"))).strip().lower()
+    if provider in {"openai", "gemini-rest"}:
+        provider = "gemini"
+    if provider not in {"gemini", "groq"}:
+        provider = "gemini"
+    normalized["deep_translation_provider"] = provider
     if "deep_translation_api_key" not in normalized:
         normalized["deep_translation_api_key"] = str(normalized.get("openai_api_key", "")).strip()
     if "deep_translation_model" not in normalized:
@@ -115,6 +123,12 @@ def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
         settings["font_size"] = int(overlay["font_size"])
     if "translation_log_enabled" in logging:
         settings["translation_log_enabled"] = bool(logging["translation_log_enabled"])
+    if "provider" in translation:
+        settings["deep_translation_provider"] = str(translation["provider"]).strip()
+    if "cloud_provider" in translation:
+        settings["deep_translation_provider"] = str(translation["cloud_provider"]).strip()
+    if "deep_translation_provider" in translation:
+        settings["deep_translation_provider"] = str(translation["deep_translation_provider"]).strip()
     if "openai_model" in translation:
         settings["deep_translation_model"] = str(translation["openai_model"]).strip()
     return _normalize_loaded_settings(settings)
@@ -134,7 +148,11 @@ class SettingsDialog(QDialog):
 
         self.deep_translation_api_key_edit = QLineEdit(str(settings["deep_translation_api_key"]))
         self.deep_translation_api_key_edit.setEchoMode(QLineEdit.Password)
-        self.deep_translation_api_key_edit.setPlaceholderText("Nhập Gemini API key, để trống sẽ fallback sang ctranslate2")
+        self.deep_translation_api_key_edit.setPlaceholderText("Nhập cloud API key, để trống sẽ fallback sang ctranslate2")
+
+        self.deep_translation_provider_combo = QComboBox()
+        self.deep_translation_provider_combo.addItems(["gemini", "groq"])
+        self.deep_translation_provider_combo.setCurrentText(str(settings["deep_translation_provider"]))
 
         self.game_profile_title_edit = QLineEdit(str(settings["game_profile_title"]))
         self.game_profile_title_edit.setPlaceholderText("Tên game")
@@ -200,10 +218,11 @@ class SettingsDialog(QDialog):
         self.translation_log_check.setChecked(bool(settings["translation_log_enabled"]))
 
         self.deep_translation_model_edit = QLineEdit(str(settings["deep_translation_model"]))
-        self.deep_translation_model_edit.setPlaceholderText("gemini-2.0-flash")
+        self.deep_translation_model_edit.setPlaceholderText("gemini-2.0-flash / groq model name")
 
         expanding_fields = (
             self.deep_translation_api_key_edit,
+            self.deep_translation_provider_combo,
             self.game_profile_title_edit,
             self.game_profile_world_edit,
             self.game_profile_factions_edit,
@@ -227,7 +246,8 @@ class SettingsDialog(QDialog):
         deep_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         deep_form.setFormAlignment(Qt.AlignTop | Qt.AlignLeft)
         deep_form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self._add_labeled_row(deep_form, "Gemini API Key", self.deep_translation_api_key_edit)
+        self._add_labeled_row(deep_form, "Cloud Provider", self.deep_translation_provider_combo)
+        self._add_labeled_row(deep_form, "Cloud API Key", self.deep_translation_api_key_edit)
         self._add_labeled_row(deep_form, "Game Title", self.game_profile_title_edit)
         self._add_labeled_row(deep_form, "World / Setting", self.game_profile_world_edit)
         self._add_labeled_row(deep_form, "Factions / Organizations", self.game_profile_factions_edit)
@@ -247,7 +267,7 @@ class SettingsDialog(QDialog):
         self._add_labeled_row(advanced_form, "Overlay TTL (s)", self.overlay_ttl_spin)
         self._add_labeled_row(advanced_form, "Font Size", self.font_size_spin)
         self._add_labeled_row(advanced_form, "Logging", self.translation_log_check)
-        self._add_labeled_row(advanced_form, "Gemini Model", self.deep_translation_model_edit)
+        self._add_labeled_row(advanced_form, "Cloud Model", self.deep_translation_model_edit)
         self.advanced_container = QWidget()
         self.advanced_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.advanced_container.setLayout(advanced_form)
@@ -260,7 +280,7 @@ class SettingsDialog(QDialog):
         deep_column_layout.setContentsMargins(0, 0, 0, 0)
         deep_column_layout.addWidget(QLabel("Deep Translation"))
         deep_column_layout.addWidget(
-            QLabel("Deep translation mặc định dùng Gemini. Nếu không nhập API key, hệ thống sẽ fallback sang ctranslate2.")
+            QLabel("Deep translation dùng cloud provider đã chọn. Nếu không nhập API key, hệ thống sẽ fallback sang ctranslate2.")
         )
         deep_column_layout.addLayout(deep_form)
         deep_column_layout.addWidget(self.advanced_check)
@@ -311,6 +331,7 @@ class SettingsDialog(QDialog):
             "translation_log_enabled": self.translation_log_check.isChecked(),
             "font_size": self.font_size_spin.value(),
             "deep_translation_api_key": self.deep_translation_api_key_edit.text().strip(),
+            "deep_translation_provider": self.deep_translation_provider_combo.currentText(),
             "deep_translation_model": self.deep_translation_model_edit.text().strip(),
             "deep_translation_transport": "rest",
             "game_profile_title": self.game_profile_title_edit.text().strip(),

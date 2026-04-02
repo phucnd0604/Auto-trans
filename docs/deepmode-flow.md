@@ -32,9 +32,9 @@ flowchart TD
     D --> E["map lines vào layout regions"]
     E --> F["merge lines thành paragraph blocks"]
     F --> G["prepare pending overlay"]
-    G --> H["chọn translator: Gemini nếu có mạng và API key"]
+    G --> H["chọn translator cloud theo provider nếu có mạng và API key"]
     H --> I["cache lookup"]
-    I --> J["Gemini translate_screen_blocks"]
+    I --> J["cloud provider translate_screen_blocks"]
     J --> K["fallback ctranslate2 nếu cloud lỗi"]
     K --> L["build final persistent overlay"]
 ```
@@ -91,7 +91,7 @@ Nếu không map được vào layout region:
 
 Logic:
 - nếu có `cloud_translator`
-- và `_network_available()` resolve được host Gemini
+- và `_network_available()` resolve được host theo provider đã chọn
 - dùng cloud
 - nếu không thì dùng local `ctranslate2`
 
@@ -136,13 +136,12 @@ Kết quả cuối được render bằng persistent overlay:
 Các lỗi thường gặp:
 - không có API key
 - mạng không dùng được
-- Gemini rate limit / quota
+- cloud provider rate limit / quota
 - model Paddle chưa có cache và môi trường không thể tải model
 
 ## Điểm maintain cần nhớ
 
 - Deep mode không được phép kéo chậm luồng realtime
 - OCR deepmode dùng cùng `PaddleOCRProvider` nhưng gọi method riêng `recognize_paragraphs()`
-- Nếu chỉnh prompt Gemini, nên test lại bằng `render_deepmode_runtime_preview.py`
+- Nếu chỉnh prompt hoặc parser của cloud provider, nên test lại bằng `render_deepmode_runtime_preview.py`
 - Nếu đổi model layout hoặc heuristic merge, cần render lại PNG/JSON preview để so sánh trực quan
-

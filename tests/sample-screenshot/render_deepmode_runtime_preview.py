@@ -14,7 +14,7 @@ from autotrans.config import AppConfig
 from autotrans.models import Frame, OverlayItem, Rect, VisibilityState
 from autotrans.services.cache import TranslationCache
 from autotrans.services.ocr import PaddleOCRProvider
-from autotrans.services.translation import GeminiRestTranslator, GeminiTranslator, build_default_local_translator
+from autotrans.services.translation import GeminiRestTranslator, GeminiTranslator, GroqTranslator, build_default_local_translator
 
 
 capture_stub = types.ModuleType("autotrans.services.capture")
@@ -215,29 +215,83 @@ def _make_deep_provider(config: AppConfig) -> PaddleOCRProvider:
 
 
 def _make_cloud_translator(config: AppConfig):
-    if TRANSLATOR_BACKEND == "gemini":
+    backend = TRANSLATOR_BACKEND
+    provider = config.deep_translation_provider.strip().lower()
+    timeout_s = max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0
+
+    if backend == "groq":
+        provider = "groq"
+        config.deep_translation_provider = provider
         if not config.deep_translation_api_key:
-            raise RuntimeError("Gemini translator requested but AUTOTRANS_DEEP_TRANSLATION_API_KEY is empty")
-        return GeminiTranslator(
+            raise RuntimeError("Groq translator requested but AUTOTRANS_DEEP_TRANSLATION_API_KEY is empty")
+        return GroqTranslator(
             model=config.deep_translation_model,
             api_key=config.deep_translation_api_key,
             config=config,
-            timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
+            timeout_s=timeout_s,
             verbose=config.translation_log_enabled,
             max_logged_items=config.translation_log_max_items,
         )
-    if TRANSLATOR_BACKEND == "gemini-rest":
+    if backend == "gemini-rest":
+        provider = "gemini"
+        config.deep_translation_provider = provider
         if not config.deep_translation_api_key:
             raise RuntimeError("Gemini REST translator requested but AUTOTRANS_DEEP_TRANSLATION_API_KEY is empty")
         return GeminiRestTranslator(
             model=config.deep_translation_model,
             api_key=config.deep_translation_api_key,
             config=config,
-            timeout_s=max(config.cloud_timeout_ms, config.deep_translation_timeout_ms) / 1000.0,
+            timeout_s=timeout_s,
             verbose=config.translation_log_enabled,
             max_logged_items=config.translation_log_max_items,
         )
-    return None
+    if backend == "gemini":
+        provider = "gemini"
+        config.deep_translation_provider = provider
+        if not config.deep_translation_api_key:
+            raise RuntimeError("Gemini translator requested but AUTOTRANS_DEEP_TRANSLATION_API_KEY is empty")
+        return GeminiTranslator(
+            model=config.deep_translation_model,
+            api_key=config.deep_translation_api_key,
+            config=config,
+            timeout_s=timeout_s,
+            verbose=config.translation_log_enabled,
+            max_logged_items=config.translation_log_max_items,
+        )
+
+    config.deep_translation_provider = provider
+    if provider == "groq":
+        if not config.deep_translation_api_key:
+            raise RuntimeError("Groq translator requested but AUTOTRANS_DEEP_TRANSLATION_API_KEY is empty")
+        return GroqTranslator(
+            model=config.deep_translation_model,
+            api_key=config.deep_translation_api_key,
+            config=config,
+            timeout_s=timeout_s,
+            verbose=config.translation_log_enabled,
+            max_logged_items=config.translation_log_max_items,
+        )
+    if provider == "gemini":
+        if not config.deep_translation_api_key:
+            raise RuntimeError("Gemini translator requested but AUTOTRANS_DEEP_TRANSLATION_API_KEY is empty")
+        return GeminiTranslator(
+            model=config.deep_translation_model,
+            api_key=config.deep_translation_api_key,
+            config=config,
+            timeout_s=timeout_s,
+            verbose=config.translation_log_enabled,
+            max_logged_items=config.translation_log_max_items,
+        )
+    if not config.deep_translation_api_key:
+        raise RuntimeError("Gemini REST translator requested but AUTOTRANS_DEEP_TRANSLATION_API_KEY is empty")
+    return GeminiRestTranslator(
+        model=config.deep_translation_model,
+        api_key=config.deep_translation_api_key,
+        config=config,
+        timeout_s=timeout_s,
+        verbose=config.translation_log_enabled,
+        max_logged_items=config.translation_log_max_items,
+    )
 
 
 def _make_local_translator(config: AppConfig):

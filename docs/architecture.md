@@ -97,11 +97,11 @@ File chính:
 
 Translator hiện có:
 - local: `CTranslate2Translator`
-- cloud: `GeminiRestTranslator`
+- cloud: `GeminiRestTranslator`, `GroqTranslator`
 
 Chính sách:
 - realtime chỉ dùng local `ctranslate2`
-- deep mode ưu tiên `Gemini`, nếu không dùng được thì fallback `ctranslate2`
+- deep mode ưu tiên cloud provider đã chọn, nếu không dùng được thì fallback `ctranslate2`
 
 ## 7. Shared data model
 
@@ -125,7 +125,7 @@ flowchart LR
     B --> C["PipelineOrchestrator"]
     C --> D["PaddleOCRProvider"]
     C --> E["CTranslate2Translator"]
-    C --> F["GeminiRestTranslator"]
+    C --> F["GeminiRestTranslator / GroqTranslator"]
     C --> G["TranslationCache"]
     C --> H["OCRTracker + SubtitleDetector"]
     C --> I["OverlayWindow"]
@@ -138,4 +138,3 @@ flowchart LR
 - Lazy init cho các thành phần nặng
 - Cache translation theo text/source/target/glossary version
 - Overlay là lớp hiển thị, không chứa business logic OCR/translation
-

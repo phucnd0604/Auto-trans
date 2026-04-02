@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import sys
+import types
 
 import numpy as np
 import pytest
@@ -12,7 +14,7 @@ from autotrans.models import Frame, OCRBox, OverlayItem, OverlayStyle, QualityMo
 from autotrans.services.ocr import BaseOCRProvider, PaddleOCRProvider
 from autotrans.services.orchestrator import PipelineOrchestrator
 from autotrans.services.subtitle import SubtitleDetector
-from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiRestTranslator, GeminiTranslator
+from autotrans.services.translation import GEMINI_DEEP_SYSTEM_PROMPT, GeminiRestTranslator, GeminiTranslator, GroqTranslator
 from autotrans.ui.main_window import MainWindow
 from autotrans.ui.overlay import OverlayWindow
 from autotrans.ui.settings_dialog import SettingsDialog, load_startup_settings
@@ -117,6 +119,7 @@ class StubCloudTranslator:
 def _make_config() -> AppConfig:
     config = AppConfig()
     config.deep_translation_api_key = "test-key"
+    config.deep_translation_provider = "gemini"
     config.deep_translation_model = "gemini-test"
     config.deep_translation_transport = "rest"
     config.translation_log_enabled = False
@@ -392,6 +395,7 @@ def test_load_startup_settings_maps_legacy_openai_keys(tmp_path) -> None:
 
     assert settings["deep_translation_api_key"] == "legacy-key"
     assert settings["deep_translation_model"] == "legacy-model"
+    assert settings["deep_translation_provider"] == "gemini"
     assert settings["deep_translation_transport"] == "rest"
     assert settings["game_profile_title"] == ""
     assert settings["game_profile_world"] == ""
@@ -404,6 +408,7 @@ def test_load_startup_settings_maps_legacy_openai_keys(tmp_path) -> None:
 
 def test_settings_dialog_values_include_game_profile_fields(tmp_path) -> None:
     dialog = SettingsDialog(settings_path=tmp_path / "ui-settings.json")
+    dialog.deep_translation_provider_combo.setCurrentText("groq")
     dialog.game_profile_title_edit.setText("Phi Tien Truyen")
     dialog.game_profile_world_edit.setPlainText("Tu tien the gioi, tong mon va bi canh")
     dialog.game_profile_factions_edit.setPlainText("Thanh Van Mon, Ma Dao")
@@ -417,6 +422,7 @@ def test_settings_dialog_values_include_game_profile_fields(tmp_path) -> None:
     assert values["game_profile_factions"] == "Thanh Van Mon, Ma Dao"
     assert values["game_profile_characters_honorifics"] == "Han Lap - dao huu, Nam Cung Uyen - tien tu"
     assert values["game_profile_terms_items_skills"] == "Linh thach, phap bao, Truc Co"
+    assert values["deep_translation_provider"] == "groq"
     assert values["deep_translation_transport"] == "rest"
 
 
@@ -526,6 +532,56 @@ def test_gemini_rest_translator_extracts_text_parts_content() -> None:
     text = GeminiRestTranslator._extract_message_text(payload)
 
     assert text == "<BLOCK_1> NHAT KY </BLOCK_1>"
+
+
+def test_groq_translator_uses_sdk_and_extracts_message_text(monkeypatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeGroqClient:
+        def __init__(self, api_key=None, timeout=None) -> None:
+            calls["api_key"] = api_key
+            calls["timeout"] = timeout
+            self.chat = self
+            self.completions = self
+
+        def create(self, messages, model):
+            calls["messages"] = messages
+            calls["model"] = model
+
+            class FakeMessage:
+                content = "<BLOCK_1>\nDOC LUC\n</BLOCK_1>"
+
+            class FakeChoice:
+                message = FakeMessage()
+
+            class FakeResponse:
+                choices = [FakeChoice()]
+
+                def model_dump(self):
+                    return {"choices": [{"message": {"content": FakeMessage.content}}]}
+
+            return FakeResponse()
+
+    monkeypatch.setitem(sys.modules, "groq", types.SimpleNamespace(Groq=FakeGroqClient))
+
+    config = _make_config()
+    config.deep_translation_provider = "groq"
+    translator = GroqTranslator(
+        model="llama-3.1-8b-instant",
+        api_key="groq-key",
+        config=config,
+        timeout_s=12.0,
+        verbose=False,
+    )
+
+    result = translator.translate_screen_blocks(_make_boxes(), "en", "vi")
+
+    assert calls["api_key"] == "groq-key"
+    assert calls["timeout"] == 12.0
+    assert calls["model"] == "llama-3.1-8b-instant"
+    assert calls["messages"][0]["role"] == "system"
+    assert calls["messages"][1]["role"] == "user"
+    assert result[0].translated_text == "DOC LUC"
 
 
 def test_overlay_keeps_persistent_items_after_live_items_clear(qtbot) -> None:

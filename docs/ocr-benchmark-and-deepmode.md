@@ -119,7 +119,30 @@ AUTOTRANS_DEEP_TRANSLATION_API_KEY=... \
 - Tạo overlay preview cho trạng thái pending và final
 - Xác nhận fallback `Gemini -> ctranslate2` vẫn hoạt động khi cần
 
-## 4. Compile check nhanh
+## 4. Test Groq deep mode riêng
+
+Benchmark này đọc key từ `.env` hoặc biến môi trường:
+- `AUTOTRANS_DEEP_TRANSLATION_API_KEY`
+- `GROQ_API_KEY`
+
+Model mặc định:
+- `moonshotai/kimi-k2-instruct`
+
+Lệnh chạy:
+
+```bash
+PYTHONPATH=src \
+./.venv/bin/python tests/translation_test/benchmark_groq_deepmode_translator.py \
+  --env-file .env \
+  --model moonshotai/kimi-k2-instruct
+```
+
+Ý nghĩa:
+- Dịch các đoạn tiếng Anh khoảng 100 từ
+- Ghi report JSON và Markdown vào `tests/translation_test/`
+- In ra latency từng đoạn để so sánh tốc độ và chất lượng
+
+## 5. Compile check nhanh
 
 ```bash
 PYTHONPATH=src ./.venv/bin/python -m py_compile \
@@ -136,7 +159,7 @@ PYTHONPATH=src ./.venv/bin/python -m py_compile \
   tests/test_ocr_runtime_providers.py
 ```
 
-## 5. Khi nào nên chạy lại
+## 6. Khi nào nên chạy lại
 
 Chạy lại benchmark và test deepmode khi:
 - đổi model OCR
@@ -145,4 +168,3 @@ Chạy lại benchmark và test deepmode khi:
 - đổi layout grouping của deepmode
 - thay đổi dependency phiên bản Paddle
 - xóa hoặc thay local cache model
-
