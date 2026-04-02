@@ -489,7 +489,7 @@ class PipelineOrchestrator:
             ocr_boxes = self.deep_ocr_provider.recognize(frame)
         ocr_boxes = self._dedupe_boxes(ocr_boxes)
         selected_boxes = self._select_deep_boxes(ocr_boxes)
-        grouped_boxes = self._group_boxes_for_deep_translation(selected_boxes)
+        grouped_boxes = list(selected_boxes)
         self._log(
             f"deep ocr blocks raw={len(ocr_boxes)} selected={len(selected_boxes)} grouped={len(grouped_boxes)} paragraph_ocr={used_paragraph_ocr}"
         )

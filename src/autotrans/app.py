@@ -220,7 +220,7 @@ def _build_realtime_ocr_provider(config: AppConfig):
 
 def _build_deep_ocr_provider(config: AppConfig):
     print("[AutoTrans] Deep OCR provider selected: paddleocr (lazy)", flush=True)
-    return _LazyOCRProvider("paddleocr", lambda: PaddleOCRProvider(config))
+    return _LazyOCRProvider("paddleocr", lambda: PaddleOCRProvider(config, deep_mode=True))
 
 
 def _normalize_deep_provider_name(provider: str) -> str:

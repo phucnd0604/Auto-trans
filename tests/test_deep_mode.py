@@ -246,7 +246,7 @@ def test_prepare_deep_translation_uses_paragraph_ocr_when_available() -> None:
     assert preview_items
 
 
-def test_prepare_deep_translation_does_not_fallback_to_heuristic_grouping() -> None:
+def test_prepare_deep_translation_keeps_line_boxes_without_heuristic_grouping() -> None:
     config = _make_config()
     separate_lines = [
         OCRBox(

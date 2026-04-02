@@ -100,6 +100,46 @@ class AdaptiveSubtitleFilter:
         enough_overlap = overlap_x > -max(18, int(width_basis * 0.08))
         return same_column or near_center_column or enough_overlap
 
+    @staticmethod
+    def _compose_group_text(group: list[OCRBox]) -> str:
+        if not group:
+            return ""
+
+        ordered = sorted(group, key=lambda item: (item.bbox.y, item.bbox.x))
+        rows: list[list[OCRBox]] = []
+        row_centers: list[float] = []
+
+        for box in ordered:
+            text = normalize_text(box.source_text)
+            if not text:
+                continue
+            box_center_y = box.bbox.y + (box.bbox.height / 2)
+            placed = False
+            for index, row in enumerate(rows):
+                anchor = row[0]
+                avg_height = (anchor.bbox.height + box.bbox.height) / 2
+                if abs(box_center_y - row_centers[index]) <= avg_height * 0.40:
+                    row.append(box)
+                    row_centers[index] = sum(
+                        item.bbox.y + (item.bbox.height / 2) for item in row
+                    ) / len(row)
+                    placed = True
+                    break
+            if not placed:
+                rows.append([box])
+                row_centers.append(box_center_y)
+
+        lines = []
+        for row in rows:
+            line = " ".join(
+                text
+                for text in (normalize_text(item.source_text) for item in sorted(row, key=lambda item: item.bbox.x))
+                if text
+            )
+            if line:
+                lines.append(line)
+        return "\n".join(lines)
+
     def _merge_candidates(self, boxes: list[OCRBox]) -> list[tuple[OCRBox, list[OCRBox]]]:
         if not boxes:
             return []
@@ -121,14 +161,14 @@ class AdaptiveSubtitleFilter:
         merged: list[tuple[OCRBox, list[OCRBox]]] = []
         for index, group in enumerate(groups):
             ordered_group = sorted(group, key=lambda item: (item.bbox.y, item.bbox.x))
-            text = " ".join(normalize_text(item.source_text) for item in ordered_group if normalize_text(item.source_text))
+            text = self._compose_group_text(ordered_group)
             x = min(item.bbox.x for item in ordered_group)
             y = min(item.bbox.y for item in ordered_group)
             right = max(item.bbox.right for item in ordered_group)
             bottom = max(item.bbox.bottom for item in ordered_group)
             merged_box = OCRBox(
                 id="",
-                source_text=normalize_text(text),
+                source_text=text,
                 confidence=sum(item.confidence for item in ordered_group) / len(ordered_group),
                 bbox=Rect(x=x, y=y, width=right - x, height=bottom - y),
                 language_hint=ordered_group[0].language_hint,

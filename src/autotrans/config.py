@@ -106,6 +106,8 @@ class AppConfig:
     ocr_min_confidence: float = float(getenv("AUTOTRANS_OCR_MIN_CONFIDENCE", "0.45"))
     ocr_preprocess: bool = getenv("AUTOTRANS_OCR_PREPROCESS", "0") != "0"
     ocr_max_side: int = int(getenv("AUTOTRANS_OCR_MAX_SIDE", "960"))
+    deep_ocr_max_side: int = int(getenv("AUTOTRANS_DEEP_OCR_MAX_SIDE", "1600"))
+    deep_ocr_text_det_limit_side_len: int = int(getenv("AUTOTRANS_DEEP_OCR_TEXT_DET_LIMIT_SIDE_LEN", "512"))
     ocr_max_boxes: int = int(getenv("AUTOTRANS_OCR_MAX_BOXES", "0"))
     ocr_crop_subtitle_only: bool = getenv("AUTOTRANS_OCR_CROP_SUBTITLE_ONLY", "1") != "0"
     overlay_source_text: bool = getenv("AUTOTRANS_OVERLAY_SOURCE_TEXT", "0") != "0"

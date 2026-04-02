@@ -52,8 +52,9 @@ class MockOCRProvider:
 
 
 class BaseOCRProvider:
-    def __init__(self, config: AppConfig) -> None:
+    def __init__(self, config: AppConfig, *, deep_mode: bool = False) -> None:
         self._config = config
+        self._deep_mode = deep_mode
 
     def _log(self, message: str) -> None:
         if self._config.runtime_verbose_log:
@@ -62,10 +63,11 @@ class BaseOCRProvider:
     def _resize_for_ocr(self, image: np.ndarray) -> tuple[np.ndarray, float]:
         height, width = image.shape[:2]
         longest = max(height, width)
-        if longest <= self._config.ocr_max_side:
+        max_side = self._config.deep_ocr_max_side if self._deep_mode else self._config.ocr_max_side
+        if longest <= max_side:
             return image, 1.0
 
-        scale = self._config.ocr_max_side / float(longest)
+        scale = max_side / float(longest)
         new_width = max(1, int(width * scale))
         new_height = max(1, int(height * scale))
         import cv2
@@ -292,8 +294,8 @@ class PaddleOCRProvider(BaseOCRProvider):
         "en_PP-OCRv5_mobile_rec",
     )
 
-    def __init__(self, config: AppConfig) -> None:
-        super().__init__(config)
+    def __init__(self, config: AppConfig, *, deep_mode: bool = False) -> None:
+        super().__init__(config, deep_mode=deep_mode)
         os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
         from paddleocr import PaddleOCR
 
@@ -328,13 +330,18 @@ class PaddleOCRProvider(BaseOCRProvider):
     def _build_ocr_kwargs(self) -> dict[str, object]:
         det_model_dir = self._resolve_paddlex_model_dir("PP-OCRv5_mobile_det")
         rec_model_name, rec_model_dir = self._resolve_recognition_model()
+        text_det_limit_side_len = (
+            self._config.deep_ocr_text_det_limit_side_len
+            if self._deep_mode
+            else 192
+        )
         kwargs: dict[str, object] = {
             "text_detection_model_name": "PP-OCRv5_mobile_det",
             "text_recognition_model_name": rec_model_name,
             "use_doc_orientation_classify": False,
             "use_doc_unwarping": False,
             "use_textline_orientation": False,
-            "text_det_limit_side_len": 192,
+            "text_det_limit_side_len": text_det_limit_side_len,
             "text_recognition_batch_size": 8,
         }
         if det_model_dir is not None:

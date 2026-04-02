@@ -126,6 +126,21 @@ def test_subtitle_detector_keeps_speaker_name_with_dialogue_block() -> None:
     selected = detector.select(frame, boxes)
 
     assert len(selected) == 1
-    assert selected[0].source_text.startswith("Yuna ")
+    assert selected[0].source_text.startswith("Yuna\n")
     assert "turn back if you want" in selected[0].source_text
     assert "no one has to know" in selected[0].source_text.lower()
+
+
+def test_subtitle_detector_preserves_visual_line_breaks() -> None:
+    config = AppConfig()
+    detector = SubtitleDetector(config)
+    frame = _make_frame(width=1280, height=720)
+    boxes = [
+        _make_box("We should leave before sunrise.", 110, 600, 420, 34, confidence=0.96),
+        _make_box("The patrol will notice us here.", 112, 639, 432, 35, confidence=0.95),
+    ]
+
+    selected = detector.select(frame, boxes)
+
+    assert len(selected) == 1
+    assert selected[0].source_text == "We should leave before sunrise.\nThe patrol will notice us here."
