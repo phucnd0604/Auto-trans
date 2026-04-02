@@ -60,12 +60,15 @@ Cac path nay duoc normalize ve app root trong `AppConfig.__post_init__()`.
 - `AUTOTRANS_OCR_MIN_CONFIDENCE`
 - `AUTOTRANS_OCR_PREPROCESS`
 - `AUTOTRANS_OCR_MAX_SIDE`
+- `AUTOTRANS_DEEP_OCR_MAX_SIDE`
+- `AUTOTRANS_DEEP_OCR_TEXT_DET_LIMIT_SIDE_LEN`
 - `AUTOTRANS_OCR_MAX_BOXES`
 - `AUTOTRANS_OCR_CROP_SUBTITLE_ONLY`
 
 Luu y:
 - code hien chi ho tro `paddleocr`
 - `ocr_languages` ton tai o config nhung `PaddleOCRProvider` hien co dinh dung recognition model Latin-script
+- realtime OCR va deep mode OCR hien dung chung provider, nhung deep mode co the dung input lon hon va `text_det_limit_side_len` rieng
 
 ### Local translator
 

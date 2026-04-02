@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-04-03
+
+### Deep Mode OCR
+
+- Bo heuristic regroup trong `PipelineOrchestrator` cho deep mode; deep mode hien giu nguyen output tu `recognize_paragraphs()` / `recognize()`.
+- Tach setting OCR input rieng cho deep mode:
+  - `AUTOTRANS_DEEP_OCR_MAX_SIDE`
+  - `AUTOTRANS_DEEP_OCR_TEXT_DET_LIMIT_SIDE_LEN`
+- Tang OCR input cho deep mode giup giam tinh trang paragraph box bi thieu dong va line con bi chen de len nhau trong man hinh journal/quest.
+
+### Subtitle
+
+- Subtitle grouping hien giu xuong dong theo row thuc te thay vi noi toan bo box trong cung mot cum thanh mot dong.
+
 ## 2026-04-02
 
 ### Runtime Diagnostics

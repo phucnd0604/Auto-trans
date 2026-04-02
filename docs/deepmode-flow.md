@@ -2,7 +2,7 @@
 
 ## Mục tiêu
 
-Deep mode dùng để quét toàn màn hình game, gom các line OCR thành block có ngữ cảnh tốt hơn, rồi dịch theo block.
+Deep mode dùng để quét toàn màn hình game, lấy block OCR/layout có ngữ cảnh tốt hơn, rồi dịch theo block.
 
 Luồng này ưu tiên:
 - ngữ cảnh
@@ -49,7 +49,8 @@ flowchart TD
 2. `deep_ocr_provider.recognize_paragraphs(frame)`
 3. `_dedupe_boxes()`
 4. `_select_deep_boxes()`
-5. `build_pending_deep_overlay()`
+5. giu nguyen cac box do `recognize_paragraphs()` hoac `recognize()` tra ve, khong regroup them o orchestrator
+6. `build_pending_deep_overlay()`
 
 ### Kết quả
 
@@ -76,14 +77,18 @@ Pending overlay hiển thị text:
    - map line vào layout regions
    - merge line trong cùng region thành block paragraph
 
+Deep mode hien uu tien tin vao output paragraph/layout tu provider.
+Orchestrator khong con heuristic regroup them sau buoc nay.
+
 ### Label layout hiện dùng
 
 Hiện code chỉ ưu tiên merge theo các vùng:
 - `text`
 - `title`
 
-Nếu không map được vào layout region:
-- block vẫn có thể được merge theo heuristic paragraph thường
+Neu text khong map duoc vao layout region:
+- provider van co the tra line box hoac merged line box tuy theo OCR output
+- orchestrator se giu nguyen output do thay vi regroup them
 
 ## Pha 3: Chọn translator
 
@@ -143,5 +148,8 @@ Các lỗi thường gặp:
 
 - Deep mode không được phép kéo chậm luồng realtime
 - OCR deepmode dùng cùng `PaddleOCRProvider` nhưng gọi method riêng `recognize_paragraphs()`
+- Deep mode hien co setting OCR input rieng:
+  - `AUTOTRANS_DEEP_OCR_MAX_SIDE`
+  - `AUTOTRANS_DEEP_OCR_TEXT_DET_LIMIT_SIDE_LEN`
 - Nếu chỉnh prompt hoặc parser của cloud provider, nên test lại bằng `render_deepmode_runtime_preview.py`
 - Nếu đổi model layout hoặc heuristic merge, cần render lại PNG/JSON preview để so sánh trực quan
