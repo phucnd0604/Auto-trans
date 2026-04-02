@@ -515,7 +515,7 @@ class GeminiTranslator(DeepCloudTranslatorBase):
 
     def __init__(
         self,
-        model: str = "gemini-2.0-flash",
+        model: str = "gemini-3.1-flash-lite-preview",
         api_key: str | None = None,
         config: AppConfig | None = None,
         timeout_s: float = 2.5,

@@ -1,170 +1,127 @@
-# Hướng Dẫn Benchmark OCR Và Test Deepmode
+# Huong Dan Benchmark OCR Va Test Deepmode
 
-## Mục tiêu
+## Muc tieu
 
-Tài liệu này mô tả các lệnh chuẩn để kiểm tra lại OCR runtime và deepmode sau khi thay đổi code hoặc model.
+Tai lieu nay mo ta cac lenh chuan de kiem tra lai OCR runtime va deep mode sau khi thay doi code, dependency, cache model, hoac subtitle filter.
 
-## Môi trường chạy
+## Moi truong chay
 
-Chạy từ thư mục root của repo và dùng đúng `venv` của project.
-
-macOS / Linux:
-
-```bash
-./.venv/bin/python --version
-export PYTHONPATH=src
-export PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache"
-```
+Chay tu thu muc root cua repo va dung dung `venv` cua project.
 
 Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\python.exe --version
 $env:PYTHONPATH = "src"
-$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddlex-cache"
+$env:PADDLE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddle"
 ```
 
-Lưu ý:
-- Nếu local cache chưa có model và máy có mạng, Paddle có thể tự tải model.
-- Nếu môi trường không có mạng, chỉ các model đã có sẵn trong `PADDLE_PDX_CACHE_HOME` mới dùng được.
+Khuyen nghi:
+- Dung `.\run.ps1 -SyncModels -SkipRun` truoc khi benchmark de dam bao local model va Paddle model da nam trong `.runtime`
+- Neu may khong co mang, chi cac model da co san trong `.runtime` moi dung duoc
 
-## 1. Benchmark OCR realtime
+## 1. Dong bo model runtime
 
-Lệnh:
-
-macOS / Linux:
-
-```bash
-PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
-./.venv/bin/python tests/ocr_test/benchmark_subtitle_runtime.py
+```powershell
+.\run.ps1 -SyncModels -SkipRun
 ```
 
-Windows PowerShell:
+Lenh nay se:
+- kiem tra local translator model trong `.runtime\models\quickmt-en-vi`
+- kiem tra Paddle/PaddleX model trong `.runtime\paddle`
+- tai model thieu ve dung thu muc runtime
+
+## 2. Benchmark OCR realtime
 
 ```powershell
 $env:PYTHONPATH = "src"
-$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddlex-cache"
+$env:PADDLE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddle"
 .\.venv\Scripts\python.exe tests\ocr_test\benchmark_subtitle_runtime.py
 ```
 
-Ý nghĩa:
-- Chạy OCR trên 11 ảnh subtitle mẫu trong `tests/ocr_test/`
-- Benchmark luồng OCR realtime hiện tại
-- Ghi report JSON vào `tests/ocr_test/subtitle_runtime_benchmark.json`
+Y nghia:
+- chay OCR tren bo anh subtitle mau trong `tests/ocr_test/`
+- benchmark luong OCR realtime hien tai
+- ghi report JSON vao `tests/ocr_test/subtitle_runtime_benchmark.json`
 
-Preset hiện có:
-- `runtime-default`
-- `runtime-no-crop`
-- `runtime-det-640`
-- `runtime-en-rec`
-
-Mặc định benchmark hiện dùng recognition model `en_PP-OCRv5_mobile_rec`. Nếu máy chỉ còn cache cũ, script và runtime vẫn có thể resolve alias tương thích.
-
-## 2. Test deepmode OCR preview
-
-Lệnh:
-
-macOS / Linux:
-
-```bash
-PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
-./.venv/bin/python tests/sample-screenshot/render_deepmode_ocr_preview.py
-```
-
-Windows PowerShell:
+## 3. Test deepmode OCR preview
 
 ```powershell
 $env:PYTHONPATH = "src"
-$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddlex-cache"
+$env:PADDLE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddle"
 .\.venv\Scripts\python.exe tests\sample-screenshot\render_deepmode_ocr_preview.py
 ```
 
-Ý nghĩa:
-- Chạy deepmode OCR trên `quest1.png` và `quest2.png`
-- Render box OCR sau khi grouping theo layout
-- Xuất PNG và JSON cạnh file sample
+Y nghia:
+- chay deepmode OCR tren screenshot mau
+- render box OCR sau khi grouping theo layout
+- xuat PNG va JSON canh file sample
 
-Output mong đợi:
-- `tests/sample-screenshot/quest1.deepmode-paddleocr_auto-ocr-boxes.png`
-- `tests/sample-screenshot/quest1.deepmode-paddleocr_auto-ocr-boxes.json`
-- `tests/sample-screenshot/quest2.deepmode-paddleocr_auto-ocr-boxes.png`
-- `tests/sample-screenshot/quest2.deepmode-paddleocr_auto-ocr-boxes.json`
+## 4. Test deepmode runtime preview
 
-## 3. Test deepmode runtime preview
+Local translator:
 
-Lệnh local translator:
-
-```bash
-PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
-AUTOTRANS_TRANSLATOR_BACKEND=ctranslate2 \
-./.venv/bin/python tests/sample-screenshot/render_deepmode_runtime_preview.py
+```powershell
+$env:PYTHONPATH = "src"
+$env:PADDLE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+.\.venv\Scripts\python.exe tests\sample-screenshot\render_deepmode_runtime_preview.py
 ```
 
-Lệnh ưu tiên Gemini:
+Groq:
 
-```bash
-PYTHONPATH=src \
-PADDLE_PDX_CACHE_HOME="$(pwd)/.runtime/paddlex-cache" \
-AUTOTRANS_TRANSLATOR_BACKEND=gemini-rest \
-AUTOTRANS_DEEP_TRANSLATION_MODEL=gemini-3.1-flash-lite-preview \
-AUTOTRANS_DEEP_TRANSLATION_API_KEY=... \
-./.venv/bin/python tests/sample-screenshot/render_deepmode_runtime_preview.py
+```powershell
+$env:PYTHONPATH = "src"
+$env:PADDLE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:AUTOTRANS_DEEP_TRANSLATION_API_KEY = "..."
+$env:AUTOTRANS_DEEP_TRANSLATION_PROVIDER = "groq"
+$env:AUTOTRANS_DEEP_TRANSLATION_MODEL = "qwen/qwen3-32b"
+.\.venv\Scripts\python.exe tests\sample-screenshot\render_deepmode_runtime_preview.py
 ```
 
-Ý nghĩa:
-- Mô phỏng luồng deepmode gần runtime thật
-- Tạo overlay preview cho trạng thái pending và final
-- Xác nhận fallback `Gemini -> ctranslate2` vẫn hoạt động khi cần
+Gemini:
 
-## 4. Test Groq deep mode riêng
-
-Benchmark này đọc key từ `.env` hoặc biến môi trường:
-- `AUTOTRANS_DEEP_TRANSLATION_API_KEY`
-- `GROQ_API_KEY`
-
-Model mặc định:
-- `moonshotai/kimi-k2-instruct`
-
-Lệnh chạy:
-
-```bash
-PYTHONPATH=src \
-./.venv/bin/python tests/translation_test/benchmark_groq_deepmode_translator.py \
-  --env-file .env \
-  --model moonshotai/kimi-k2-instruct
+```powershell
+$env:PYTHONPATH = "src"
+$env:PADDLE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:PADDLE_PDX_CACHE_HOME = Join-Path (Get-Location) ".runtime\paddle"
+$env:AUTOTRANS_DEEP_TRANSLATION_API_KEY = "..."
+$env:AUTOTRANS_DEEP_TRANSLATION_PROVIDER = "gemini"
+$env:AUTOTRANS_DEEP_TRANSLATION_MODEL = "gemini-3.1-flash-lite-preview"
+.\.venv\Scripts\python.exe tests\sample-screenshot\render_deepmode_runtime_preview.py
 ```
 
-Ý nghĩa:
-- Dịch các đoạn tiếng Anh khoảng 100 từ
-- Ghi report JSON và Markdown vào `tests/translation_test/`
-- In ra latency từng đoạn để so sánh tốc độ và chất lượng
+## 5. Test Groq deep mode rieng
 
-## 5. Compile check nhanh
-
-```bash
-PYTHONPATH=src ./.venv/bin/python -m py_compile \
-  src/autotrans/app.py \
-  src/autotrans/config.py \
-  src/autotrans/services/ocr.py \
-  src/autotrans/services/translation.py \
-  src/autotrans/ui/main_window.py \
-  src/autotrans/ui/settings_dialog.py \
-  tests/ocr_test/benchmark_subtitle_runtime.py \
-  tests/sample-screenshot/render_deepmode_ocr_preview.py \
-  tests/sample-screenshot/render_deepmode_runtime_preview.py \
-  tests/test_deep_mode.py \
-  tests/test_ocr_runtime_providers.py
+```powershell
+$env:PYTHONPATH = "src"
+.\.venv\Scripts\python.exe tests\translation_test\benchmark_groq_deepmode_translator.py --env-file .env --model qwen/qwen3-32b
 ```
 
-## 6. Khi nào nên chạy lại
+## 6. Compile check nhanh
 
-Chạy lại benchmark và test deepmode khi:
-- đổi model OCR
-- đổi detection size
-- đổi subtitle crop hoặc logic subtitle selection
-- đổi layout grouping của deepmode
-- thay đổi dependency phiên bản Paddle
-- xóa hoặc thay local cache model
+```powershell
+.\.venv\Scripts\python.exe -m py_compile `
+  src\autotrans\app.py `
+  src\autotrans\config.py `
+  src\autotrans\services\ocr.py `
+  src\autotrans\services\translation.py `
+  src\autotrans\services\subtitle_filter.py `
+  src\autotrans\ui\main_window.py `
+  src\autotrans\ui\settings_dialog.py
+```
+
+## 7. Khi nao nen chay lai
+
+Chay lai benchmark va test deepmode khi:
+- doi model OCR
+- doi detection size
+- doi subtitle crop hoac logic subtitle selection
+- doi layout grouping cua deep mode
+- doi cloud provider/model
+- doi dependency Paddle hoac Groq
+- xoa hoac thay local cache model

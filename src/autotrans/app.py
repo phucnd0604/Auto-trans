@@ -128,6 +128,7 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
         config.xdg_cache_home,
         config.xdg_config_home,
         config.hf_home,
+        config.paddle_cache_dir,
         config.log_dir,
     ]
     for path in runtime_dirs:
@@ -137,10 +138,13 @@ def _prepare_runtime_environment(config: AppConfig) -> None:
     os.environ["XDG_CACHE_HOME"] = str(config.xdg_cache_home.resolve())
     os.environ["XDG_CONFIG_HOME"] = str(config.xdg_config_home.resolve())
     os.environ["HF_HOME"] = str(config.hf_home.resolve())
+    os.environ["PADDLE_HOME"] = str(config.paddle_cache_dir.resolve())
+    os.environ["PADDLE_PDX_CACHE_HOME"] = str(config.paddle_cache_dir.resolve())
 
     setup_runtime_logging(config)
     print(f"[AutoTrans] Runtime root: {config.runtime_root_dir}", flush=True)
     print(f"[AutoTrans] Cache root: {config.cache_root_dir}", flush=True)
+    print(f"[AutoTrans] Paddle cache root: {config.paddle_cache_dir}", flush=True)
 
 
 def _build_realtime_ocr_provider(config: AppConfig):
@@ -169,14 +173,30 @@ def _build_local_translator(config: AppConfig):
     return _LazyTranslatorProvider("local-ctranslate2", lambda: build_default_local_translator(config))
 
 
+def _mask_api_key(api_key: str | None) -> str:
+    if not api_key:
+        return "missing"
+    if len(api_key) <= 8:
+        return "***"
+    return f"{api_key[:4]}...{api_key[-4:]}"
+
+
 def _build_cloud_translator(config: AppConfig):
+    provider = _normalize_deep_provider_name(config.deep_translation_provider)
+    config.deep_translation_provider = provider
+    print(
+        "[AutoTrans] Cloud translator config: "
+        f"provider={provider} "
+        f"model={config.deep_translation_model} "
+        f"transport={config.deep_translation_transport} "
+        f"api_key={_mask_api_key(config.deep_translation_api_key)}",
+        flush=True,
+    )
     if not config.deep_translation_api_key:
         print("[AutoTrans] Deep translator: disabled, fallback to ctranslate2", flush=True)
         return None
 
     try:
-        provider = _normalize_deep_provider_name(config.deep_translation_provider)
-        config.deep_translation_provider = provider
         config.deep_translation_transport = "rest"
         if provider == "groq":
             translator = GroqTranslator(
@@ -204,7 +224,12 @@ def _build_cloud_translator(config: AppConfig):
         )
         return translator
     except Exception as exc:
-        print(f"[AutoTrans] Deep translator unavailable, fallback to ctranslate2: {exc}", flush=True)
+        print(
+            "[AutoTrans] Deep translator unavailable, fallback to ctranslate2: "
+            f"provider={provider} model={config.deep_translation_model} error={exc!r}",
+            flush=True,
+        )
+        traceback.print_exc()
         return None
 
 

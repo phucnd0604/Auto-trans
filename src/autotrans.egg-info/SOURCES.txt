@@ -16,6 +16,7 @@ src/autotrans/services/capture.py
 src/autotrans/services/ocr.py
 src/autotrans/services/orchestrator.py
 src/autotrans/services/subtitle.py
+src/autotrans/services/subtitle_filter.py
 src/autotrans/services/tracker.py
 src/autotrans/services/translation.py
 src/autotrans/ui/__init__.py
@@ -27,5 +28,9 @@ src/autotrans/utils/__init__.py
 src/autotrans/utils/runtime_logging.py
 src/autotrans/utils/text.py
 tests/test_deep_mode.py
+tests/test_groq_deepmode_benchmark.py
+tests/test_local_translator_benchmark.py
 tests/test_ocr_runtime_providers.py
 tests/test_runtime_logging.py
+tests/test_subtitle.py
+tests/test_translation.py

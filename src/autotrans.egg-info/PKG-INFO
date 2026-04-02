@@ -9,6 +9,7 @@ Requires-Dist: numpy>=1.26
 Requires-Dist: Pillow>=10.4
 Requires-Dist: mss>=10.0
 Requires-Dist: rapidfuzz>=3.9
+Requires-Dist: groq>=0.31
 Requires-Dist: pywin32>=308; sys_platform == "win32"
 Requires-Dist: bettercam>=1.0.0; sys_platform == "win32"
 Provides-Extra: ocr
@@ -26,15 +27,15 @@ Requires-Dist: pytest-qt>=4.4; extra == "dev"
 
 # AutoTrans
 
-Tài liệu dự án đã được gom về thư mục `docs`.
+Tài liệu dự án đã được gom về thư mục [`docs`](./docs).
 
 ## Lối vào nhanh
 
-- `docs/README.md`
-- `docs/getting-started.md`
-- `docs/ocr-benchmark-and-deepmode.md`
-- `docs/changelog.md`
-- `docs/reports/2026-04-01-paddleocr-only.md`
+- [Mục lục tài liệu](./docs/README.md)
+- [Bắt đầu nhanh](./docs/getting-started.md)
+- [Hướng dẫn benchmark OCR và test deepmode](./docs/ocr-benchmark-and-deepmode.md)
+- [Changelog](./docs/changelog.md)
+- [Báo cáo PaddleOCR-only](./docs/reports/2026-04-01-paddleocr-only.md)
 
 ## Chạy nhanh từ source
 
@@ -43,6 +44,24 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
 .\.venv\Scripts\python.exe -m pip install -e .[dev,ocr,local_translate]
 .\run.ps1
+```
+
+Hoặc để script tự đồng bộ môi trường trước khi chạy:
+
+```powershell
+.\run.ps1 -SyncEnv
+```
+
+Để chỉ kiểm tra và tải các model runtime cần thiết về `.runtime`:
+
+```powershell
+.\run.ps1 -SyncModels -SkipRun
+```
+
+Nếu cần dựng lại `.venv` từ đầu:
+
+```powershell
+.\run.ps1 -RecreateVenv
 ```
 
 ## Build EXE

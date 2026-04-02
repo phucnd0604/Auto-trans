@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-04-02
+
+### Runtime va Moi truong
+
+- Chuan hoa `run.ps1` de co the tu tao `.venv`, sync dependency, sync model runtime va chay app trong cung mot flow.
+- Bo sung che do `-SyncEnv`, `-SyncModels`, `-RecreateVenv`, `-SkipRun` cho script runtime.
+- Them buoc bootstrap model runtime de local translator model va Paddle models duoc tai/kiem tra truoc khi mo app.
+- Chuan hoa duong dan cache Paddle/PaddleX ve `.runtime/paddle` thay vi de phan tan ra thu muc home cua user.
+
+### Translation va Deep Mode
+
+- Them logging startup ro hon cho cloud translator: provider, model, tinh trang API key, va traceback day du khi fallback.
+- Deep mode Groq da duoc giu dung provider/model sau khi sua settings va flow khoi tao.
+- Khoi phuc grouping OCR block trong deep mode de overlay dung block da gom thay vi box OCR tho.
+
+### Subtitle va Overlay
+
+- Bo filter `uppercase_label` trong subtitle detector de subtitle viet toan chu hoa khong bi loai oan.
+- Bo penalty cham diem rieng cho subtitle all-caps trong subtitle mode.
+
+### Tai lieu
+
+- Cap nhat `README` va huong dan khoi dong de phan anh flow sync env/model moi.
+- Cap nhat tai lieu benchmark/deepmode de dung `PADDLE_HOME` va `PADDLE_PDX_CACHE_HOME` tro ve `.runtime/paddle`.
+
 ## 2026-04-01
 
 ### Repo

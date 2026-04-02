@@ -19,6 +19,24 @@ py -3.11 -m venv .venv
 .\run.ps1
 ```
 
+Hoặc để script tự đồng bộ môi trường trước khi chạy:
+
+```powershell
+.\run.ps1 -SyncEnv
+```
+
+Để chỉ kiểm tra và tải các model runtime cần thiết về `.runtime`:
+
+```powershell
+.\run.ps1 -SyncModels -SkipRun
+```
+
+Nếu cần dựng lại `.venv` từ đầu:
+
+```powershell
+.\run.ps1 -RecreateVenv
+```
+
 ## Build EXE
 
 ```powershell

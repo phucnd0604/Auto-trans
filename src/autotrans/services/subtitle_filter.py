@@ -46,15 +46,6 @@ class AdaptiveSubtitleFilter:
                 return False
         return True
 
-    @staticmethod
-    def _looks_like_uppercase_label(text: str) -> bool:
-        normalized = normalize_text(text)
-        letters = [char for char in normalized if char.isalpha()]
-        if not letters:
-            return False
-        uppercase = sum(1 for char in letters if char.isupper())
-        return uppercase / max(len(letters), 1) >= 0.85
-
     def explain_rejection(self, frame: Frame, box: OCRBox) -> str | None:
         text = normalize_text(box.source_text)
         text_len = len(text)
@@ -85,9 +76,6 @@ class AdaptiveSubtitleFilter:
         digit_ratio = digits / max(alnum, 1)
         if digit_ratio >= 0.75 and text_len <= 18:
             return "numeric_noise"
-
-        if self._looks_like_uppercase_label(text) and len(tokens) <= 3 and text_len <= 28 and not self._looks_like_name_tag(text):
-            return "uppercase_label"
         return None
 
     def _is_subtitle_candidate(self, frame: Frame, box: OCRBox) -> bool:
@@ -184,9 +172,6 @@ class AdaptiveSubtitleFilter:
         text_length = min(self._normalized_length(box.source_text), 64)
         line_count = len(group)
         tokens = tokenize_words(box.source_text)
-        alpha_count = sum(char.isalpha() for char in box.source_text)
-        uppercase_alpha = sum(char.isupper() for char in box.source_text if char.isalpha())
-        uppercase_ratio = uppercase_alpha / max(alpha_count, 1)
         digits = sum(char.isdigit() for char in box.source_text)
         alnum = sum(char.isalnum() for char in box.source_text)
         digit_ratio = digits / max(alnum, 1)
@@ -210,8 +195,6 @@ class AdaptiveSubtitleFilter:
             score += 0.25
         if digit_ratio >= 0.3:
             score -= 0.9
-        if self._looks_like_uppercase_label(box.source_text) and uppercase_ratio >= 0.9 and text_length <= 32:
-            score -= 0.75
         if box.bbox.y <= frame.window_rect.height * 0.74:
             score -= 0.2
 

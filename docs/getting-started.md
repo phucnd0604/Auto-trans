@@ -1,24 +1,24 @@
-# Bắt Đầu Nhanh
+# Bat Dau Nhanh
 
-## Tổng quan
+## Tong quan
 
-`AutoTrans` là ứng dụng OCR overlay dành cho game trên Windows.
+`AutoTrans` la ung dung OCR overlay cho game tren Windows.
 
-Trạng thái hiện tại:
-- OCR runtime đã được chuẩn hóa sang `PaddleOCR`
-- Deep mode dùng OCR đoạn văn + phân tích layout bằng Paddle
-- Dịch realtime dùng `ctranslate2`
-- Deep mode ưu tiên `Gemini`, nếu không dùng được thì fallback sang `ctranslate2`
+Trang thai hien tai:
+- OCR runtime da duoc chuan hoa sang `PaddleOCR`
+- Deep mode dung OCR doan van + layout bang Paddle
+- Dich realtime dung `ctranslate2`
+- Deep mode co the dung `Gemini` hoac `Groq`, neu khong dung duoc thi fallback sang `ctranslate2`
 
-## Yêu cầu
+## Yeu cau
 
 - Python `3.11`
-- Windows để chạy app thực tế
-- `venv` cục bộ của project
+- Windows de chay app thuc te
+- `venv` cuc bo cua project
 
-## Chạy từ source
+## Chay tu source
 
-Thực hiện tại thư mục root của repo:
+Thuc hien tai thu muc root cua repo:
 
 ```powershell
 py -3.11 -m venv .venv
@@ -26,10 +26,28 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .[dev,ocr,local_translate]
 ```
 
-Chạy app:
+Chay app:
 
 ```powershell
 .\run.ps1
+```
+
+De script tu sync dependency truoc khi chay:
+
+```powershell
+.\run.ps1 -SyncEnv
+```
+
+De chi kiem tra va tai model runtime ve `.runtime`:
+
+```powershell
+.\run.ps1 -SyncModels -SkipRun
+```
+
+Neu can dung lai `.venv` tu dau:
+
+```powershell
+.\run.ps1 -RecreateVenv
 ```
 
 ## Build EXE
@@ -38,18 +56,18 @@ Chạy app:
 .\build_exe.ps1
 ```
 
-## Biến môi trường quan trọng
+## Bien moi truong quan trong
 
 - `PYTHONPATH=src`
-- `PADDLE_PDX_CACHE_HOME=.runtime/paddlex-cache`
+- `PADDLE_HOME=.runtime/paddle`
+- `PADDLE_PDX_CACHE_HOME=.runtime/paddle`
 - `AUTOTRANS_DEEP_TRANSLATION_API_KEY`
 - `AUTOTRANS_DEEP_TRANSLATION_MODEL`
 
-Nếu local cache chưa có model Paddle và máy có mạng, Paddle có thể tự tải model cần thiết.
+Neu local cache chua co model va may co mang, `run.ps1 -SyncModels` se tai cac model can thiet ve `.runtime`.
 
-## Tài liệu liên quan
+## Tai lieu lien quan
 
-- [Hướng dẫn benchmark OCR và test deepmode](./ocr-benchmark-and-deepmode.md)
+- [Huong dan benchmark OCR va test deepmode](./ocr-benchmark-and-deepmode.md)
 - [Changelog](./changelog.md)
-- [Báo cáo PaddleOCR-only](./reports/2026-04-01-paddleocr-only.md)
-
+- [Bao cao PaddleOCR-only](./reports/2026-04-01-paddleocr-only.md)

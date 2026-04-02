@@ -3,6 +3,7 @@ numpy>=1.26
 Pillow>=10.4
 mss>=10.0
 rapidfuzz>=3.9
+groq>=0.31
 
 [:sys_platform == "win32"]
 pywin32>=308

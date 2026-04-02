@@ -36,7 +36,7 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "font_size": 18,
     "deep_translation_api_key": "",
     "deep_translation_provider": "gemini",
-    "deep_translation_model": "gemini-2.0-flash",
+    "deep_translation_model": "gemini-3.1-flash-lite-preview",
     "deep_translation_transport": "rest",
     "game_profile_title": "",
     "game_profile_world": "",
@@ -44,6 +44,33 @@ DEFAULT_STARTUP_SETTINGS: dict[str, Any] = {
     "game_profile_characters_honorifics": "",
     "game_profile_terms_items_skills": "",
     "advanced_settings": False,
+}
+
+GEMINI_CLOUD_MODELS: list[tuple[str, str]] = [
+    ("gemini-3.1-flash-lite-preview", "Gemini flash lite preview"),
+    ("gemini-2.0-flash", "Gemini 2.0 flash"),
+]
+
+GROQ_CLOUD_MODELS: list[tuple[str, str]] = [
+    ("allam-2-7b", "Allam 7B"),
+    ("groq/compound", "Groq Compound"),
+    ("groq/compound-mini", "Groq Compound Mini"),
+    ("llama-3.1-8b-instant", "Llama 3.1 8B instant"),
+    ("llama-3.3-70b-versatile", "Llama 3.3 70B versatile"),
+    ("meta-llama/llama-4-scout-17b-16e-instruct", "Llama 4 Scout 17B instruct"),
+    ("meta-llama/llama-prompt-guard-2-22m", "Llama Prompt Guard 22M"),
+    ("meta-llama/llama-prompt-guard-2-86m", "Llama Prompt Guard 86M"),
+    ("moonshotai/kimi-k2-instruct", "Kimi K2 instruct"),
+    ("moonshotai/kimi-k2-instruct-0905", "Kimi K2 instruct 0905"),
+    ("openai/gpt-oss-120b", "OpenAI GPT OSS 120B"),
+    ("openai/gpt-oss-20b", "OpenAI GPT OSS 20B"),
+    ("openai/gpt-oss-safeguard-20b", "OpenAI GPT OSS safeguard 20B"),
+    ("qwen/qwen3-32b", "Qwen 3 32B"),
+]
+
+CLOUD_MODELS_BY_PROVIDER: dict[str, list[tuple[str, str]]] = {
+    "gemini": GEMINI_CLOUD_MODELS,
+    "groq": GROQ_CLOUD_MODELS,
 }
 
 SETTING_TOOLTIPS: dict[str, str] = {
@@ -129,6 +156,10 @@ def _load_preset_settings(preset_path: Path) -> dict[str, Any]:
         settings["deep_translation_provider"] = str(translation["cloud_provider"]).strip()
     if "deep_translation_provider" in translation:
         settings["deep_translation_provider"] = str(translation["deep_translation_provider"]).strip()
+    if "model" in translation:
+        settings["deep_translation_model"] = str(translation["model"]).strip()
+    if "deep_translation_model" in translation:
+        settings["deep_translation_model"] = str(translation["deep_translation_model"]).strip()
     if "openai_model" in translation:
         settings["deep_translation_model"] = str(translation["openai_model"]).strip()
     return _normalize_loaded_settings(settings)
@@ -153,6 +184,16 @@ class SettingsDialog(QDialog):
         self.deep_translation_provider_combo = QComboBox()
         self.deep_translation_provider_combo.addItems(["gemini", "groq"])
         self.deep_translation_provider_combo.setCurrentText(str(settings["deep_translation_provider"]))
+
+        self.deep_translation_model_combo = QComboBox()
+        self.deep_translation_model_combo.setEditable(True)
+        self.deep_translation_model_combo.setInsertPolicy(QComboBox.NoInsert)
+        self.deep_translation_model_combo.setPlaceholderText("Nhap model id neu khong co san trong danh sach")
+        self._refresh_cloud_model_options(
+            str(settings["deep_translation_provider"]),
+            str(settings["deep_translation_model"]),
+        )
+        self.deep_translation_provider_combo.currentTextChanged.connect(self._handle_provider_changed)
 
         self.game_profile_title_edit = QLineEdit(str(settings["game_profile_title"]))
         self.game_profile_title_edit.setPlaceholderText("Tên game")
@@ -217,12 +258,10 @@ class SettingsDialog(QDialog):
         self.translation_log_check = QCheckBox("Enable translation log")
         self.translation_log_check.setChecked(bool(settings["translation_log_enabled"]))
 
-        self.deep_translation_model_edit = QLineEdit(str(settings["deep_translation_model"]))
-        self.deep_translation_model_edit.setPlaceholderText("gemini-2.0-flash / groq model name")
-
         expanding_fields = (
             self.deep_translation_api_key_edit,
             self.deep_translation_provider_combo,
+            self.deep_translation_model_combo,
             self.game_profile_title_edit,
             self.game_profile_world_edit,
             self.game_profile_factions_edit,
@@ -237,7 +276,6 @@ class SettingsDialog(QDialog):
             self.overlay_ttl_spin,
             self.font_size_spin,
             self.translation_log_check,
-            self.deep_translation_model_edit,
         )
         for widget in expanding_fields:
             widget.setSizePolicy(QSizePolicy.Expanding, widget.sizePolicy().verticalPolicy())
@@ -267,7 +305,7 @@ class SettingsDialog(QDialog):
         self._add_labeled_row(advanced_form, "Overlay TTL (s)", self.overlay_ttl_spin)
         self._add_labeled_row(advanced_form, "Font Size", self.font_size_spin)
         self._add_labeled_row(advanced_form, "Logging", self.translation_log_check)
-        self._add_labeled_row(advanced_form, "Cloud Model", self.deep_translation_model_edit)
+        self._add_labeled_row(advanced_form, "Cloud Model", self.deep_translation_model_combo)
         self.advanced_container = QWidget()
         self.advanced_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.advanced_container.setLayout(advanced_form)
@@ -319,6 +357,28 @@ class SettingsDialog(QDialog):
             field.setToolTip(tooltip)
         form.addRow(label, field)
 
+    def _handle_provider_changed(self, provider: str) -> None:
+        self._refresh_cloud_model_options(provider, self.deep_translation_model_combo.currentText().strip())
+
+    def _refresh_cloud_model_options(self, provider: str, selected_model: str) -> None:
+        normalized_provider = provider.strip().lower()
+        options = CLOUD_MODELS_BY_PROVIDER.get(normalized_provider, [])
+        fallback_model = DEFAULT_STARTUP_SETTINGS["deep_translation_model"]
+        model_to_select = selected_model.strip() or fallback_model
+
+        self.deep_translation_model_combo.blockSignals(True)
+        self.deep_translation_model_combo.clear()
+        for model_id, comment in options:
+            self.deep_translation_model_combo.addItem(model_id)
+            index = self.deep_translation_model_combo.count() - 1
+            self.deep_translation_model_combo.setItemData(index, comment, Qt.ToolTipRole)
+        if model_to_select and self.deep_translation_model_combo.findText(model_to_select) < 0:
+            self.deep_translation_model_combo.addItem(model_to_select)
+            index = self.deep_translation_model_combo.count() - 1
+            self.deep_translation_model_combo.setItemData(index, "Custom model id", Qt.ToolTipRole)
+        self.deep_translation_model_combo.setCurrentText(model_to_select)
+        self.deep_translation_model_combo.blockSignals(False)
+
     def values(self) -> dict[str, Any]:
         return {
             "ocr_provider": self.ocr_provider_combo.currentText(),
@@ -332,7 +392,7 @@ class SettingsDialog(QDialog):
             "font_size": self.font_size_spin.value(),
             "deep_translation_api_key": self.deep_translation_api_key_edit.text().strip(),
             "deep_translation_provider": self.deep_translation_provider_combo.currentText(),
-            "deep_translation_model": self.deep_translation_model_edit.text().strip(),
+            "deep_translation_model": self.deep_translation_model_combo.currentText().strip(),
             "deep_translation_transport": "rest",
             "game_profile_title": self.game_profile_title_edit.text().strip(),
             "game_profile_world": self.game_profile_world_edit.toPlainText().strip(),

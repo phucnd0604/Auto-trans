@@ -349,6 +349,7 @@ class PaddleOCRProvider(BaseOCRProvider):
         if raw_cache_home:
             base_dirs.append(Path(raw_cache_home).expanduser().resolve())
         else:
+            base_dirs.append(self._config.paddle_cache_dir.resolve())
             base_dirs.append((self._config.runtime_root_dir / "paddlex-cache").resolve())
             base_dirs.append(Path.home() / ".paddlex")
 

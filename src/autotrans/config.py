@@ -56,6 +56,12 @@ _DEFAULT_HF_HOME = Path(
         str(_DEFAULT_RUNTIME_ROOT_DIR / "huggingface"),
     )
 )
+_DEFAULT_PADDLE_CACHE_DIR = Path(
+    getenv(
+        "AUTOTRANS_PADDLE_CACHE_DIR",
+        str(_DEFAULT_RUNTIME_ROOT_DIR / "paddle"),
+    )
+)
 _DEFAULT_LOG_DIR = Path(
     getenv(
         "AUTOTRANS_LOG_DIR",
@@ -120,12 +126,13 @@ class AppConfig:
     xdg_cache_home: Path = _DEFAULT_XDG_CACHE_HOME
     xdg_config_home: Path = _DEFAULT_XDG_CONFIG_HOME
     hf_home: Path = _DEFAULT_HF_HOME
+    paddle_cache_dir: Path = _DEFAULT_PADDLE_CACHE_DIR
     log_dir: Path = _DEFAULT_LOG_DIR
     log_max_lines: int = int(getenv("AUTOTRANS_LOG_MAX_LINES", "10000"))
     log_trim_to_lines: int = int(getenv("AUTOTRANS_LOG_TRIM_TO_LINES", "5000"))
     deep_translation_api_key: str | None = getenv("AUTOTRANS_DEEP_TRANSLATION_API_KEY") or None
     deep_translation_provider: str = getenv("AUTOTRANS_DEEP_TRANSLATION_PROVIDER", "gemini")
-    deep_translation_model: str = getenv("AUTOTRANS_DEEP_TRANSLATION_MODEL", "gemini-2.0-flash")
+    deep_translation_model: str = getenv("AUTOTRANS_DEEP_TRANSLATION_MODEL", "gemini-3.1-flash-lite-preview")
     deep_translation_transport: str = getenv("AUTOTRANS_DEEP_TRANSLATION_TRANSPORT", "rest")
     game_profile_title: str = getenv("AUTOTRANS_GAME_PROFILE_TITLE", "")
     game_profile_world: str = getenv("AUTOTRANS_GAME_PROFILE_WORLD", "")
@@ -146,6 +153,7 @@ class AppConfig:
         self.xdg_cache_home = _resolve_from_app_root(self.xdg_cache_home)
         self.xdg_config_home = _resolve_from_app_root(self.xdg_config_home)
         self.hf_home = _resolve_from_app_root(self.hf_home)
+        self.paddle_cache_dir = _resolve_from_app_root(self.paddle_cache_dir)
         self.log_dir = _resolve_from_app_root(self.log_dir)
         self.deep_translation_provider = self.deep_translation_provider.strip().lower() or "gemini"
 
